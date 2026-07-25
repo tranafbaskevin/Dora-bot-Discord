@@ -10,6 +10,7 @@ async function executeInventory(interaction) {
   const userId = interaction.user.id;
   const user = db.getUser(userId);
   const inventory = db.getUserInventory(userId);
+  const userWeapons = db.getUserWeapons(userId);
 
   const rawDb = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../../database.json'), 'utf8'));
   const userArts = (rawDb.artifacts && rawDb.artifacts[userId]) || [];
@@ -18,11 +19,11 @@ async function executeInventory(interaction) {
     .setTitle(`🎒 TÚI ĐỒ VẬT PHẨM & TRANG BỊ - ${interaction.user.username}`)
     .setColor('#f59e0b')
     .setThumbnail(interaction.user.displayAvatarURL())
-    .setDescription('Nhấn vào các nút bên dưới để xem chi tiết thông tin **Nón Ánh Sáng (Vũ Khí)** hoặc **Thánh Di Vật (Artifacts)** có sẵn!')
+    .setDescription('Nhấn vào các nút bên dưới để xem chi tiết **Nón Ánh Sáng (Vũ Khí S1-S5)** hoặc **Thánh Di Vật (Artifacts)** có sẵn!')
     .addFields(
       { name: '💎 Nguyên Thạch (Stellar Jade)', value: `**${user.jades.toLocaleString()}**`, inline: true },
-      { name: '🗑️ Nón Ánh Sáng 3★ Rác', value: `**${user.trash_items || 0}** món`, inline: true },
-      { name: '🔮 Di Vật Trong Kho', value: `**${user.artifacts ? user.artifacts.length : userArts.length}** món`, inline: true },
+      { name: '⚔️ Nón Ánh Sáng Sở Hữu', value: `**${userWeapons.length}** món (S1 - S5)`, inline: true },
+      { name: '🔮 Di Vật Trong Kho', value: `**${userArts.length}** món`, inline: true },
       {
         name: '📦 Kho Vật Liệu Nâng Cấp',
         value: `📘 **Sách EXP**: ${user.materials?.char_exp_book || 0} cuốn\n⚔️ **Tinh Thể Vũ Khí**: ${user.materials?.weapon_exp_crystal || 0} tinh thể\n🔮 **Bụi Di Vật**: ${user.materials?.artifact_dust || 0} túi\n📜 **Mầm Kỹ Năng**: ${user.materials?.trace_material || 0} mầm`,
@@ -39,8 +40,9 @@ async function executeInventory(interaction) {
   );
 
   const buttonsRow2 = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('inv_recycle_trash').setLabel('♻️ Phân Tách Rác 3★ (+20 Jades/món)').setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId('inv_view_artifacts').setLabel('🔮 Xem Kho Di Vật & Chỉ Số Dòng').setStyle(ButtonStyle.Secondary)
+    new ButtonBuilder().setCustomId('inv_view_weapons').setLabel('⚔️ Xem Kho Vũ Khí (Nón S1-S5)').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('inv_view_artifacts').setLabel('🔮 Xem Kho Di Vật & Chỉ Số Dòng').setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId('inv_recycle_trash').setLabel('♻️ Phân Tách Rác 3★').setStyle(ButtonStyle.Danger)
   );
 
   const response = await interaction.reply({
@@ -59,6 +61,7 @@ async function executeInventory(interaction) {
       return i.reply({ content: '❌ Bạn không phải là người sở hữu túi đồ này!', ephemeral: true });
     }
 
+    // 1. Recycle Trash Items
     if (i.customId === 'inv_recycle_trash') {
       const result = db.recycleTrashItems(userId);
       if (!result.success) {
@@ -67,11 +70,37 @@ async function executeInventory(interaction) {
 
       const updatedUser = db.getUser(userId);
       mainEmbed.spliceFields(0, 1, { name: '💎 Nguyên Thạch (Stellar Jade)', value: `**${updatedUser.jades.toLocaleString()}**`, inline: true });
-      mainEmbed.spliceFields(1, 1, { name: '🗑️ Nón Ánh Sáng 3★ Rác', value: `**0** món`, inline: true });
 
       await i.update({ embeds: [mainEmbed], components: [buttonsRow1, buttonsRow2] });
       await i.followUp({ content: `🎉 **Đã phân tách ${result.count} món rác**! Nhận được **+${result.jadesGained} Nguyên Thạch**!`, ephemeral: true });
-    } else if (i.customId === 'inv_view_artifacts') {
+    }
+
+    // 2. View Weapon Inventory (Light Cones S1-S5)
+    else if (i.customId === 'inv_view_weapons') {
+      const currentWeapons = db.getUserWeapons(userId);
+
+      if (currentWeapons.length === 0) {
+        return i.reply({ content: '⚠️ Kho Vũ Khí của bạn đang trống! Hãy quay Gacha ở `/gacha` để nhận Nón Ánh Sáng 5★!', ephemeral: true });
+      }
+
+      const wpnLines = currentWeapons.map((wpn, idx) => {
+        const sLevel = wpn.superimpose || 1;
+        const starStr = '⭐'.repeat(wpn.rarity || 4);
+        const equippedMsg = wpn.char_id ? ` (Đang trang bị cho **${wpn.char_id.toUpperCase()}**)` : '';
+        return `**${idx + 1}. ${starStr} ${wpn.name}**\n   • Cấp độ: **Lv.${wpn.level || 1} / 80** | Cung Mệnh Tích Chồng: **Tích Chồng S${sLevel} / S5** ✨${equippedMsg}\n   • Hiệu ứng: Tăng +${10 + sLevel * 5}% ATK & +${5 + sLevel * 5}% CRIT Rate!`;
+      }).join('\n\n');
+
+      const wpnEmbed = new EmbedBuilder()
+        .setTitle(`⚔️ KHO NÓN ÁNH SÁNG & CUNG MỆNH VŨ KHÍ S1-S5 (${currentWeapons.length} MÓN)`)
+        .setColor('#eab308')
+        .setDescription(wpnLines)
+        .setFooter({ text: 'Khi roll trùng Nón Ánh Sáng ở /gacha, Vũ khí sẽ tự động Tích Chồng S1 -> S5!' });
+
+      await i.update({ embeds: [wpnEmbed], components: [buttonsRow1, buttonsRow2] });
+    }
+
+    // 3. View Artifact Inventory
+    else if (i.customId === 'inv_view_artifacts') {
       const currentArts = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../../database.json'), 'utf8')).artifacts[userId] || [];
 
       if (currentArts.length === 0) {
@@ -90,7 +119,10 @@ async function executeInventory(interaction) {
         .setFooter({ text: 'Dùng /upgrade -> 🔮 Cường Hóa Di Vật để RNG Roll dòng phụ!' });
 
       await i.update({ embeds: [artEmbed], components: [buttonsRow1, buttonsRow2] });
-    } else if (i.customId.startsWith('inv_char_')) {
+    }
+
+    // 4. Character Equipment Inspection
+    else if (i.customId.startsWith('inv_char_')) {
       const idx = parseInt(i.customId.replace('inv_char_', ''), 10);
       const item = inventory[idx];
       if (!item) {
@@ -101,18 +133,21 @@ async function executeInventory(interaction) {
       const charLvl = item.level || 1;
       const wpnLvl = item.weapon_level || 1;
 
+      const userWpns = db.getUserWeapons(userId);
+      const equippedWpn = userWpns.find(w => w.char_id === item.char_id || w.name.includes(item.light_cone)) || { name: item.light_cone, superimpose: 1 };
+
       const charEmbed = new EmbedBuilder()
         .setTitle(`🛡️ THÔNG TIN TRANG BỊ - ${char.name.toUpperCase()}`)
         .setColor(char.color || '#3b82f6')
         .setThumbnail(char.icon || interaction.user.displayAvatarURL())
         .addFields(
           { name: '👤 Cấp Nhân Vật', value: `**Lv.${charLvl} / 80**`, inline: true },
-          { name: '⚔️ Nón Ánh Sáng (Vũ Khí)', value: `**${item.light_cone || 'Tiêu Chuẩn'}** (Lv.${wpnLvl}/80)`, inline: true },
+          { name: '⚔️ Nón Ánh Sáng (Vũ Khí)', value: `**${equippedWpn.name}** (Lv.${wpnLvl} • **Tích Chồng S${equippedWpn.superimpose || 1}**)`, inline: true },
           { name: '🔮 Bộ Di Vật', value: `**${item.artifact_set || 'Bộ Tiêu Chuẩn'}**`, inline: true },
           { name: '📜 Cấp Kỹ Năng', value: `Đánh thường: Lv.${item.basic_lvl || 1} | Chiến kỹ: Lv.${item.skill_lvl || 1} | Tuyệt kỹ: Lv.${item.ult_lvl || 1}`, inline: false },
           {
             name: '📊 Chỉ Số Thực Tế (Scaled Stats)',
-            value: `• **HP**: ${char.baseStats.hp + (charLvl - 1) * 35}\n• **ATK**: ${char.baseStats.atk + (charLvl - 1) * 15 + (wpnLvl - 1) * 12}\n• **DEF**: ${char.baseStats.def + (charLvl - 1) * 10}\n• **Tốc độ (SPD)**: ${char.baseStats.speed}`,
+            value: `• **HP**: ${char.baseStats.hp + (charLvl - 1) * 40}\n• **ATK**: ${char.baseStats.atk + (charLvl - 1) * 18 + (wpnLvl - 1) * 12}\n• **DEF**: ${char.baseStats.def + (charLvl - 1) * 12}\n• **Tốc độ (SPD)**: ${char.baseStats.speed}`,
             inline: false
           }
         );

@@ -6,7 +6,7 @@ const dbFilePath = path.join(__dirname, '../../database.json');
 // Helper to read database
 function readDb() {
   if (!fs.existsSync(dbFilePath)) {
-    const initialData = { users: {}, inventory: {}, teams: {}, artifacts: {} };
+    const initialData = { users: {}, inventory: {}, teams: {}, artifacts: {}, weapons: {} };
     fs.writeFileSync(dbFilePath, JSON.stringify(initialData, null, 2));
     return initialData;
   }
@@ -14,9 +14,10 @@ function readDb() {
     const raw = fs.readFileSync(dbFilePath, 'utf8');
     const data = JSON.parse(raw);
     if (!data.artifacts) data.artifacts = {};
+    if (!data.weapons) data.weapons = {};
     return data;
   } catch (err) {
-    const initialData = { users: {}, inventory: {}, teams: {}, artifacts: {} };
+    const initialData = { users: {}, inventory: {}, teams: {}, artifacts: {}, weapons: {} };
     fs.writeFileSync(dbFilePath, JSON.stringify(initialData, null, 2));
     return initialData;
   }
@@ -257,7 +258,56 @@ function addArtifact(discordId, artifact) {
   return newArt;
 }
 
-// RNG Artifact Upgrade System (Lv 1 - 15) with random Sub-stat Rolls on +3 levels
+// Add Weapon & Superimpose S1-S5
+function addWeapon(discordId, weapon) {
+  const data = readDb();
+  if (!data.weapons) data.weapons = {};
+  if (!data.weapons[discordId]) {
+    data.weapons[discordId] = [
+      { id: 'wpn_seele', name: 'In the Night (5★)', rarity: 5, level: 1, superimpose: 1, char_id: 'seele' },
+      { id: 'wpn_danheng', name: 'Only Silence Remains (4★)', rarity: 4, level: 1, superimpose: 1, char_id: 'dan_heng' },
+      { id: 'wpn_march', name: 'Day One of My New Life (4★)', rarity: 4, level: 1, superimpose: 1, char_id: 'march_7th' },
+      { id: 'wpn_natasha', name: 'Shared Feeling (4★)', rarity: 4, level: 1, superimpose: 1, char_id: 'natasha' }
+    ];
+  }
+
+  const existing = data.weapons[discordId].find(w => w.name === weapon.name);
+  if (existing) {
+    existing.superimpose = Math.min(5, (existing.superimpose || 1) + 1);
+    saveDb(data);
+    return { isNew: false, superimpose: existing.superimpose, weapon: existing };
+  } else {
+    const newWpn = {
+      id: `wpn_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      name: weapon.name,
+      rarity: weapon.rarity || 4,
+      level: 1,
+      exp: 0,
+      superimpose: 1,
+      char_id: null
+    };
+    data.weapons[discordId].push(newWpn);
+    saveDb(data);
+    return { isNew: true, superimpose: 1, weapon: newWpn };
+  }
+}
+
+function getUserWeapons(discordId) {
+  const data = readDb();
+  if (!data.weapons) data.weapons = {};
+  if (!data.weapons[discordId]) {
+    data.weapons[discordId] = [
+      { id: 'wpn_seele', name: 'In the Night (5★)', rarity: 5, level: 1, superimpose: 1, char_id: 'seele' },
+      { id: 'wpn_danheng', name: 'Only Silence Remains (4★)', rarity: 4, level: 1, superimpose: 1, char_id: 'dan_heng' },
+      { id: 'wpn_march', name: 'Day One of My New Life (4★)', rarity: 4, level: 1, superimpose: 1, char_id: 'march_7th' },
+      { id: 'wpn_natasha', name: 'Shared Feeling (4★)', rarity: 4, level: 1, superimpose: 1, char_id: 'natasha' }
+    ];
+    saveDb(data);
+  }
+  return data.weapons[discordId];
+}
+
+// RNG Artifact Upgrade System (Lv 1 - 15)
 function upgradeArtifact(discordId, artifactId, dustToUse = 5) {
   const data = readDb();
   const user = data.users[discordId] || getUser(discordId);
@@ -441,6 +491,8 @@ module.exports = {
   upgradeSkillLevel,
   addArtifact,
   upgradeArtifact,
+  addWeapon,
+  getUserWeapons,
   setGuaranteedState,
   updateUserJades,
   updatePity,
