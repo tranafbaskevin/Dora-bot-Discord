@@ -211,6 +211,7 @@ function upgradeWeaponLevel(discordId, charId, useMax = true) {
     const wpn = data.weapons[discordId].find(w => w.char_id === charId || normalizeWeaponName(w.name) === normTarget);
     if (wpn) {
       wpn.level = char.weapon_level;
+      wpn.char_id = charId;
     }
   }
 
@@ -329,6 +330,21 @@ function getUserWeapons(discordId) {
     ];
     saveDb(data);
   }
+
+  // AUTO SYNC WEAPON LEVELS FROM INVENTORY FOR EQUIPPED WEAPONS!
+  const userInv = data.inventory[discordId] || [];
+  let updated = false;
+  data.weapons[discordId].forEach(w => {
+    const invChar = userInv.find(c => c.char_id === w.char_id || normalizeWeaponName(c.light_cone) === normalizeWeaponName(w.name));
+    if (invChar && invChar.weapon_level && invChar.weapon_level > (w.level || 1)) {
+      w.level = invChar.weapon_level;
+      if (!w.char_id) w.char_id = invChar.char_id;
+      updated = true;
+    }
+  });
+
+  if (updated) saveDb(data);
+
   return data.weapons[discordId];
 }
 

@@ -1,153 +1,189 @@
+const db = require('../database/db');
 const charactersData = require('../data/characters.json');
 const enemiesData = require('../data/enemies.json');
-const artifactsData = require('../data/artifacts.json');
-const db = require('../database/db');
 
-class BattleSession {
-  constructor(userId, teamCharIds, enemyId, options = {}) {
+class CombatEngine {
+  constructor(userId, bossId, difficultyLevel = 60) {
     this.userId = userId;
-    const rawEnemy = enemiesData.find(e => e.id === enemyId) || enemiesData[0];
-    const userInv = db.getUserInventory(userId);
+    this.bossId = bossId;
+    this.difficultyLevel = difficultyLevel;
 
-    // Ensure teamCharIds is always an array
-    let teamList = Array.isArray(teamCharIds) ? teamCharIds : [];
-    if (teamList.length === 0) {
-      const userTeam = db.getUserTeam(userId);
-      teamList = [userTeam.slot1, userTeam.slot2, userTeam.slot3, userTeam.slot4].filter(Boolean);
-    }
-    if (teamList.length === 0) {
-      teamList = ['seele', 'dan_heng', 'march_7th', 'natasha'];
-    }
-
-    // Calculate Average Team Level
-    const partyLevels = teamList.map(id => {
-      const rec = userInv.find(i => i.char_id === id);
-      return rec ? (rec.level || 1) : 1;
-    });
-    const avgPartyLevel = Math.round(partyLevels.reduce((a, b) => a + b, 0) / partyLevels.length);
-
-    // Level Matchmaking (Boss Level = Avg Party Level + 2, unless manual difficulty is requested)
-    const targetEnemyLevel = options.difficultyLevel || (avgPartyLevel + 2);
-    const levelScaleFactor = 1.0 + (targetEnemyLevel - 1) * 0.15;
-
-    const scaledMaxHp = Math.floor(rawEnemy.hp * levelScaleFactor);
-    const scaledAtk = Math.floor(rawEnemy.atk * levelScaleFactor);
-    const scaledDef = Math.floor(rawEnemy.def * levelScaleFactor);
-
-    this.enemy = {
-      ...rawEnemy,
-      level: targetEnemyLevel,
-      currentHp: scaledMaxHp,
-      maxHp: scaledMaxHp,
-      atk: scaledAtk,
-      def: scaledDef,
-      currentToughness: rawEnemy.toughness || 100,
-      maxToughness: rawEnemy.toughness || 100,
-      actionValue: Math.round(10000 / rawEnemy.speed),
-      isAlive: true
-    };
-
-    this.team = teamList.map((charId, idx) => {
-      const charData = charactersData.find(c => c.id === charId) || charactersData[0];
-      const invRecord = userInv.find(i => i.char_id === charId) || { level: 1, weapon_level: 1, basic_lvl: 1, skill_lvl: 1, ult_lvl: 1 };
-
-      const charLvl = invRecord.level || 1;
-      const wpnLvl = invRecord.weapon_level || 1;
-
-      const maxHp = charData.baseStats.hp + (charLvl - 1) * 40;
-      const atk = charData.baseStats.atk + (charLvl - 1) * 18 + (wpnLvl - 1) * 12;
-      const def = charData.baseStats.def + (charLvl - 1) * 12;
-      const speed = charData.baseStats.speed;
-
-      return {
-        ...charData,
-        slot: idx + 1,
-        level: charLvl,
-        weaponLevel: wpnLvl,
-        basicLvl: invRecord.basic_lvl || 1,
-        skillLvl: invRecord.skill_lvl || 1,
-        ultLvl: invRecord.ult_lvl || 1,
-        critRate: 0.15,
-        critDmg: 0.50,
-        currentHp: maxHp,
-        maxHp: maxHp,
-        atk: atk,
-        def: def,
-        speed: speed,
-        currentEnergy: Math.floor(charData.baseStats.maxEnergy / 2),
-        maxEnergy: charData.baseStats.maxEnergy,
-        shield: 0,
-        actionValue: Math.round(10000 / speed),
-        isAlive: true
-      };
-    });
+    this.userTeamData = db.getUserTeam(userId);
+    this.userInv = db.getUserInventory(userId);
 
     this.sp = 3;
     this.maxSp = 5;
-    this.turnCount = 0;
-    this.maxTurns = 30; // 30-Turn Limit
-    this.logs = [`⚔️ Trận đấu bắt đầu với **${this.enemy.name}** (Lv.${this.enemy.level})!`];
+    this.turn = 1;
+    this.maxTurns = 30;
     this.isFinished = false;
     this.winner = null;
+    this.logs = [];
 
-    this.advanceToNextTurn();
+    this.initBattle();
   }
 
-  advanceToNextTurn() {
-    if (this.isFinished) return;
+  initBattle() {
+    const baseEnemy = enemiesData.find(e => e.id === this.bossId) || enemiesData[0];
 
-    if (!this.enemy.isAlive) {
-      this.isFinished = true;
-      this.winner = 'player';
-      this.logs.push(`🎉 **Kẻ địch ${this.enemy.name} đã bị đánh bại! Bạn chiến thắng!**`);
-      this.handleVictoryRewards();
-      return;
-    }
+    const lvlDiff = this.difficultyLevel - 1;
+    const hpFactor = 1.0 + (this.difficultyLevel / 80) * 4.5;
+    const atkFactor = 1.0 + lvlDiff * 0.015;
+    const defFactor = 1.0 + lvlDiff * 0.008;
+
+    this.enemy = {
+      ...baseEnemy,
+      level: this.difficultyLevel,
+      maxHp: Math.round(baseEnemy.hp * hpFactor),
+      currentHp: Math.round(baseEnemy.hp * hpFactor),
+      atk: Math.round(baseEnemy.atk * atkFactor),
+      def: Math.round(baseEnemy.def * defFactor),
+      toughness: 100,
+      maxToughness: 100,
+      weaknesses: baseEnemy.weakness || ["Fire", "Quantum"],
+      isAlive: true
+    };
+
+    const slots = [this.userTeamData.slot1, this.userTeamData.slot2, this.userTeamData.slot3, this.userTeamData.slot4];
+
+    this.team = slots.map((charId, idx) => {
+      const baseChar = charactersData.find(c => c.id === charId) || charactersData[0];
+      const invRecord = this.userInv.find(i => i.char_id === charId) || {
+        level: 1,
+        weapon_level: 1,
+        basic_lvl: 1,
+        skill_lvl: 1,
+        ult_lvl: 1,
+        eidolon: 0,
+        light_cone: 'In the Night (5★)',
+        artifact_set: 'Bộ Thiện Xạ Trường Hoang'
+      };
+
+      const userWpns = db.getUserWeapons(this.userId);
+      const equippedWpn = userWpns.find(w => w.char_id === charId) || { level: invRecord.weapon_level || 1, superimpose: 1 };
+      const wpnLvl = Math.max(invRecord.weapon_level || 1, equippedWpn.level || 1);
+      const superimpose = equippedWpn.superimpose || 1;
+
+      const lvlScale = 1.0 + (invRecord.level - 1) * 0.08;
+      const wpnScale = 1.0 + (wpnLvl - 1) * 0.05;
+      const superimposeBonus = 1.0 + (superimpose - 1) * 0.08;
+
+      let baseAtk = Math.round(baseChar.baseAtk * lvlScale * wpnScale * superimposeBonus);
+      let baseHp = Math.round(baseChar.baseHp * lvlScale * wpnScale);
+      let baseDef = Math.round(baseChar.baseDef * lvlScale * wpnScale);
+
+      // Relic Set Bonus (+15% ATK)
+      if (invRecord.artifact_set) {
+        baseAtk = Math.round(baseAtk * 1.15);
+      }
+
+      const eidolonBonus = 1.0 + invRecord.eidolon * 0.05;
+      const finalAtk = Math.round(baseAtk * eidolonBonus);
+      const finalHp = Math.round(baseHp * eidolonBonus);
+
+      return {
+        slot: idx + 1,
+        id: baseChar.id,
+        name: baseChar.name,
+        element: baseChar.element,
+        path: baseChar.path,
+        level: invRecord.level,
+        maxHp: finalHp,
+        currentHp: finalHp,
+        atk: finalAtk,
+        def: baseDef,
+        speed: baseChar.speed,
+        maxEnergy: baseChar.maxEnergy || 100,
+        currentEnergy: Math.floor((baseChar.maxEnergy || 100) * 0.5),
+        shield: 0,
+        eidolon: invRecord.eidolon,
+        basicLvl: invRecord.basic_lvl || 1,
+        skillLvl: invRecord.skill_lvl || 1,
+        ultLvl: invRecord.ult_lvl || 1,
+        skills: baseChar.skills,
+        icon: baseChar.icon,
+        critRate: 0.25 + (superimpose - 1) * 0.03,
+        critDmg: 0.60 + (superimpose - 1) * 0.05,
+        isAlive: true,
+        actionValue: Math.round(10000 / baseChar.speed)
+      };
+    });
+
+    this.currentActor = null;
+    this.determineNextActor();
+  }
+
+  determineNextActor() {
+    if (this.isFinished) return;
 
     const aliveTeam = this.team.filter(c => c.isAlive);
     if (aliveTeam.length === 0) {
       this.isFinished = true;
       this.winner = 'enemy';
-      this.logs.push(`💀 **Toàn bộ đội hình đã gục ngã! Bạn thất bại...**`);
+      this.logs.push(`💀 **Toàn bộ đội hình của bạn đã gục ngã! Thất bại trong thử thách.**`);
       return;
     }
 
-    if (this.turnCount >= this.maxTurns) {
+    if (!this.enemy.isAlive) {
       this.isFinished = true;
-      this.winner = 'enemy';
-      this.logs.push(`⏳ **Đã vượt quá giới hạn 30 Vòng (30 Turns)! Bạn đã thất bại khiêu chiến Boss!**`);
+      this.winner = 'player';
+      this.logs.push(`🎉 **Kẻ địch ${this.enemy.name} đã bị tiêu diệt hoàn toàn! Bạn chiến thắng!**`);
+      this.handleVictoryRewards();
       return;
     }
 
-    const allActors = [...aliveTeam, this.enemy];
-    let minAV = Math.min(...allActors.map(a => a.actionValue));
+    const actors = [...aliveTeam];
+    if (this.enemy.isAlive) {
+      if (!this.enemy.actionValue) {
+        this.enemy.actionValue = Math.round(10000 / this.enemy.speed);
+      }
+      actors.push(this.enemy);
+    }
 
-    allActors.forEach(a => {
-      a.actionValue -= minAV;
+    actors.sort((a, b) => a.actionValue - b.actionValue);
+    this.currentActor = actors[0];
+  }
+
+  advanceToNextTurn() {
+    if (this.isFinished) return;
+
+    const minAv = this.currentActor.actionValue;
+
+    this.team.forEach(c => {
+      if (c.isAlive) c.actionValue -= minAv;
     });
 
-    this.currentActor = allActors.find(a => a.actionValue <= 0);
-
-    if (this.currentActor === this.enemy) {
-      this.turnCount++;
-      this.executeEnemyTurn();
+    if (this.enemy.isAlive) {
+      this.enemy.actionValue -= minAv;
     }
+
+    this.turn++;
+    if (this.turn > this.maxTurns) {
+      this.isFinished = true;
+      this.winner = 'draw';
+      this.logs.push(`⏳ **Hết 30 vòng đấu! Trận chiến kết thúc với tỷ số Hòa.**`);
+      return;
+    }
+
+    this.determineNextActor();
   }
 
   handleVictoryRewards() {
-    const expResult = db.addPlayerExp(this.userId, 450);
     const user = db.getUser(this.userId);
-
     user.materials.char_exp_book = (user.materials.char_exp_book || 0) + 6;
     user.materials.weapon_exp_crystal = (user.materials.weapon_exp_crystal || 0) + 6;
     user.materials.artifact_dust = (user.materials.artifact_dust || 0) + 12;
-    user.materials.trace_material = (user.materials.trace_material || 0) + 4;
 
-    const dropList = this.enemy.dropArtifacts || ['musketeer'];
-    const chosenSetId = dropList[Math.floor(Math.random() * dropList.length)];
-    const relicSet = artifactsData.find(a => a.id === chosenSetId) || artifactsData[0];
+    const expResult = db.addPlayerExp(this.userId, 450);
 
-    const mainStats = ['ATK%', 'HP%', 'DEF%', 'CRIT Rate%', 'CRIT DMG%', 'SPD', 'Quantum DMG%', 'Fire DMG%'];
+    const relicSets = [
+      { name: 'Bộ Thiên Tài Kim Loại', slot: 'Head' },
+      { name: 'Bộ Thợ Lặn Ranh Ma', slot: 'Hands' },
+      { name: 'Bộ Chim Ưng Ranh Ma', slot: 'Body' },
+      { name: 'Bộ Vệ Binh Băng Tuyết', slot: 'Feet' }
+    ];
+
+    const relicSet = relicSets[Math.floor(Math.random() * relicSets.length)];
+    const mainStats = ['ATK%', 'HP%', 'DEF%', 'CRIT Rate%', 'CRIT DMG%', 'SPD'];
     const chosenMainStat = mainStats[Math.floor(Math.random() * mainStats.length)];
     const mainVal = chosenMainStat.includes('%') ? (5.0 + Math.random() * 3.0) : (10 + Math.floor(Math.random() * 5));
 
@@ -175,14 +211,15 @@ class BattleSession {
     this.logs.push(`- 🛡️ Rớt Di Vật 5★: **${droppedArtifact.setName}** (${droppedArtifact.mainStat} +${droppedArtifact.mainValue})!`);
   }
 
-  calculateDamage(attackerAtk, defenderDef, multiplier, critRate = 0.15, critDmg = 0.50) {
+  // REBALANCED HSR DAMAGE MITIGATION FORMULA
+  calculateDamage(attackerAtk, defenderDef, multiplier, critRate = 0.25, critDmg = 0.60) {
     const isCrit = Math.random() < critRate;
     const critMult = isCrit ? (1 + critDmg) : 1.0;
     const rawDmg = attackerAtk * multiplier * critMult;
-    const defMitigation = 100 / (100 + defenderDef);
+    const defMitigation = 1000 / (1000 + defenderDef);
     const variance = 0.95 + Math.random() * 0.1;
     return {
-      damage: Math.max(10, Math.floor(rawDmg * defMitigation * variance)),
+      damage: Math.max(50, Math.floor(rawDmg * defMitigation * variance)),
       isCrit
     };
   }
@@ -192,7 +229,7 @@ class BattleSession {
 
     const char = this.currentActor;
     const skill = char.skills.basic;
-    const skillMultiplier = skill.multiplier * (1 + (char.basicLvl - 1) * 0.15);
+    const skillMultiplier = skill.multiplier * (1 + (char.basicLvl - 1) * 0.25);
     const res = this.calculateDamage(char.atk, this.enemy.def, skillMultiplier, char.critRate, char.critDmg);
 
     this.enemy.currentHp = Math.max(0, this.enemy.currentHp - res.damage);
@@ -220,21 +257,21 @@ class BattleSession {
     this.sp -= 1;
     char.currentEnergy = Math.min(char.maxEnergy, char.currentEnergy + skill.energyGain);
 
-    const skillMultiplier = skill.multiplier * (1 + (char.skillLvl - 1) * 0.20);
+    const skillMultiplier = skill.multiplier * (1 + (char.skillLvl - 1) * 0.30);
 
     if (skill.isHeal) {
       this.team.filter(c => c.isAlive).forEach(ally => {
-        const healAmt = Math.floor((char.maxHp * 0.20 + 150) * (1 + (char.skillLvl - 1) * 0.1));
+        const healAmt = Math.floor((char.maxHp * 0.25 + 250) * (1 + (char.skillLvl - 1) * 0.12));
         ally.currentHp = Math.min(ally.maxHp, ally.currentHp + healAmt);
       });
-      this.logs.push(`💚 **${char.name}** dùng **${skill.name} (Lv.${char.skillLvl})** hồi máu cho toàn đội! (-1 SP)`);
+      this.logs.push(`💚 **${char.name}** dùng **${skill.name} (Lv.${char.skillLvl})** hồi lượng lớn HP toàn đội! (-1 SP)`);
     } else if (skill.isShield) {
       this.team.filter(c => c.isAlive).forEach(ally => {
-        ally.shield = Math.floor((char.def * 1.2 + 150) * (1 + (char.skillLvl - 1) * 0.1));
+        ally.shield = Math.floor((char.def * 1.5 + 300) * (1 + (char.skillLvl - 1) * 0.12));
       });
-      this.logs.push(`🛡️ **${char.name}** dùng **${skill.name} (Lv.${char.skillLvl})** tạo khiên bảo vệ toàn đội! (-1 SP)`);
+      this.logs.push(`🛡️ **${char.name}** dùng **${skill.name} (Lv.${char.skillLvl})** tạo khiên kiên cố cho toàn đội! (-1 SP)`);
     } else {
-      const res = this.calculateDamage(char.atk, this.enemy.def, skillMultiplier, char.critRate + 0.1, char.critDmg);
+      const res = this.calculateDamage(char.atk, this.enemy.def, skillMultiplier, char.critRate + 0.10, char.critDmg + 0.15);
       this.enemy.currentHp = Math.max(0, this.enemy.currentHp - res.damage);
       if (this.enemy.currentHp === 0) this.enemy.isAlive = false;
 
@@ -257,26 +294,26 @@ class BattleSession {
 
     const ult = char.skills.ultimate;
     char.currentEnergy = 0;
-    const ultMultiplier = ult.multiplier * (1 + (char.ultLvl - 1) * 0.25);
+    const ultMultiplier = ult.multiplier * (1 + (char.ultLvl - 1) * 0.35);
 
     if (ult.isHeal) {
       this.team.filter(c => c.isAlive).forEach(ally => {
-        const healAmt = Math.floor((char.maxHp * 0.35 + 300) * (1 + (char.ultLvl - 1) * 0.1));
+        const healAmt = Math.floor((char.maxHp * 0.40 + 500) * (1 + (char.ultLvl - 1) * 0.15));
         ally.currentHp = Math.min(ally.maxHp, ally.currentHp + healAmt);
       });
-      this.logs.push(`✨ **[TUYỆT KỸ] ${char.name} (Lv.${char.ultLvl})** thi triển **${ult.name}** hồi lượng lớn HP!`);
+      this.logs.push(`✨ **[TUYỆT KỸ] ${char.name} (Lv.${char.ultLvl})** thi triển **${ult.name}** phục hồi HP toàn đội!`);
     } else if (ult.isBuff) {
       this.team.filter(c => c.isAlive).forEach(ally => {
-        ally.atk = Math.floor(ally.atk * 1.35);
+        ally.atk = Math.floor(ally.atk * 1.45);
       });
-      this.logs.push(`✨ **[TUYỆT KỸ] ${char.name} (Lv.${char.ultLvl})** thi triển **${ult.name}** tăng 35% ATK toàn đội!`);
+      this.logs.push(`✨ **[TUYỆT KỸ] ${char.name} (Lv.${char.ultLvl})** thi triển **${ult.name}** tăng 45% ATK toàn đội!`);
     } else {
-      const res = this.calculateDamage(char.atk, this.enemy.def, ultMultiplier * 1.5, char.critRate + 0.2, char.critDmg + 0.3);
+      const res = this.calculateDamage(char.atk, this.enemy.def, ultMultiplier * 2.2, char.critRate + 0.25, char.critDmg + 0.50);
       this.enemy.currentHp = Math.max(0, this.enemy.currentHp - res.damage);
       if (this.enemy.currentHp === 0) this.enemy.isAlive = false;
 
       const critTag = res.isCrit ? ' 💥💥 [CHÍ MẠNG TOÀN PHẦN!]' : '';
-      this.logs.push(`🌟 **[TUYỆT KỸ] ${char.name} (Lv.${char.ultLvl})** tung **${ult.name}** giáng **${res.damage}** sát thương!${critTag}`);
+      this.logs.push(`🌟 **[TUYỆT KỸ] ${char.name} (Lv.${char.ultLvl})** tung **${ult.name}** giáng **${res.damage}** sát thương cực đại!${critTag}`);
     }
 
     if (!this.enemy.isAlive) {
@@ -308,18 +345,17 @@ class BattleSession {
     }
 
     target.currentHp = Math.max(0, target.currentHp - dmg);
-    target.currentEnergy = Math.min(target.maxEnergy, target.currentEnergy + 10);
+    if (target.currentHp === 0) target.isAlive = false;
+
+    this.logs.push(`⚔️ **${this.enemy.name}** giáng đòn vào **${target.name}** gây **${res.damage}** sát thương!`);
 
     if (target.currentHp === 0) {
-      target.isAlive = false;
-      this.logs.push(`👹 **${this.enemy.name}** giáng đòn vào **${target.name}** gây **${dmg}** DMG! (**${target.name}** đã bị hạ gục!)`);
-    } else {
-      this.logs.push(`👹 **${this.enemy.name}** tấn công **${target.name}** gây **${dmg}** DMG!`);
+      this.logs.push(`💀 **${target.name}** đã gục ngã!`);
     }
 
     this.enemy.actionValue = Math.round(10000 / this.enemy.speed);
-    this.advanceToNextTurn();
+    this.determineNextActor();
   }
 }
 
-module.exports = BattleSession;
+module.exports = CombatEngine;

@@ -1,21 +1,32 @@
-const { createCanvas } = require('@napi-rs/canvas');
+const { createCanvas, loadImage } = require('@napi-rs/canvas');
 
-function renderBattleCard(battleSession) {
+async function drawBattleCanvas(battleState) {
   const width = 1000;
-  const height = 520;
+  const height = 600;
   const canvas = createCanvas(width, height);
   const ctx = canvas.getContext('2d');
 
-  // 1. BACKGROUND: Dark Sci-Fi Cyber Grid (HSR Style)
-  const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+  // Helper for rounded rects
+  function drawRoundedRect(x, y, w, h, r) {
+    if (ctx.roundRect) {
+      ctx.beginPath();
+      ctx.roundRect(x, y, w, h, r);
+    } else {
+      ctx.beginPath();
+      ctx.rect(x, y, w, h);
+    }
+  }
+
+  // 1. Dark Futuristic Sci-Fi Background Gradient
+  const bgGrad = ctx.createLinearGradient(0, 0, width, height);
   bgGrad.addColorStop(0, '#090d16');
-  bgGrad.addColorStop(0.5, '#111827');
-  bgGrad.addColorStop(1, '#05070c');
+  bgGrad.addColorStop(0.5, '#0f172a');
+  bgGrad.addColorStop(1, '#050811');
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, width, height);
 
-  // Background Cyber Grid lines
-  ctx.strokeStyle = 'rgba(59, 130, 246, 0.1)';
+  // Background Grid Overlay
+  ctx.strokeStyle = 'rgba(59, 130, 246, 0.05)';
   ctx.lineWidth = 1;
   for (let x = 0; x < width; x += 40) {
     ctx.beginPath();
@@ -30,202 +41,305 @@ function renderBattleCard(battleSession) {
     ctx.stroke();
   }
 
-  const enemy = battleSession.enemy;
-  const team = battleSession.team;
-  const activeChar = team.find(c => c.currentHp > 0) || team[0];
+  const { team, enemy, currentActor, turn, maxTurns, sp, maxSp, logs } = battleState;
 
-  // 2. TOP BANNER: ACTIVE TURN INDICATOR & TURN COUNTER
-  ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
-  ctx.fillRect(0, 0, width, 38);
-  ctx.strokeStyle = '#3b82f6';
-  ctx.lineWidth = 1;
-  ctx.strokeRect(0, 0, width, 38);
+  // ----------------------------------------------------
+  // 2. TOP CENTER BOSS HUD
+  // ----------------------------------------------------
+  ctx.save();
+  const bossHudX = 220;
+  const bossHudY = 15;
+  const bossHudW = 560;
 
-  ctx.font = 'bold 15px sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillStyle = '#f59e0b';
-  ctx.fillText(`⏳ VÒNG ĐẤU: Turn ${battleSession.turnCount} / ${battleSession.maxTurns} (Còn ${battleSession.maxTurns - battleSession.turnCount} lượt)`, 20, 24);
-
-  ctx.textAlign = 'right';
-  ctx.fillStyle = '#38bdf8';
-  ctx.fillText(`👉 ĐANG ĐẾN LƯỢT: ${activeChar ? activeChar.name.toUpperCase() : 'PHE TA'}`, 980, 24);
-
-  // 3. BOSS HUD (TOP CENTER)
-  // Boss Name & Level
-  ctx.textAlign = 'center';
-  ctx.font = 'bold 22px sans-serif';
-  ctx.fillStyle = '#ef4444';
-  ctx.fillText(`👹 BOSS: ${enemy.name.toUpperCase()} (Lv.${enemy.level})`, 500, 70);
-
-  // Weaknesses
-  const weaknesses = enemy.weakness || enemy.weaknesses || ['Physical'];
-  ctx.font = 'bold 13px sans-serif';
-  ctx.fillStyle = '#cbd5e1';
-  ctx.fillText(`Điểm Yếu: [ ${weaknesses.join(' • ')} ]`, 500, 92);
-
-  // Boss HP Bar Container
-  const hpBarX = 220;
-  const hpBarY = 102;
-  const hpBarW = 560;
-  const hpBarH = 22;
-
-  ctx.fillStyle = '#1e1b4b';
-  if (ctx.roundRect) ctx.roundRect(hpBarX, hpBarY, hpBarW, hpBarH, 4);
-  else ctx.rect(hpBarX, hpBarY, hpBarW, hpBarH);
+  // Boss Container Background
+  drawRoundedRect(bossHudX, bossHudY, bossHudW, 90, 12);
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
   ctx.fill();
-  ctx.strokeStyle = '#ef4444';
+  ctx.strokeStyle = 'rgba(239, 68, 68, 0.5)';
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  const enemyHpPct = Math.max(0, enemy.currentHp / enemy.maxHp);
-  const bossHpGrad = ctx.createLinearGradient(hpBarX, 0, hpBarX + hpBarW, 0);
-  bossHpGrad.addColorStop(0, '#f97316');
-  bossHpGrad.addColorStop(1, '#ef4444');
-  ctx.fillStyle = bossHpGrad;
-  if (enemyHpPct > 0) {
-    if (ctx.roundRect) ctx.roundRect(hpBarX + 1, hpBarY + 1, (hpBarW - 2) * enemyHpPct, hpBarH - 2, 3);
-    else ctx.rect(hpBarX + 1, hpBarY + 1, (hpBarW - 2) * enemyHpPct, hpBarH - 2);
+  // Boss Name & Level
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 18px Sans-Serif';
+  ctx.fillText(`👹 ${enemy.name.toUpperCase()} (Lv.${enemy.level})`, bossHudX + 15, bossHudY + 28);
+
+  // Elemental Weaknesses
+  const weaknesses = enemy.weaknesses || enemy.weakness || ['Fire', 'Quantum'];
+  ctx.font = '12px Sans-Serif';
+  ctx.fillStyle = '#94a3b8';
+  ctx.fillText('Điểm Yếu:', bossHudX + 380, bossHudY + 26);
+  ctx.fillStyle = '#ef4444';
+  ctx.fillText(weaknesses.join(' • '), bossHudX + 445, bossHudY + 26);
+
+  // Boss Toughness Bar (Break Bar)
+  const toughnessPct = Math.max(0, Math.min(1, (enemy.toughness || 100) / (enemy.maxToughness || 100)));
+  drawRoundedRect(bossHudX + 15, bossHudY + 38, bossHudW - 30, 8, 4);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+  ctx.fill();
+  if (toughnessPct > 0) {
+    drawRoundedRect(bossHudX + 15, bossHudY + 38, (bossHudW - 30) * toughnessPct, 8, 4);
+    ctx.fillStyle = '#cbd5e1';
+    ctx.fill();
+  }
+
+  // Boss HP Bar
+  const hpPct = Math.max(0, Math.min(1, enemy.currentHp / enemy.maxHp));
+  drawRoundedRect(bossHudX + 15, bossHudY + 52, bossHudW - 30, 20, 6);
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+  ctx.fill();
+
+  if (hpPct > 0) {
+    drawRoundedRect(bossHudX + 15, bossHudY + 52, (bossHudW - 30) * hpPct, 20, 6);
+    const hpGrad = ctx.createLinearGradient(bossHudX, 0, bossHudX + bossHudW, 0);
+    hpGrad.addColorStop(0, '#dc2626');
+    hpGrad.addColorStop(1, '#f87171');
+    ctx.fillStyle = hpGrad;
     ctx.fill();
   }
 
   // Boss HP Text
-  ctx.font = 'bold 13px sans-serif';
   ctx.fillStyle = '#ffffff';
-  ctx.fillText(`❤️ HP BOSS: ${enemy.currentHp.toLocaleString()} / ${enemy.maxHp.toLocaleString()} (${Math.ceil(enemyHpPct * 100)}%)`, 500, 118);
+  ctx.font = 'bold 13px Sans-Serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(`❤️ HP BOSS: ${enemy.currentHp.toLocaleString()} / ${enemy.maxHp.toLocaleString()} (${Math.ceil(hpPct * 100)}%)`, bossHudX + bossHudW / 2, bossHudY + 66);
+  ctx.textAlign = 'left';
+  ctx.restore();
 
-  // 4. COMBAT ACTION LOG OVERLAY (MIDDLE)
+  // ----------------------------------------------------
+  // 3. LEFT VERTICAL ACTION ORDER BAR (AV TURN ORDER LIST)
+  // ----------------------------------------------------
+  ctx.save();
+  const avX = 20;
+  const avY = 20;
+  const avW = 160;
+  const avH = 560;
+
+  drawRoundedRect(avX, avY, avW, avH, 12);
   ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
-  if (ctx.roundRect) ctx.roundRect(30, 138, 940, 185, 8);
-  else ctx.rect(30, 138, 940, 185);
   ctx.fill();
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+  ctx.strokeStyle = 'rgba(59, 130, 246, 0.4)';
+  ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  ctx.textAlign = 'left';
-  ctx.font = 'bold 14px sans-serif';
-  ctx.fillStyle = '#f59e0b';
-  ctx.fillText('📜 NHẬT KÝ CHIẾN ĐẤU (BATTLE LOGS):', 50, 162);
+  // Header Title
+  ctx.fillStyle = '#38bdf8';
+  ctx.font = 'bold 13px Sans-Serif';
+  ctx.fillText('⚡ LƯỢT ĐẤU (AV)', avX + 15, avY + 25);
 
-  ctx.font = '13px sans-serif';
-  ctx.fillStyle = '#f1f5f9';
+  // Vertical Connecting Line
+  ctx.strokeStyle = 'rgba(56, 189, 248, 0.3)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(avX + 40, avY + 45);
+  ctx.lineTo(avX + 40, avY + avH - 20);
+  ctx.stroke();
 
-  const logsToShow = battleSession.logs.slice(-5);
-  logsToShow.forEach((log, lIdx) => {
-    ctx.fillText(log, 50, 188 + lIdx * 24);
-  });
+  // Build Turn Actors List
+  const turnActors = [...team.filter(c => c.isAlive)];
+  if (enemy.isAlive) turnActors.push(enemy);
+  turnActors.sort((a, b) => (a.actionValue || 0) - (b.actionValue || 0));
 
-  // 5. PLAYER PARTY CARDS (BOTTOM - 4 SLOTS)
-  const slotW = 222;
-  const slotH = 170;
-  const startY = 335;
-  const gapX = 236;
-  const startX = 30;
+  let actorY = avY + 50;
+  for (let idx = 0; idx < Math.min(6, turnActors.length); idx++) {
+    const act = turnActors[idx];
+    const isCurrent = currentActor && (currentActor.id === act.id || currentActor.name === act.name);
 
-  team.forEach((char, idx) => {
-    const x = startX + idx * gapX;
-    const isCurrentTurnChar = (char === activeChar && char.currentHp > 0);
+    ctx.save();
+    if (isCurrent) {
+      drawRoundedRect(avX + 10, actorY - 5, avW - 20, 60, 8);
+      ctx.fillStyle = 'rgba(234, 179, 8, 0.2)';
+      ctx.fill();
+      ctx.strokeStyle = '#eab308';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
 
-    // Card background
-    ctx.fillStyle = char.currentHp > 0 ? 'rgba(30, 41, 59, 0.95)' : 'rgba(239, 68, 68, 0.25)';
-    ctx.strokeStyle = isCurrentTurnChar ? '#f59e0b' : (char.currentHp > 0 ? (char.color || '#3b82f6') : '#ef4444');
-    ctx.lineWidth = isCurrentTurnChar ? 3 : 1.5;
+    // Avatar Circle
+    ctx.beginPath();
+    ctx.arc(avX + 40, actorY + 25, 20, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
 
-    if (ctx.roundRect) ctx.roundRect(x, startY, slotW, slotH, 8);
-    else ctx.rect(x, startY, slotW, slotH);
+    ctx.fillStyle = act.id === enemy.id ? '#ef4444' : '#3b82f6';
+    ctx.fillRect(avX + 20, actorY + 5, 40, 40);
+
+    if (act.icon) {
+      try {
+        const img = await loadImage(act.icon);
+        ctx.drawImage(img, avX + 20, actorY + 5, 40, 40);
+      } catch (err) {}
+    }
+    ctx.restore();
+
+    // Name & Action Value
+    ctx.fillStyle = isCurrent ? '#fde047' : '#ffffff';
+    ctx.font = isCurrent ? 'bold 12px Sans-Serif' : '11px Sans-Serif';
+    ctx.fillText(act.name.length > 10 ? act.name.substring(0, 9) + '..' : act.name, avX + 70, actorY + 22);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '10px Sans-Serif';
+    ctx.fillText(`AV ${act.actionValue || 100}`, avX + 70, actorY + 38);
+
+    actorY += 80;
+  }
+  ctx.restore();
+
+  // ----------------------------------------------------
+  // 4. CENTER TRANSPARENT COMBAT BATTLE LOG OVERLAY
+  // ----------------------------------------------------
+  ctx.save();
+  const logX = 200;
+  const logY = 120;
+  const logW = 780;
+  const logH = 310;
+
+  drawRoundedRect(logX, logY, logW, logH, 12);
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(148, 163, 184, 0.2)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Battle Turn & SP Header
+  ctx.fillStyle = '#eab308';
+  ctx.font = 'bold 14px Sans-Serif';
+  ctx.fillText(`⚔️ VÒNG ĐẤU: ${turn} / ${maxTurns}`, logX + 20, logY + 30);
+
+  ctx.fillStyle = '#38bdf8';
+  ctx.fillText(`✨ Điểm Chiến Kỹ (SP): ${sp} / ${maxSp}`, logX + 560, logY + 30);
+
+  // Active Turn Banner
+  if (currentActor) {
+    drawRoundedRect(logX + 20, logY + 45, logW - 40, 32, 6);
+    ctx.fillStyle = currentActor.id === enemy.id ? 'rgba(239, 68, 68, 0.3)' : 'rgba(16, 185, 129, 0.3)';
     ctx.fill();
+    ctx.strokeStyle = currentActor.id === enemy.id ? '#ef4444' : '#10b981';
+    ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    // Turn Banner badge if active turn!
-    if (isCurrentTurnChar) {
-      ctx.fillStyle = '#f59e0b';
-      if (ctx.roundRect) ctx.roundRect(x, startY, slotW, 22, [8, 8, 0, 0]);
-      else ctx.rect(x, startY, slotW, 22);
-      ctx.fill();
-
-      ctx.textAlign = 'center';
-      ctx.font = 'bold 11px sans-serif';
-      ctx.fillStyle = '#0f172a';
-      ctx.fillText('⚡ DANG HANH DONG', x + slotW / 2, startY + 15);
-    }
-
-    // Character Name & Level
-    const nameY = isCurrentTurnChar ? startY + 40 : startY + 25;
-    ctx.textAlign = 'left';
-    ctx.font = 'bold 15px sans-serif';
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(`${char.name}`, x + 10, nameY);
+    ctx.font = 'bold 13px Sans-Serif';
+    ctx.fillText(`👉 ĐANG ĐẾN LƯỢT: ${currentActor.name.toUpperCase()} (Tốc độ: ${currentActor.speed || 100})`, logX + 35, logY + 66);
+  }
 
-    ctx.font = '11px sans-serif';
-    ctx.fillStyle = '#94a3b8';
-    ctx.fillText(`Lv.${char.level} | ${char.element}`, x + 10, nameY + 16);
+  // Combat Log Dòng Tin
+  const recentLogs = logs.slice(-5);
+  let logTextY = logY + 115;
 
-    // HP Bar Container
-    const charHpPct = Math.max(0, char.currentHp / char.maxHp);
-    const cHpBarX = x + 10;
-    const cHpBarY = nameY + 26;
-    const cHpBarW = 202;
-    const cHpBarH = 12;
+  recentLogs.forEach(line => {
+    let cleanLine = line.replace(/\*\*/g, '').replace(/__/g, '');
+    ctx.font = '13px Sans-Serif';
 
-    ctx.fillStyle = '#0f172a';
-    if (ctx.roundRect) ctx.roundRect(cHpBarX, cHpBarY, cHpBarW, cHpBarH, 3);
-    else ctx.rect(cHpBarX, cHpBarY, cHpBarW, cHpBarH);
-    ctx.fill();
-
-    const charHpGrad = ctx.createLinearGradient(cHpBarX, 0, cHpBarX + cHpBarW, 0);
-    charHpGrad.addColorStop(0, '#10b981');
-    charHpGrad.addColorStop(1, '#34d399');
-    ctx.fillStyle = charHpGrad;
-    if (charHpPct > 0) {
-      if (ctx.roundRect) ctx.roundRect(cHpBarX + 1, cHpBarY + 1, (cHpBarW - 2) * charHpPct, cHpBarH - 2, 2);
-      else ctx.rect(cHpBarX + 1, cHpBarY + 1, (cHpBarW - 2) * charHpPct, cHpBarH - 2);
-      ctx.fill();
+    if (cleanLine.includes('TUYỆT KỸ') || cleanLine.includes('CHÍ MẠNG')) {
+      ctx.fillStyle = '#facc15';
+    } else if (cleanLine.includes('gây') || cleanLine.includes('sát thương')) {
+      ctx.fillStyle = '#f87171';
+    } else if (cleanLine.includes('hồi') || cleanLine.includes('khiên')) {
+      ctx.fillStyle = '#4ade80';
+    } else {
+      ctx.fillStyle = '#cbd5e1';
     }
 
-    // HP Text
-    ctx.font = 'bold 10px sans-serif';
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(`❤️ HP: ${char.currentHp} / ${char.maxHp}`, x + 12, cHpBarY + 24);
-
-    // Energy / EP Bar Container (CurrentEnergy / MaxEnergy)
-    const curEnergy = char.currentEnergy || 0;
-    const maxEnergy = char.maxEnergy || 120;
-    const epPct = Math.max(0, Math.min(1, curEnergy / maxEnergy));
-    const cEpY = cHpBarY + 30;
-
-    ctx.fillStyle = '#0f172a';
-    if (ctx.roundRect) ctx.roundRect(cHpBarX, cEpY, cHpBarW, cHpBarH, 3);
-    else ctx.rect(cHpBarX, cEpY, cHpBarW, cHpBarH);
-    ctx.fill();
-
-    const epGrad = ctx.createLinearGradient(cHpBarX, 0, cHpBarX + cHpBarW, 0);
-    epGrad.addColorStop(0, '#3b82f6');
-    epGrad.addColorStop(1, '#8b5cf6');
-    ctx.fillStyle = epGrad;
-    if (epPct > 0) {
-      if (ctx.roundRect) ctx.roundRect(cHpBarX + 1, cEpY + 1, (cHpBarW - 2) * epPct, cHpBarH - 2, 2);
-      else ctx.rect(cHpBarX + 1, cEpY + 1, (cHpBarW - 2) * epPct, cHpBarH - 2);
-      ctx.fill();
-    }
-
-    // EP / Mana Text
-    ctx.font = 'bold 10px sans-serif';
-    ctx.fillStyle = curEnergy >= maxEnergy ? '#f59e0b' : '#38bdf8';
-    const ultStatus = curEnergy >= maxEnergy
-      ? `🌟 ULT SẴN SÀNG! (${curEnergy}/${maxEnergy})`
-      : `⚡ EP: ${curEnergy} / ${maxEnergy}`;
-    ctx.fillText(ultStatus, x + 12, cEpY + 24);
-
-    // Shield Badge if shielded
-    if (char.shield > 0) {
-      ctx.fillStyle = '#38bdf8';
-      ctx.font = 'bold 10px sans-serif';
-      ctx.fillText(`🛡️ Khiên: +${char.shield}`, x + 12, cEpY + 38);
-    }
+    ctx.fillText(cleanLine, logX + 25, logTextY);
+    logTextY += 38;
   });
+  ctx.restore();
+
+  // ----------------------------------------------------
+  // 5. BOTTOM 4 TEAM CHARACTER STATUS CARDS
+  // ----------------------------------------------------
+  ctx.save();
+  const cardW = 185;
+  const cardH = 120;
+  const startX = 200;
+  const cardY = 460;
+  const gap = 13;
+
+  for (let i = 0; i < team.length; i++) {
+    const char = team[i];
+    const x = startX + i * (cardW + gap);
+    const isCurrent = currentActor && currentActor.id === char.id;
+
+    // Card Container
+    drawRoundedRect(x, cardY, cardW, cardH, 10);
+    ctx.fillStyle = isCurrent ? 'rgba(30, 41, 59, 0.95)' : 'rgba(15, 23, 42, 0.85)';
+    ctx.fill();
+    ctx.strokeStyle = isCurrent ? '#eab308' : (char.isAlive ? 'rgba(59, 130, 246, 0.4)' : 'rgba(239, 68, 68, 0.6)');
+    ctx.lineWidth = isCurrent ? 2.5 : 1;
+    ctx.stroke();
+
+    // Active Glow Halo
+    if (isCurrent) {
+      ctx.fillStyle = '#eab308';
+      ctx.font = 'bold 10px Sans-Serif';
+      ctx.fillText('⚡ ĐANG HÀNH ĐỘNG', x + 42, cardY + 15);
+    }
+
+    // Avatar Circle
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x + 28, cardY + 45, 18, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+
+    ctx.fillStyle = char.isAlive ? '#3b82f6' : '#64748b';
+    ctx.fillRect(x + 10, cardY + 27, 36, 36);
+
+    if (char.icon) {
+      try {
+        const img = await loadImage(char.icon);
+        ctx.drawImage(img, x + 10, cardY + 27, 36, 36);
+      } catch (err) {}
+    }
+    ctx.restore();
+
+    // Name & Level
+    ctx.fillStyle = char.isAlive ? '#ffffff' : '#94a3b8';
+    ctx.font = 'bold 12px Sans-Serif';
+    ctx.fillText(`${char.name.length > 9 ? char.name.substring(0, 8) + '..' : char.name}`, x + 52, cardY + 42);
+
+    ctx.fillStyle = '#94a3b8';
+    ctx.font = '10px Sans-Serif';
+    ctx.fillText(`Lv.${char.level} • E${char.eidolon}`, x + 52, cardY + 56);
+
+    // HP Bar
+    const charHpPct = Math.max(0, Math.min(1, char.currentHp / char.maxHp));
+    drawRoundedRect(x + 10, cardY + 68, cardW - 20, 16, 4);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fill();
+
+    if (charHpPct > 0) {
+      drawRoundedRect(x + 10, cardY + 68, (cardW - 20) * charHpPct, 16, 4);
+      ctx.fillStyle = charHpPct > 0.3 ? '#22c55e' : '#ef4444';
+      ctx.fill();
+    }
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 10px Sans-Serif';
+    ctx.fillText(`❤️ ${char.currentHp}/${char.maxHp}`, x + 18, cardY + 80);
+
+    // EP Energy Bar
+    const charEpPct = Math.max(0, Math.min(1, char.currentEnergy / char.maxEnergy));
+    drawRoundedRect(x + 10, cardY + 92, cardW - 20, 14, 4);
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fill();
+
+    if (charEpPct > 0) {
+      drawRoundedRect(x + 10, cardY + 92, (cardW - 20) * charEpPct, 14, 4);
+      ctx.fillStyle = charEpPct >= 1.0 ? '#a855f7' : '#3b82f6';
+      ctx.fill();
+    }
+
+    ctx.fillStyle = charEpPct >= 1.0 ? '#fde047' : '#ffffff';
+    ctx.font = 'bold 9px Sans-Serif';
+    ctx.fillText(charEpPct >= 1.0 ? '🌟 ULT SẴN SÀNG!' : `⚡ EP: ${char.currentEnergy}/${char.maxEnergy}`, x + 18, cardY + 103);
+  }
+  ctx.restore();
 
   return canvas.toBuffer('image/png');
 }
 
 module.exports = {
-  renderBattleCard
+  drawBattleCanvas
 };
