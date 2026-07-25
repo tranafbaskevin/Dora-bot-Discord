@@ -59,6 +59,9 @@ async function executeBattle(interaction) {
       return i.reply({ content: '❌ Bạn không phải là người tham gia trận đấu này!', ephemeral: true });
     }
 
+    // Immediately defer update to prevent Discord 3-second timeout ("Bot không phản hồi")
+    await i.deferUpdate().catch(() => {});
+
     const customId = i.customId;
     let usedUltChar = null;
 
@@ -92,7 +95,7 @@ async function executeBattle(interaction) {
         .setImage(ultGifUrl)
         .setDescription(`✨ **${charInfo.name}** giáng đòn Tuyệt kỹ ngắt lượt hoành tráng!`);
 
-      await i.channel.send({ embeds: [ultEmbed] });
+      await i.channel.send({ embeds: [ultEmbed] }).catch(() => {});
     }
 
     // Render updated Canvas
@@ -108,11 +111,11 @@ async function executeBattle(interaction) {
 
     const newComponents = session.isFinished ? [] : createBattleComponents(session);
 
-    await i.update({
+    await i.editReply({
       embeds: [newEmbed],
       files: [newAttachment],
       components: newComponents
-    });
+    }).catch(() => {});
 
     if (session.isFinished) {
       collector.stop();

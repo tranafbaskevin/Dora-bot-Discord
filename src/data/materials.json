@@ -1,0 +1,29 @@
+[
+  {
+    "id": "char_exp_book",
+    "name": "Sách Kinh Nghiệm Nhân Vật (Traveler's Guide)",
+    "description": "Cung cấp +1,000 EXP cho Nhân vật.",
+    "expValue": 1000,
+    "rarity": 4
+  },
+  {
+    "id": "weapon_exp_crystal",
+    "name": "Tinh Thể Điệm Kim (Refined Aether)",
+    "description": "Cung cấp +1,000 EXP cho Vũ khí / Nón Ánh Sáng.",
+    "expValue": 1000,
+    "rarity": 4
+  },
+  {
+    "id": "artifact_dust",
+    "name": "Bụi Vàng Cường Hóa Di Vật (Lost Gold Dust)",
+    "description": "Cung cấp +500 EXP cho Thánh Di Vật.",
+    "expValue": 500,
+    "rarity": 4
+  },
+  {
+    "id": "trace_material",
+    "name": "Vật Liệu Vết Kích Kỹ Năng (Trace Material)",
+    "description": "Dùng để nâng cấp Cấp Kỹ Năng cho nhân vật.",
+    "rarity": 4
+  }
+]

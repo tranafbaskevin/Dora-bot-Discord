@@ -7,6 +7,7 @@ const teamCommand = require('./src/commands/team');
 const battleCommand = require('./src/commands/battle');
 const infoCommand = require('./src/commands/info');
 const inventoryCommand = require('./src/commands/inventory');
+const upgradeCommand = require('./src/commands/upgrade');
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
@@ -20,7 +21,8 @@ const commandsList = [
   teamCommand,
   battleCommand,
   infoCommand,
-  inventoryCommand
+  inventoryCommand,
+  upgradeCommand
 ];
 
 commandsList.forEach(cmd => {
@@ -43,7 +45,7 @@ client.once('clientReady', async () => {
       { body: commandsData }
     );
 
-    console.log('✅ Đã đăng ký thành công các lệnh: /gacha, /profile, /team, /battle, /info, /inventory');
+    console.log('✅ Đã đăng ký thành công các lệnh: /gacha, /profile, /team, /battle, /info, /inventory, /upgrade');
   } catch (error) {
     console.error('❌ Lỗi đăng ký Slash Commands:', error);
   }
