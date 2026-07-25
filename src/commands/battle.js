@@ -50,7 +50,6 @@ async function executeBattle(interaction) {
     if (i.customId === 'map_btn_belobog') mapId = 'belobog';
     else if (i.customId === 'map_btn_xianzhou') mapId = 'xianzhou';
 
-    // Step 2: Filter ONLY bosses belonging to the selected map!
     const mapBosses = enemiesData.filter(e => e.map === mapId);
 
     const bossOptions = mapBosses.map(b => ({
@@ -68,13 +67,12 @@ async function executeBattle(interaction) {
     const bossRow = new ActionRowBuilder().addComponents(bossMenu);
 
     const bossEmbed = new EmbedBuilder()
-      .setTitle(`👹 VÙNG ĐẤT: ${mapId.toUpperCase()} - CHỌN BOSS KHIÊU CHIẾN`)
+      .setTitle(`👹 VÙNG ĐẤU: ${mapId.toUpperCase()} - CHỌN BOSS KHIÊU CHIẾN`)
       .setColor('#f59e0b')
       .setDescription('Chọn 1 Boss bên dưới để khiêu chiến và farm Di vật tương ứng:');
 
     await i.update({ embeds: [bossEmbed], components: [bossRow] });
 
-    // Step 3: Handle Boss selection
     const bossCollector = response.createMessageComponentCollector({
       componentType: ComponentType.StringSelect,
       time: 120000
@@ -83,11 +81,13 @@ async function executeBattle(interaction) {
     bossCollector.on('collect', async bi => {
       if (bi.user.id !== interaction.user.id) return;
 
+      // DEFER IMMEDIATELY TO PREVENT DISCORD 3-SECOND TIMEOUT ("DoraBot đã không phản hồi kịp thời")
+      await bi.deferUpdate().catch(() => {});
+
       const chosenEnemyId = bi.values[0].replace('boss_select_', '');
       const team = db.getUserTeam(userId);
       const teamCharIds = [team.slot1, team.slot2, team.slot3, team.slot4];
 
-      // Launch Battle Session with Equal Level Matchmaking
       const session = new BattleSession(userId, teamCharIds, chosenEnemyId);
 
       const imageBuffer = renderBattleCard(session);
@@ -103,13 +103,12 @@ async function executeBattle(interaction) {
 
       const battleComponents = createBattleComponents(session);
 
-      await bi.update({
+      await bi.editReply({
         embeds: [battleEmbed],
         files: [attachment],
         components: battleComponents
-      });
+      }).catch(() => {});
 
-      // Battle action collector
       const actionCollector = response.createMessageComponentCollector({
         componentType: ComponentType.Button,
         time: 300000

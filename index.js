@@ -1,6 +1,15 @@
 const { Client, GatewayIntentBits, REST, Routes, Collection } = require('discord.js');
 require('dotenv').config();
 
+// Global Error Handlers (Prevents Bot Process from Crashing!)
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('⚠️ Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (err, origin) => {
+  console.error('⚠️ Uncaught Exception:', err, 'origin:', origin);
+});
+
 const gachaCommand = require('./src/commands/gacha');
 const profileCommand = require('./src/commands/profile');
 const teamCommand = require('./src/commands/team');

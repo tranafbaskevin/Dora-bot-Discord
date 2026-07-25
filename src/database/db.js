@@ -28,6 +28,16 @@ function saveDb(data) {
   fs.writeFileSync(dbFilePath, JSON.stringify(data, null, 2));
 }
 
+// Normalize Weapon Name for exact S1-S5 matching
+function normalizeWeaponName(name) {
+  if (!name) return '';
+  return name.toLowerCase()
+    .replace(/nón ánh sáng \d★:\s*/gi, '')
+    .replace(/\s*\(\d★\)/gi, '')
+    .replace(/\s*\([^)]*\)/gi, '')
+    .trim();
+}
+
 // Get or Create User
 function getUser(discordId) {
   const data = readDb();
@@ -271,7 +281,13 @@ function addWeapon(discordId, weapon) {
     ];
   }
 
-  const existing = data.weapons[discordId].find(w => w.name === weapon.name);
+  const normTarget = normalizeWeaponName(weapon.name);
+
+  const existing = data.weapons[discordId].find(w => {
+    const normExist = normalizeWeaponName(w.name);
+    return normExist === normTarget || normExist.includes(normTarget) || normTarget.includes(normExist);
+  });
+
   if (existing) {
     existing.superimpose = Math.min(5, (existing.superimpose || 1) + 1);
     saveDb(data);
