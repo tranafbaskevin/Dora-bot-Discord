@@ -10,25 +10,31 @@ const battleCommand = new SlashCommandBuilder()
   .setName('battle')
   .setDescription('Bắt đầu trận chiến khiêu chiến Boss theo Map và Độ Khó')
   .addStringOption(opt =>
-    opt.setName('map')
-      .setDescription('Chọn Map / Khu vực khiêu chiến')
+    opt.setName('enemy')
+      .setDescription('Chọn trực tiếp Boss khiêu chiến')
       .setRequired(false)
       .addChoices(
-        { name: '🛰️ Trạm Không Gian Herta', value: 'herta' },
-        { name: '❄️ Thành Phố Belobog', value: 'belobog' },
-        { name: '⛩️ Xianzhou Luofu', value: 'xianzhou' }
+        { name: '🛰️ Herta: Doomsday Beast (Bộ Thiên Tài & Thiện Xạ)', value: 'doomsday_beast' },
+        { name: '🛰️ Herta: Voidranger Trampler (Bộ Chim Ưng & Thiện Xạ)', value: 'voidranger_trampler' },
+        { name: '🛰️ Herta: Anti-Matter Legionnaire (Bộ Thiện Xạ)', value: 'antimatter_legionnaire' },
+        { name: '❄️ Belobog: Automaton Grizzly (Bộ Hiệp Sĩ & Thợ Săn Băng)', value: 'automaton_grizzly' },
+        { name: '❄️ Belobog: Cocolia (Bộ Lãng Khách & Hiệp Sĩ)', value: 'cocolia' },
+        { name: '❄️ Belobog: Svarog (Bộ Hiệp Sĩ & Thiện Xạ)', value: 'svarog' },
+        { name: '⛩️ Xianzhou: Phantylia (Bộ Thiên Tài & Chim Ưng)', value: 'phantylia' },
+        { name: '⛩️ Xianzhou: Abundance Deer (Bộ Lãng Khách Âm Thầm)', value: 'abundance_deer' },
+        { name: '⛩️ Xianzhou: Aurumaton Gatekeeper (Bộ Chim Ưng & Thợ Săn Băng)', value: 'aurumaton_gatekeeper' }
       )
   )
   .addStringOption(opt =>
     opt.setName('difficulty')
-      .setDescription('Chọn Cấp Độ Boss / Độ Khó')
+      .setDescription('Chọn Cấp Độ / Độ Khó Boss')
       .setRequired(false)
       .addChoices(
         { name: '🎯 Phù Hợp Level Đội Hình (Equal Level)', value: 'auto' },
         { name: '🟢 Dễ (Lv.20)', value: '20' },
         { name: '🔵 Thường (Lv.40)', value: '40' },
         { name: '🔴 Khó (Lv.60)', value: '60' },
-        { name: '🟣 Cực Khó / Siêu Cấp (Lv.80)', value: '80' }
+        { name: '🟣 Cực Khó (Lv.80)', value: '80' }
       )
   );
 
@@ -62,23 +68,19 @@ async function startBattleMatch(interaction, enemyId, difficultyOpt = 'auto') {
 
     const battleComponents = createBattleComponents(session);
 
-    // Edit original reply with files
-    const msg = await interaction.editReply({
+    await interaction.editReply({
       embeds: [battleEmbed],
       files: [attachment],
       components: battleComponents
     });
 
-    const actionCollector = msg.createMessageComponentCollector({
+    const actionCollector = interaction.channel.createMessageComponentCollector({
       componentType: ComponentType.Button,
       time: 300000
     });
 
     actionCollector.on('collect', async ai => {
-      if (ai.user.id !== userId) {
-        return ai.reply({ content: '❌ Bạn không phải người chơi trận này!', ephemeral: true });
-      }
-
+      if (ai.user.id !== userId) return;
       await ai.deferUpdate().catch(() => {});
 
       const customId = ai.customId;
@@ -140,39 +142,84 @@ async function startBattleMatch(interaction, enemyId, difficultyOpt = 'auto') {
 
 async function executeBattle(interaction) {
   const userId = interaction.user.id;
-  const mapOpt = interaction.options.getString('map');
+  const enemyOpt = interaction.options.getString('enemy');
   const diffOpt = interaction.options.getString('difficulty') || 'auto';
 
-  // Step 1: Reply immediately so Discord never timeouts!
   await interaction.deferReply();
 
-  let selectedMap = mapOpt || 'herta';
+  // If user provided slash options directly, launch immediately!
+  if (enemyOpt) {
+    return startBattleMatch(interaction, enemyOpt, diffOpt);
+  }
 
-  // Step 1 Embed: Select Map
-  const mapEmbed = new EmbedBuilder()
-    .setTitle('🗺️ CHỌN MAP / KHU VỰC KHIÊU CHIẾN BOSS')
-    .setColor('#3b82f6')
-    .setDescription('Hãy chọn Map và Độ khó bên dưới để bắt đầu trận chiến:')
-    .addFields(
-      { name: '🛰️ 1. Trạm Không Gian Herta', value: '• Doomsday Beast *(Bộ Thiên Tài Kim Loại & Bộ Thiện Xạ)*\n• Voidranger: Trampler *(Bộ Chim Ưng & Bộ Thiện Xạ)*\n• Anti-Matter Legionnaire *(Bộ Thiện Xạ)*', inline: false },
-      { name: '❄️ 2. Thành Phố Belobog', value: '• Automaton Grizzly *(Bộ Hiệp Sĩ & Bộ Thợ Săn Băng)*\n• Cocolia - Mẫu Thần Dối Tráp *(Bộ Lãng Khách Âm Thầm & Hiệp Sĩ)*\n• Svarog *(Bộ Hiệp Sĩ & Bộ Thiện Xạ)*', inline: false },
-      { name: '⛩️ 3. Xianzhou Luofu', value: '• Phantylia *(Bộ Thiên Tài Kim Loại & Chim Ưng)*\n• Abundance Deer *(Bộ Lãng Khách Âm Thầm)*\n• Aurumaton Gatekeeper *(Bộ Chim Ưng & Thợ Săn Băng)*', inline: false }
-    )
-    .setFooter({ text: 'Bấm nút bên dưới để chọn Map!' });
+  // Interactive Single Dashboard Setup
+  let currentEnemyId = 'doomsday_beast';
+  let currentDiff = diffOpt;
 
-  const mapButtons = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('map_btn_herta').setLabel('🛰️ Trạm Herta').setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('map_btn_belobog').setLabel('❄️ Belobog').setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId('map_btn_xianzhou').setLabel('⛩️ Xianzhou Luofu').setStyle(ButtonStyle.Danger)
-  );
+  function buildSetupEmbed() {
+    const chosenEnemy = enemiesData.find(e => e.id === currentEnemyId) || enemiesData[0];
+    const diffLabel = currentDiff === 'auto'
+      ? '🎯 Phù Hợp Đội Hình (Equal Level Matchmaking)'
+      : `Lv.${currentDiff}`;
 
-  const msg = await interaction.editReply({
-    embeds: [mapEmbed],
-    components: [mapButtons]
+    return new EmbedBuilder()
+      .setTitle('⚔️ THIẾT LẬP KHIÊU CHIẾN BOSS TRẬN ĐẤU')
+      .setColor('#3b82f6')
+      .setDescription('Chọn Boss và Độ Khó từ các menu bên dưới, sau đó bấm nút **🚀 BẮT ĐẦU TRẬN ĐẤU** để vào trận!')
+      .addFields(
+        { name: '👹 Boss Được Chọn', value: `**${chosenEnemy.name}** *(Rớt: ${chosenEnemy.dropArtifacts.map(a => a.toUpperCase()).join(' & ')})*`, inline: true },
+        { name: '📊 Độ Khó / Level', value: `**${diffLabel}**`, inline: true }
+      )
+      .setFooter({ text: 'Thoải mái tùy chỉnh Boss và Độ khó trước khi bấm Bắt Đầu!' });
+  }
+
+  // 1. Boss Options grouped by Map
+  const bossOptions = enemiesData.map(b => {
+    let mapEmoji = '🛰️';
+    if (b.map === 'belobog') mapEmoji = '❄️';
+    else if (b.map === 'xianzhou') mapEmoji = '⛩️';
+
+    return {
+      label: `${mapEmoji} ${b.name}`,
+      description: `Rớt: ${b.dropArtifacts.map(id => id.toUpperCase()).join(' & ')}`,
+      value: `boss_opt_${b.id}`
+    };
   });
 
-  const collector = msg.createMessageComponentCollector({
-    time: 120000
+  const bossMenu = new StringSelectMenuBuilder()
+    .setCustomId('setup_boss_menu')
+    .setPlaceholder('1. Chọn Boss Khiêu Chiến...')
+    .addOptions(bossOptions);
+
+  // 2. Difficulty Options
+  const diffMenu = new StringSelectMenuBuilder()
+    .setCustomId('setup_diff_menu')
+    .setPlaceholder('2. Chọn Cấp Độ / Độ Khó...')
+    .addOptions(
+      { label: '🎯 Phù Hợp Level Đội Hình (Equal Level)', description: 'Lv.Boss tự điều chỉnh theo Level Đội Hình (+2 Lv)', value: 'diff_auto', emoji: '🎯' },
+      { label: '🟢 Dễ (Lv.20)', description: 'Boss Lv.20 cho Tân thủ', value: 'diff_20', emoji: '🟢' },
+      { label: '🔵 Thường (Lv.40)', description: 'Boss Lv.40 thử thách trung bình', value: 'diff_40', emoji: '🔵' },
+      { label: '🔴 Khó (Lv.60)', description: 'Boss Lv.60 đòi hỏi trang bị nâng cao', value: 'diff_60', emoji: '🔴' },
+      { label: '🟣 Cực Khó / Siêu Cấp (Lv.80)', description: 'Boss Lv.80 dành cho Đội hình Max Cấp', value: 'diff_80', emoji: '🟣' }
+    );
+
+  // 3. Start Battle Action Button
+  const startBtn = new ButtonBuilder()
+    .setCustomId('setup_start_battle')
+    .setLabel('🚀 BẮT ĐẦU TRẬN ĐẤU')
+    .setStyle(ButtonStyle.Success);
+
+  const row1 = new ActionRowBuilder().addComponents(bossMenu);
+  const row2 = new ActionRowBuilder().addComponents(diffMenu);
+  const row3 = new ActionRowBuilder().addComponents(startBtn);
+
+  await interaction.editReply({
+    embeds: [buildSetupEmbed()],
+    components: [row1, row2, row3]
+  });
+
+  const collector = interaction.channel.createMessageComponentCollector({
+    time: 180000
   });
 
   collector.on('collect', async i => {
@@ -182,71 +229,16 @@ async function executeBattle(interaction) {
 
     await i.deferUpdate().catch(() => {});
 
-    if (i.customId === 'map_btn_herta') selectedMap = 'herta';
-    else if (i.customId === 'map_btn_belobog') selectedMap = 'belobog';
-    else if (i.customId === 'map_btn_xianzhou') selectedMap = 'xianzhou';
-
-    // Step 2: Show Boss dropdown AND Difficulty dropdown for selected map!
-    const mapBosses = enemiesData.filter(e => e.map === selectedMap);
-
-    const bossOptions = mapBosses.map(b => ({
-      label: b.name,
-      description: `Rớt: ${b.dropArtifacts.map(id => id.toUpperCase()).join(' & ')}`,
-      value: `boss_select_${b.id}`,
-      emoji: '👹'
-    }));
-
-    const bossMenu = new StringSelectMenuBuilder()
-      .setCustomId('battle_boss_menu')
-      .setPlaceholder(`Chọn Boss trong Map ${selectedMap.toUpperCase()}...`)
-      .addOptions(bossOptions);
-
-    const diffMenu = new StringSelectMenuBuilder()
-      .setCustomId('battle_diff_menu')
-      .setPlaceholder('Chọn Cấp Độ / Độ Khó Boss...')
-      .addOptions(
-        { label: '🎯 Phù Hợp Level Đội Hình (Equal Level)', description: 'Lv.Boss tự điều chỉnh theo Level trung bình của Đội hình', value: 'auto', emoji: '🎯' },
-        { label: '🟢 Dễ (Lv.20)', description: 'Boss Lv.20 cho Tân thủ', value: '20', emoji: '🟢' },
-        { label: '🔵 Thường (Lv.40)', description: 'Boss Lv.40 thử thách trung bình', value: '40', emoji: '🔵' },
-        { label: '🔴 Khó (Lv.60)', description: 'Boss Lv.60 đòi hỏi trang bị nâng cao', value: '60', emoji: '🔴' },
-        { label: '🟣 Cực Khó / Siêu Cấp (Lv.80)', description: 'Boss Lv.80 dành cho Đội hình Max Cấp', value: '80', emoji: '🟣' }
-      );
-
-    const row1 = new ActionRowBuilder().addComponents(bossMenu);
-    const row2 = new ActionRowBuilder().addComponents(diffMenu);
-
-    let chosenEnemyId = mapBosses[0].id;
-    let chosenDiff = diffOpt;
-
-    const bossEmbed = new EmbedBuilder()
-      .setTitle(`👹 VÙNG ĐẤU: ${selectedMap.toUpperCase()} - CHỌN BOSS & ĐỘ KHÓ`)
-      .setColor('#f59e0b')
-      .setDescription(`Hãy chọn Boss và Cấp độ khiêu chiến bên dưới:\n\n• **Boss được chọn**: **${mapBosses[0].name}**\n• **Độ Khó**: **${chosenDiff === 'auto' ? 'Equal Level (Tự động)' : 'Lv.' + chosenDiff}**`)
-      .setFooter({ text: 'Sau khi chọn Boss, trận đấu sẽ lập tức khởi chạy!' });
-
-    await interaction.editReply({ embeds: [bossEmbed], components: [row1, row2] });
-
-    const menuCollector = msg.createMessageComponentCollector({
-      componentType: ComponentType.StringSelect,
-      time: 120000
-    });
-
-    menuCollector.on('collect', async mi => {
-      if (mi.user.id !== userId) return;
-      await mi.deferUpdate().catch(() => {});
-
-      if (mi.customId === 'battle_boss_menu') {
-        chosenEnemyId = mi.values[0].replace('boss_select_', '');
-      } else if (mi.customId === 'battle_diff_menu') {
-        chosenDiff = mi.values[0];
-      }
-
-      menuCollector.stop();
+    if (i.customId === 'setup_boss_menu') {
+      currentEnemyId = i.values[0].replace('boss_opt_', '');
+      await interaction.editReply({ embeds: [buildSetupEmbed()], components: [row1, row2, row3] });
+    } else if (i.customId === 'setup_diff_menu') {
+      currentDiff = i.values[0].replace('diff_', '');
+      await interaction.editReply({ embeds: [buildSetupEmbed()], components: [row1, row2, row3] });
+    } else if (i.customId === 'setup_start_battle') {
       collector.stop();
-
-      // Launch battle session immediately
-      await startBattleMatch(interaction, chosenEnemyId, chosenDiff);
-    });
+      await startBattleMatch(interaction, currentEnemyId, currentDiff);
+    }
   });
 }
 
