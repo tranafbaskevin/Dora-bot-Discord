@@ -9,6 +9,7 @@ const infoCommand = require('./src/commands/info');
 const inventoryCommand = require('./src/commands/inventory');
 const upgradeCommand = require('./src/commands/upgrade');
 const lahoanCommand = require('./src/commands/lahoan');
+const adminCommand = require('./src/commands/admin');
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
@@ -24,7 +25,8 @@ const commandsList = [
   infoCommand,
   inventoryCommand,
   upgradeCommand,
-  lahoanCommand
+  lahoanCommand,
+  adminCommand
 ];
 
 commandsList.forEach(cmd => {
@@ -47,7 +49,7 @@ client.once('ready', async () => {
       { body: commandsData }
     );
 
-    console.log('✅ Đã đăng ký thành công 8 lệnh Slash Commands: /gacha, /profile, /team, /battle, /info, /inventory, /upgrade, /lahoan');
+    console.log('✅ Đã đăng ký thành công 9 lệnh Slash Commands: /gacha, /profile, /team, /battle, /info, /inventory, /upgrade, /lahoan, /admin');
   } catch (error) {
     console.error('❌ Lỗi đăng ký Slash Commands:', error);
   }
@@ -55,7 +57,6 @@ client.once('ready', async () => {
 
 // Khi người dùng tương tác Slash Command & Autocomplete
 client.on('interactionCreate', async interaction => {
-  // Xử lý Gợi ý Tự Động (Autocomplete)
   if (interaction.isAutocomplete()) {
     const command = client.commands.get(interaction.commandName);
     if (command && command.autocomplete) {
@@ -68,7 +69,6 @@ client.on('interactionCreate', async interaction => {
     return;
   }
 
-  // Xử lý Lệnh Slash Command
   if (!interaction.isChatInputCommand()) return;
 
   const command = client.commands.get(interaction.commandName);
