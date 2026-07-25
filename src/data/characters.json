@@ -1,0 +1,238 @@
+[
+  {
+    "id": "seele",
+    "name": "Seele",
+    "rarity": 5,
+    "element": "Quantum",
+    "path": "Hunt",
+    "color": "#8a2be2",
+    "ultGif": "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdWkzaTl0ZjIybXNxbDFmbGtkOHFudHBkOHdkaDFscXQ0ZWxwaDNpdCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/L2X2a7N03XgYnJ0sCq/giphy.gif",
+    "baseStats": {
+      "hp": 930,
+      "atk": 640,
+      "def": 360,
+      "speed": 115,
+      "maxEnergy": 120
+    },
+    "skills": {
+      "basic": {
+        "name": "Threshing Strike",
+        "description": "Deals Quantum DMG to a single enemy.",
+        "multiplier": 1.0,
+        "spChange": 1,
+        "energyGain": 20
+      },
+      "skill": {
+        "name": "Sheathed Blade",
+        "description": "Increases SPD by 25% and deals heavy Quantum DMG to a single enemy.",
+        "multiplier": 2.2,
+        "spChange": -1,
+        "energyGain": 30
+      },
+      "ultimate": {
+        "name": "Butterfly Flurry",
+        "description": "Enters buffed state and deals massive Quantum DMG to a single enemy.",
+        "multiplier": 4.2,
+        "energyCost": 120
+      }
+    }
+  },
+  {
+    "id": "jing_yuan",
+    "name": "Jing Yuan",
+    "rarity": 5,
+    "element": "Lightning",
+    "path": "Erudition",
+    "color": "#ffd700",
+    "ultGif": "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHFlZjV1NDg2eTlnaDFjZ2hyejFlMHgxaWdzZnBmbmdsNWcxeWZqOCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/1dJWqy5P22s9S5M2gK/giphy.gif",
+    "baseStats": {
+      "hp": 1160,
+      "atk": 698,
+      "def": 485,
+      "speed": 99,
+      "maxEnergy": 130
+    },
+    "skills": {
+      "basic": {
+        "name": "Glistening Light",
+        "description": "Deals Lightning DMG to a single enemy.",
+        "multiplier": 1.0,
+        "spChange": 1,
+        "energyGain": 20
+      },
+      "skill": {
+        "name": "Rifting Zenith",
+        "description": "Deals Lightning DMG to all enemies.",
+        "multiplier": 1.5,
+        "spChange": -1,
+        "energyGain": 30,
+        "isAoE": true
+      },
+      "ultimate": {
+        "name": "Lightbringer",
+        "description": "Deals massive Lightning DMG to all enemies.",
+        "multiplier": 3.0,
+        "energyCost": 130,
+        "isAoE": true
+      }
+    }
+  },
+  {
+    "id": "bronya",
+    "name": "Bronya",
+    "rarity": 5,
+    "element": "Wind",
+    "path": "Harmony",
+    "color": "#00bfff",
+    "ultGif": "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcHR2cWNocTZuNmN2MzhpNGZ2dWtrNHBzcHgxcGx3OHJ0M2d4OTRnaSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKSjRrfIPjeiVyM/giphy.gif",
+    "baseStats": {
+      "hp": 1240,
+      "atk": 580,
+      "def": 530,
+      "speed": 102,
+      "maxEnergy": 120
+    },
+    "skills": {
+      "basic": {
+        "name": "Windrider Bullet",
+        "description": "Deals Wind DMG to a single enemy.",
+        "multiplier": 1.0,
+        "spChange": 1,
+        "energyGain": 20
+      },
+      "skill": {
+        "name": "Combat Redistribution",
+        "description": "Dispels a debuff, advances target ally turn by 100%, and increases DMG.",
+        "multiplier": 1.5,
+        "spChange": -1,
+        "energyGain": 30
+      },
+      "ultimate": {
+        "name": "The Belobog March",
+        "description": "Increases ATK and CRIT DMG of all allies.",
+        "multiplier": 0.0,
+        "energyCost": 120,
+        "isBuff": true
+      }
+    }
+  },
+  {
+    "id": "dan_heng",
+    "name": "Dan Heng",
+    "rarity": 4,
+    "element": "Wind",
+    "path": "Hunt",
+    "color": "#2e8b57",
+    "ultGif": "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYmtjYnV2anloMngyYndsb24yOHQxMGw1bzVvd3NocTFqdmdwOHB0bCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3oKIPnAiaMCws8nOsE/giphy.gif",
+    "baseStats": {
+      "hp": 880,
+      "atk": 540,
+      "def": 390,
+      "speed": 110,
+      "maxEnergy": 100
+    },
+    "skills": {
+      "basic": {
+        "name": "Cloudlancer Art: North Wind",
+        "description": "Deals Wind DMG to a single enemy.",
+        "multiplier": 1.0,
+        "spChange": 1,
+        "energyGain": 20
+      },
+      "skill": {
+        "name": "Cloudlancer Art: Torrent",
+        "description": "Deals Wind DMG to a single enemy with a chance to Slow.",
+        "multiplier": 1.8,
+        "spChange": -1,
+        "energyGain": 30
+      },
+      "ultimate": {
+        "name": "Ethereal Dream",
+        "description": "Deals high Wind DMG to a single enemy. Extra DMG if enemy is Slowed.",
+        "multiplier": 3.6,
+        "energyCost": 100
+      }
+    }
+  },
+  {
+    "id": "march_7th",
+    "name": "March 7th",
+    "rarity": 4,
+    "element": "Ice",
+    "path": "Preservation",
+    "color": "#ffb6c1",
+    "ultGif": "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbWg1MnZwMnVrcWszbjVmdWpyNWhnaGExbmlqZXBnMjFiMTRhbHNudCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKxDbyw523wU8H6/giphy.gif",
+    "baseStats": {
+      "hp": 1050,
+      "atk": 510,
+      "def": 570,
+      "speed": 101,
+      "maxEnergy": 120
+    },
+    "skills": {
+      "basic": {
+        "name": "Frigid Arrow",
+        "description": "Deals Ice DMG to a single enemy.",
+        "multiplier": 1.0,
+        "spChange": 1,
+        "energyGain": 20
+      },
+      "skill": {
+        "name": "The Power of Cute",
+        "description": "Provides a Shield to an ally for 3 turns.",
+        "multiplier": 0.0,
+        "spChange": -1,
+        "energyGain": 30,
+        "isShield": true
+      },
+      "ultimate": {
+        "name": "Glacial Cascade",
+        "description": "Deals Ice DMG to all enemies with a chance to Freeze them.",
+        "multiplier": 2.0,
+        "energyCost": 120,
+        "isAoE": true
+      }
+    }
+  },
+  {
+    "id": "natasha",
+    "name": "Natasha",
+    "rarity": 4,
+    "element": "Physical",
+    "path": "Abundance",
+    "color": "#98fb98",
+    "ultGif": "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOW82bzRnMnhsdWFsa2RkdzlpdWZpdHRnb3Z4ZzBsbzBsNHl3dzdsbiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l3q2K5jinAlChoCLS/giphy.gif",
+    "baseStats": {
+      "hp": 1180,
+      "atk": 470,
+      "def": 505,
+      "speed": 98,
+      "maxEnergy": 90
+    },
+    "skills": {
+      "basic": {
+        "name": "Behind the Kindness",
+        "description": "Deals Physical DMG to a single enemy.",
+        "multiplier": 1.0,
+        "spChange": 1,
+        "energyGain": 20
+      },
+      "skill": {
+        "name": "Love, Heal, and Choose",
+        "description": "Heals a single ally and grants continuous healing.",
+        "multiplier": 0.0,
+        "spChange": -1,
+        "energyGain": 30,
+        "isHeal": true
+      },
+      "ultimate": {
+        "name": "Gift of Rebirth",
+        "description": "Heals all allies substantially.",
+        "multiplier": 0.0,
+        "energyCost": 90,
+        "isHeal": true,
+        "isAoE": true
+      }
+    }
+  }
+]

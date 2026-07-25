@@ -1,0 +1,35 @@
+[
+  {
+    "id": "doomsday_beast",
+    "name": "Doomsday Beast",
+    "hp": 8500,
+    "atk": 240,
+    "def": 280,
+    "speed": 95,
+    "weaknesses": ["Quantum", "Fire", "Ice"],
+    "toughness": 120,
+    "color": "#800000"
+  },
+  {
+    "id": "automaton_grizzly",
+    "name": "Automaton Grizzly",
+    "hp": 4800,
+    "atk": 180,
+    "def": 220,
+    "speed": 90,
+    "weaknesses": ["Lightning", "Ice", "Wind"],
+    "toughness": 80,
+    "color": "#d2691e"
+  },
+  {
+    "id": "voidranger_trampler",
+    "name": "Voidranger: Trampler",
+    "hp": 2500,
+    "atk": 140,
+    "def": 150,
+    "speed": 105,
+    "weaknesses": ["Physical", "Wind", "Imaginary"],
+    "toughness": 50,
+    "color": "#4b0082"
+  }
+]
