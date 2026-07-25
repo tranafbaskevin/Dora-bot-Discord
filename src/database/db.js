@@ -36,7 +36,7 @@ function getUser(discordId) {
       jades: 16000,
       pity_5star: 0,
       pity_4star: 0,
-      is_guaranteed: false, // 50/50 Guaranteed Pity state
+      is_guaranteed: false,
       trash_items: 0,
       player_level: 1,
       player_exp: 0,
@@ -83,6 +83,25 @@ function getUser(discordId) {
   return u;
 }
 
+// Add Admin Cheat Resources
+function addAdminResources(discordId) {
+  const data = readDb();
+  const user = data.users[discordId] || getUser(discordId);
+
+  user.jades += 100000;
+  if (!user.materials) {
+    user.materials = { char_exp_book: 50, weapon_exp_crystal: 50, artifact_dust: 50, trace_material: 30 };
+  }
+
+  user.materials.char_exp_book = (user.materials.char_exp_book || 0) + 500;
+  user.materials.weapon_exp_crystal = (user.materials.weapon_exp_crystal || 0) + 500;
+  user.materials.artifact_dust = (user.materials.artifact_dust || 0) + 500;
+  user.materials.trace_material = (user.materials.trace_material || 0) + 500;
+
+  saveDb(data);
+  return user;
+}
+
 // Add Player Trailblaze EXP
 function addPlayerExp(discordId, expGained) {
   const data = readDb();
@@ -104,7 +123,7 @@ function addPlayerExp(discordId, expGained) {
   return { leveledUp, newLevel: user.player_level, totalJades: user.jades };
 }
 
-// Upgrade Character Level (Auto Max Upgrade supported)
+// Upgrade Character Level
 function upgradeCharacterLevel(discordId, charId, useMax = true) {
   const data = readDb();
   const user = data.users[discordId] || getUser(discordId);
@@ -145,7 +164,7 @@ function upgradeCharacterLevel(discordId, charId, useMax = true) {
   };
 }
 
-// Upgrade Weapon Level (Auto Max Upgrade supported)
+// Upgrade Weapon Level
 function upgradeWeaponLevel(discordId, charId, useMax = true) {
   const data = readDb();
   const user = data.users[discordId] || getUser(discordId);
@@ -269,14 +288,12 @@ function upgradeArtifact(discordId, artifactId, dustToUse = 5) {
       art.level += 1;
       art.mainValue += 1.8;
 
-      // Every +3 levels (+3, +6, +9, +12, +15), RNG 100% Roll to upgrade an existing sub-stat or add a new one!
       if (art.level % 3 === 0) {
         if (art.subStats.length < 4) {
           const nextStat = subStatPool[Math.floor(Math.random() * subStatPool.length)];
           art.subStats.push({ name: nextStat, value: 3.2 });
           upgradedSubNames.push(`Mở dòng mới: ${nextStat}`);
         } else {
-          // RNG Roll: Pick 1 random sub-stat out of existing ones!
           const randSubIndex = Math.floor(Math.random() * art.subStats.length);
           const rollBoost = 2.0 + Math.random() * 2.5;
           art.subStats[randSubIndex].value += rollBoost;
@@ -417,6 +434,7 @@ function updateTeam(discordId, slot1, slot2, slot3, slot4) {
 
 module.exports = {
   getUser,
+  addAdminResources,
   addPlayerExp,
   upgradeCharacterLevel,
   upgradeWeaponLevel,
