@@ -28,7 +28,7 @@ function saveDb(data) {
   fs.writeFileSync(dbFilePath, JSON.stringify(data, null, 2));
 }
 
-// Normalize Weapon Name for exact S1-S5 matching
+// Normalize Weapon Name for exact matching
 function normalizeWeaponName(name) {
   if (!name) return '';
   return name.toLowerCase()
@@ -175,7 +175,7 @@ function upgradeCharacterLevel(discordId, charId, useMax = true) {
   };
 }
 
-// Upgrade Weapon Level
+// Upgrade Weapon Level (SYNCS BOTH inventory and weapons table!)
 function upgradeWeaponLevel(discordId, charId, useMax = true) {
   const data = readDb();
   const user = data.users[discordId] || getUser(discordId);
@@ -202,6 +202,15 @@ function upgradeWeaponLevel(discordId, charId, useMax = true) {
       char.weapon_exp -= reqExp;
       char.weapon_level = (char.weapon_level || 1) + 1;
       reqExp = char.weapon_level * 800;
+    }
+  }
+
+  // SYNC WITH WEAPONS TABLE
+  if (data.weapons && data.weapons[discordId]) {
+    const normTarget = normalizeWeaponName(char.light_cone);
+    const wpn = data.weapons[discordId].find(w => w.char_id === charId || normalizeWeaponName(w.name) === normTarget);
+    if (wpn) {
+      wpn.level = char.weapon_level;
     }
   }
 
