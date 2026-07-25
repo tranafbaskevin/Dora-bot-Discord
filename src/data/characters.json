@@ -6,7 +6,7 @@
     "element": "Quantum",
     "path": "Hunt",
     "color": "#8a2be2",
-    "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/character/1102.png",
+    "icon": "assets/characters/seele.jpg",
     "ultGif": "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdWkzaTl0ZjIybXNxbDFmbGtkOHFudHBkOHdkaDFscXQ0ZWxwaDNpdCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/L2X2a7N03XgYnJ0sCq/giphy.gif",
     "baseStats": {
       "hp": 930,
@@ -45,7 +45,7 @@
     "element": "Lightning",
     "path": "Erudition",
     "color": "#ffd700",
-    "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/character/1204.png",
+    "icon": "assets/characters/jing_yuan.jpg",
     "ultGif": "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHFlZjV1NDg2eTlnaDFjZ2hyejFlMHgxaWdzZnBmbmdsNWcxeWZqOCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/1dJWqy5P22s9S5M2gK/giphy.gif",
     "baseStats": {
       "hp": 1160,
@@ -86,7 +86,7 @@
     "element": "Wind",
     "path": "Harmony",
     "color": "#00bfff",
-    "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/character/1101.png",
+    "icon": "assets/characters/bronya.jpg",
     "ultGif": "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcHR2cWNocTZuNmN2MzhpNGZ2dWtrNHBzcHgxcGx3OHJ0M2d4OTRnaSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKSjRrfIPjeiVyM/giphy.gif",
     "baseStats": {
       "hp": 1240,
@@ -126,7 +126,7 @@
     "element": "Wind",
     "path": "Hunt",
     "color": "#2e8b57",
-    "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/character/1002.png",
+    "icon": "assets/characters/dan_heng.jpg",
     "ultGif": "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYmtjYnV2anloMngyYndsb24yOHQxMGw1bzVvd3NocTFqdmdwOHB0bCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3oKIPnAiaMCws8nOsE/giphy.gif",
     "baseStats": {
       "hp": 880,
@@ -165,7 +165,7 @@
     "element": "Ice",
     "path": "Preservation",
     "color": "#ffb6c1",
-    "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/character/1001.png",
+    "icon": "assets/characters/march_7th.jpg",
     "ultGif": "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbWg1MnZwMnVrcWszbjVmdWpyNWhnaGExbmlqZXBnMjFiMTRhbHNudCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKxDbyw523wU8H6/giphy.gif",
     "baseStats": {
       "hp": 1050,
@@ -206,7 +206,7 @@
     "element": "Physical",
     "path": "Abundance",
     "color": "#98fb98",
-    "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/character/1105.png",
+    "icon": "assets/characters/natasha.jpg",
     "ultGif": "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOW82bzRnMnhsdWFsa2RkdzlpdWZpdHRnb3Z4ZzBsbzBsNHl3dzdsbiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l3q2K5jinAlChoCLS/giphy.gif",
     "baseStats": {
       "hp": 1180,
