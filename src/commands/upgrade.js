@@ -20,7 +20,7 @@ async function executeUpgrade(interaction) {
   const rowButtons = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId('up_cat_char').setLabel('👤 Level Nhân Vật').setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId('up_cat_weapon').setLabel('⚔️ Level Vũ Khí').setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId('up_cat_skill').setLabel('📜 Level Kỹ Năng & Ult').setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId('up_cat_skill').setLabel('📜 Đánh Thường / Kỹ Năng / Ult').setStyle(ButtonStyle.Danger),
     new ButtonBuilder().setCustomId('up_cat_artifact').setLabel('🔮 Cường Hóa Di Vật').setStyle(ButtonStyle.Secondary)
   );
 
@@ -128,12 +128,19 @@ async function executeUpgrade(interaction) {
       await i.update({ embeds: [updatedEmbed], components: [rowButtons] });
     }
 
-    // 3. Skill & Ultimate Level Upgrade Category (Supports upgrading Skill & Ultimate!)
+    // 3. Skill & Ultimate Level Upgrade Category (Supports Basic, Skill & Ultimate!)
     else if (i.customId === 'up_cat_skill') {
       const skillOptions = [];
       userInv.forEach(inv => {
         const char = charactersData.find(c => c.id === inv.char_id);
         if (!char) return;
+
+        skillOptions.push({
+          label: `${char.name} - Đánh Thường (Lv.${inv.basic_lvl || 1}/6)`,
+          description: `Nâng cấp Đánh thường: ${char.skills.basic.name}`,
+          value: `up_sk_select_${char.id}_basic`,
+          emoji: '🗡️'
+        });
 
         skillOptions.push({
           label: `${char.name} - Chiến Kỹ (Lv.${inv.skill_lvl || 1}/10)`,
@@ -152,15 +159,15 @@ async function executeUpgrade(interaction) {
 
       const menu = new StringSelectMenuBuilder()
         .setCustomId('up_menu_skill')
-        .setPlaceholder('Chọn Chiến Kỹ hoặc Tuyệt Kỹ muốn nâng cấp...')
+        .setPlaceholder('Chọn Đánh Thường, Chiến Kỹ hoặc Tuyệt Kỹ...')
         .addOptions(skillOptions.slice(0, 25));
 
       const menuRow = new ActionRowBuilder().addComponents(menu);
 
       const embed = new EmbedBuilder()
-        .setTitle('📜 NÂNG CẤP CHIẾN KỸ & TUYỆT KỸ (TRACE LEVEL 1 -> 10)')
+        .setTitle('📜 NÂNG CẤP KỸ NĂNG: ĐÁNH THƯỜNG / CHIẾN KỸ / TUYỆT KỸ')
         .setColor('#ef4444')
-        .setDescription(`📜 Mầm Kỹ Năng hiện có: **${refreshedUser.materials?.trace_material || 0}**.\nChọn Chiến Kỹ hoặc Tuyệt Kỹ bên dưới để tăng +1 Level (Tốn 5 mầm)!`);
+        .setDescription(`📜 Mầm Kỹ Năng hiện có: **${refreshedUser.materials?.trace_material || 0}**.\nChọn kỹ năng bên dưới để tăng +1 Level (Tốn 5 mầm)!`);
 
       await i.update({ embeds: [embed], components: [menuRow, rowButtons] });
     }
@@ -168,19 +175,23 @@ async function executeUpgrade(interaction) {
     else if (i.customId === 'up_menu_skill') {
       const parts = i.values[0].replace('up_sk_select_', '').split('_');
       const charId = parts[0];
-      const skillType = parts[1]; // 'skill' or 'ult'
+      const skillType = parts[1]; // 'basic', 'skill', or 'ult'
 
       const result = db.upgradeSkillLevel(userId, charId, skillType);
 
       if (!result.success) return i.reply({ content: result.message, ephemeral: true });
 
       const char = charactersData.find(c => c.id === charId);
-      const skillName = skillType === 'ult' ? `Tuyệt Kỹ (${char.skills.ultimate.name})` : `Chiến Kỹ (${char.skills.skill.name})`;
+      let skillName = `Chiến Kỹ (${char.skills.skill.name})`;
+      if (skillType === 'ult') skillName = `Tuyệt Kỹ (${char.skills.ultimate.name})`;
+      else if (skillType === 'basic') skillName = `Đánh Thường (${char.skills.basic.name})`;
+
+      const maxLvl = skillType === 'basic' ? 6 : 10;
 
       const updatedEmbed = new EmbedBuilder()
         .setTitle(`🎉 NÂNG CẤP ${skillName.toUpperCase()} THÀNH CÔNG`)
         .setColor('#10b981')
-        .setDescription(`Level mới: **Lv.${result.newLevel} / 10**!\n📜 Mầm kỹ năng còn lại: **${result.remainingMaterials}**.`);
+        .setDescription(`Level mới: **Lv.${result.newLevel} / ${maxLvl}**!\n📜 Mầm kỹ năng còn lại: **${result.remainingMaterials}**.`);
 
       await i.update({ embeds: [updatedEmbed], components: [rowButtons] });
     }
