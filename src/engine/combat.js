@@ -67,9 +67,15 @@ class CombatEngine {
       const wpnScale = 1.0 + (wpnLvl - 1) * 0.05;
       const superimposeBonus = 1.0 + (superimpose - 1) * 0.08;
 
-      let baseAtk = Math.round(baseChar.baseAtk * lvlScale * wpnScale * superimposeBonus);
-      let baseHp = Math.round(baseChar.baseHp * lvlScale * wpnScale);
-      let baseDef = Math.round(baseChar.baseDef * lvlScale * wpnScale);
+      const rawAtk = baseChar.baseStats?.atk || baseChar.atk || 600;
+      const rawHp = baseChar.baseStats?.hp || baseChar.hp || 900;
+      const rawDef = baseChar.baseStats?.def || baseChar.def || 350;
+      const rawSpd = baseChar.baseStats?.speed || baseChar.speed || 100;
+      const rawEnergy = baseChar.baseStats?.maxEnergy || baseChar.maxEnergy || 100;
+
+      let baseAtk = Math.round(rawAtk * lvlScale * wpnScale * superimposeBonus);
+      let baseHp = Math.round(rawHp * lvlScale * wpnScale);
+      let baseDef = Math.round(rawDef * lvlScale * wpnScale);
 
       // Relic Set Bonus (+15% ATK)
       if (invRecord.artifact_set) {
@@ -91,9 +97,9 @@ class CombatEngine {
         currentHp: finalHp,
         atk: finalAtk,
         def: baseDef,
-        speed: baseChar.speed,
-        maxEnergy: baseChar.maxEnergy || 100,
-        currentEnergy: Math.floor((baseChar.maxEnergy || 100) * 0.5),
+        speed: rawSpd,
+        maxEnergy: rawEnergy,
+        currentEnergy: Math.floor(rawEnergy * 0.5),
         shield: 0,
         eidolon: invRecord.eidolon,
         basicLvl: invRecord.basic_lvl || 1,
@@ -104,7 +110,7 @@ class CombatEngine {
         critRate: 0.25 + (superimpose - 1) * 0.03,
         critDmg: 0.60 + (superimpose - 1) * 0.05,
         isAlive: true,
-        actionValue: Math.round(10000 / baseChar.speed)
+        actionValue: Math.round(10000 / rawSpd)
       };
     });
 
@@ -115,15 +121,9 @@ class CombatEngine {
   determineNextActor() {
     if (this.isFinished) return;
 
-    const aliveTeam = this.team.filter(c => c.isAlive);
-    if (aliveTeam.length === 0) {
-      this.isFinished = true;
-      this.winner = 'enemy';
-      this.logs.push(`💀 **Toàn bộ đội hình của bạn đã gục ngã! Thất bại trong thử thách.**`);
-      return;
-    }
-
-    if (!this.enemy.isAlive) {
+    if (this.enemy.currentHp <= 0 || isNaN(this.enemy.currentHp)) {
+      this.enemy.currentHp = 0;
+      this.enemy.isAlive = false;
       this.isFinished = true;
       this.winner = 'player';
       this.logs.push(`🎉 **Kẻ địch ${this.enemy.name} đã bị tiêu diệt hoàn toàn! Bạn chiến thắng!**`);
@@ -131,22 +131,40 @@ class CombatEngine {
       return;
     }
 
+    const aliveTeam = this.team.filter(c => c.isAlive && c.currentHp > 0);
+    if (aliveTeam.length === 0) {
+      this.isFinished = true;
+      this.winner = 'enemy';
+      this.logs.push(`💀 **Toàn bộ đội hình của bạn đã gục ngã! Thất bại trong thử thách.**`);
+      return;
+    }
+
     const actors = [...aliveTeam];
-    if (this.enemy.isAlive) {
-      if (!this.enemy.actionValue) {
-        this.enemy.actionValue = Math.round(10000 / this.enemy.speed);
+    if (this.enemy.isAlive && this.enemy.currentHp > 0) {
+      if (!this.enemy.actionValue || isNaN(this.enemy.actionValue)) {
+        this.enemy.actionValue = Math.round(10000 / (this.enemy.speed || 100));
       }
       actors.push(this.enemy);
     }
 
-    actors.sort((a, b) => a.actionValue - b.actionValue);
+    actors.sort((a, b) => (a.actionValue || 0) - (b.actionValue || 0));
     this.currentActor = actors[0];
   }
 
   advanceToNextTurn() {
     if (this.isFinished) return;
 
-    const minAv = this.currentActor.actionValue;
+    if (this.enemy.currentHp <= 0) {
+      this.enemy.currentHp = 0;
+      this.enemy.isAlive = false;
+      this.isFinished = true;
+      this.winner = 'player';
+      this.logs.push(`🎉 **Kẻ địch ${this.enemy.name} đã bị tiêu diệt hoàn toàn! Bạn chiến thắng!**`);
+      this.handleVictoryRewards();
+      return;
+    }
+
+    const minAv = this.currentActor?.actionValue || 10;
 
     this.team.forEach(c => {
       if (c.isAlive) c.actionValue -= minAv;
@@ -213,15 +231,30 @@ class CombatEngine {
 
   // REBALANCED HSR DAMAGE MITIGATION FORMULA
   calculateDamage(attackerAtk, defenderDef, multiplier, critRate = 0.25, critDmg = 0.60) {
+    const safeAtk = isNaN(attackerAtk) || attackerAtk <= 0 ? 1000 : attackerAtk;
+    const safeDef = isNaN(defenderDef) || defenderDef <= 0 ? 300 : defenderDef;
     const isCrit = Math.random() < critRate;
     const critMult = isCrit ? (1 + critDmg) : 1.0;
-    const rawDmg = attackerAtk * multiplier * critMult;
-    const defMitigation = 1000 / (1000 + defenderDef);
+    const rawDmg = safeAtk * multiplier * critMult;
+    const defMitigation = 1000 / (1000 + safeDef);
     const variance = 0.95 + Math.random() * 0.1;
     return {
       damage: Math.max(50, Math.floor(rawDmg * defMitigation * variance)),
       isCrit
     };
+  }
+
+  checkVictoryCondition() {
+    if (this.enemy.currentHp <= 0) {
+      this.enemy.currentHp = 0;
+      this.enemy.isAlive = false;
+      this.isFinished = true;
+      this.winner = 'player';
+      this.logs.push(`🎉 **Kẻ địch ${this.enemy.name} đã bị tiêu diệt! Bạn chiến thắng!**`);
+      this.handleVictoryRewards();
+      return true;
+    }
+    return false;
   }
 
   executeBasicAttack() {
@@ -233,7 +266,10 @@ class CombatEngine {
     const res = this.calculateDamage(char.atk, this.enemy.def, skillMultiplier, char.critRate, char.critDmg);
 
     this.enemy.currentHp = Math.max(0, this.enemy.currentHp - res.damage);
-    if (this.enemy.currentHp === 0) this.enemy.isAlive = false;
+    if (this.enemy.currentHp <= 0) {
+      this.checkVictoryCondition();
+      return;
+    }
 
     this.sp = Math.min(this.maxSp, this.sp + 1);
     char.currentEnergy = Math.min(char.maxEnergy, char.currentEnergy + skill.energyGain);
@@ -273,7 +309,10 @@ class CombatEngine {
     } else {
       const res = this.calculateDamage(char.atk, this.enemy.def, skillMultiplier, char.critRate + 0.10, char.critDmg + 0.15);
       this.enemy.currentHp = Math.max(0, this.enemy.currentHp - res.damage);
-      if (this.enemy.currentHp === 0) this.enemy.isAlive = false;
+      if (this.enemy.currentHp <= 0) {
+        this.checkVictoryCondition();
+        return true;
+      }
 
       const critTag = res.isCrit ? ' 💥 [CRIT!]' : '';
       this.logs.push(`💥 **${char.name}** dùng **${skill.name} (Lv.${char.skillLvl})** gây **${res.damage}** sát thương!${critTag} (-1 SP)`);
@@ -310,24 +349,25 @@ class CombatEngine {
     } else {
       const res = this.calculateDamage(char.atk, this.enemy.def, ultMultiplier * 2.2, char.critRate + 0.25, char.critDmg + 0.50);
       this.enemy.currentHp = Math.max(0, this.enemy.currentHp - res.damage);
-      if (this.enemy.currentHp === 0) this.enemy.isAlive = false;
+      if (this.enemy.currentHp <= 0) {
+        this.checkVictoryCondition();
+        return true;
+      }
 
       const critTag = res.isCrit ? ' 💥💥 [CHÍ MẠNG TOÀN PHẦN!]' : '';
       this.logs.push(`🌟 **[TUYỆT KỸ] ${char.name} (Lv.${char.ultLvl})** tung **${ult.name}** giáng **${res.damage}** sát thương cực đại!${critTag}`);
-    }
-
-    if (!this.enemy.isAlive) {
-      this.isFinished = true;
-      this.winner = 'player';
-      this.logs.push(`🎉 **Kẻ địch ${this.enemy.name} đã bị tiêu diệt! Bạn chiến thắng!**`);
-      this.handleVictoryRewards();
     }
 
     return true;
   }
 
   executeEnemyTurn() {
-    const aliveTeam = this.team.filter(c => c.isAlive);
+    if (this.enemy.currentHp <= 0) {
+      this.checkVictoryCondition();
+      return;
+    }
+
+    const aliveTeam = this.team.filter(c => c.isAlive && c.currentHp > 0);
     if (aliveTeam.length === 0) return;
 
     const target = aliveTeam[Math.floor(Math.random() * aliveTeam.length)];
