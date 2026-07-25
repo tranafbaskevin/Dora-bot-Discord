@@ -9,8 +9,18 @@ class BattleSession {
     const rawEnemy = enemiesData.find(e => e.id === enemyId) || enemiesData[0];
     const userInv = db.getUserInventory(userId);
 
+    // Ensure teamCharIds is always an array
+    let teamList = Array.isArray(teamCharIds) ? teamCharIds : [];
+    if (teamList.length === 0) {
+      const userTeam = db.getUserTeam(userId);
+      teamList = [userTeam.slot1, userTeam.slot2, userTeam.slot3, userTeam.slot4].filter(Boolean);
+    }
+    if (teamList.length === 0) {
+      teamList = ['seele', 'dan_heng', 'march_7th', 'natasha'];
+    }
+
     // Calculate Average Team Level
-    const partyLevels = teamCharIds.map(id => {
+    const partyLevels = teamList.map(id => {
       const rec = userInv.find(i => i.char_id === id);
       return rec ? (rec.level || 1) : 1;
     });
@@ -37,7 +47,7 @@ class BattleSession {
       isAlive: true
     };
 
-    this.team = teamCharIds.map((charId, idx) => {
+    this.team = teamList.map((charId, idx) => {
       const charData = charactersData.find(c => c.id === charId) || charactersData[0];
       const invRecord = userInv.find(i => i.char_id === charId) || { level: 1, weapon_level: 1, basic_lvl: 1, skill_lvl: 1, ult_lvl: 1 };
 
@@ -57,8 +67,8 @@ class BattleSession {
         basicLvl: invRecord.basic_lvl || 1,
         skillLvl: invRecord.skill_lvl || 1,
         ultLvl: invRecord.ult_lvl || 1,
-        critRate: 0.15, // 15% Base CRIT Rate
-        critDmg: 0.50,  // 50% Base CRIT DMG
+        critRate: 0.15,
+        critDmg: 0.50,
         currentHp: maxHp,
         maxHp: maxHp,
         atk: atk,
@@ -133,7 +143,6 @@ class BattleSession {
     user.materials.artifact_dust = (user.materials.artifact_dust || 0) + 12;
     user.materials.trace_material = (user.materials.trace_material || 0) + 4;
 
-    // Drop Randomized Artifact from Boss's Drop List
     const dropList = this.enemy.dropArtifacts || ['musketeer'];
     const chosenSetId = dropList[Math.floor(Math.random() * dropList.length)];
     const relicSet = artifactsData.find(a => a.id === chosenSetId) || artifactsData[0];
@@ -220,7 +229,6 @@ class BattleSession {
       });
       this.logs.push(`💚 **${char.name}** dùng **${skill.name} (Lv.${char.skillLvl})** hồi máu cho toàn đội! (-1 SP)`);
     } else if (skill.isShield) {
-      // Rebalanced March 7th Shield scaling strictly based on DEF!
       this.team.filter(c => c.isAlive).forEach(ally => {
         ally.shield = Math.floor((char.def * 1.2 + 150) * (1 + (char.skillLvl - 1) * 0.1));
       });
@@ -263,7 +271,6 @@ class BattleSession {
       });
       this.logs.push(`✨ **[TUYỆT KỸ] ${char.name} (Lv.${char.ultLvl})** thi triển **${ult.name}** tăng 35% ATK toàn đội!`);
     } else {
-      // Massive Ultimate multiplier (e.g. Seele Ult)
       const res = this.calculateDamage(char.atk, this.enemy.def, ultMultiplier * 1.5, char.critRate + 0.2, char.critDmg + 0.3);
       this.enemy.currentHp = Math.max(0, this.enemy.currentHp - res.damage);
       if (this.enemy.currentHp === 0) this.enemy.isAlive = false;
