@@ -3,7 +3,7 @@ const db = require('../database/db');
 const charactersData = require('../data/characters.json');
 const enemiesData = require('../data/enemies.json');
 const BattleSession = require('../engine/combat');
-const { renderBattleCard } = require('../renderer/canvasBattle');
+const { drawBattleCanvas } = require('../renderer/canvasBattle');
 const { createBattleComponents } = require('../ui/battleView');
 
 const battleCommand = new SlashCommandBuilder()
@@ -41,29 +41,31 @@ const battleCommand = new SlashCommandBuilder()
 async function startBattleMatch(interaction, enemyId, difficultyOpt = 'auto') {
   try {
     const userId = interaction.user.id;
-    const team = db.getUserTeam(userId);
-    const teamCharIds = [team.slot1, team.slot2, team.slot3, team.slot4];
 
-    const opts = {};
+    let difficultyNum = 60;
     if (difficultyOpt !== 'auto') {
-      opts.difficultyLevel = parseInt(difficultyOpt, 10);
+      difficultyNum = parseInt(difficultyOpt, 10) || 60;
+    } else {
+      const userInv = db.getUserInventory(userId);
+      const avgLvl = Math.round(userInv.reduce((acc, c) => acc + (c.level || 1), 0) / Math.max(1, userInv.length));
+      difficultyNum = Math.min(80, Math.max(20, avgLvl + 2));
     }
 
-    const session = new BattleSession(userId, teamCharIds, enemyId, opts);
+    const session = new BattleSession(userId, enemyId, difficultyNum);
 
-    const imageBuffer = renderBattleCard(session);
+    const imageBuffer = await drawBattleCanvas(session);
     const attachment = new AttachmentBuilder(imageBuffer, { name: 'battle.png' });
-    const remTurns = session.maxTurns - session.turnCount;
+    const remTurns = session.maxTurns - session.turn;
 
     const diffText = difficultyOpt === 'auto'
-      ? '🎯 Phù Hợp Đội Hình (Equal Level)'
+      ? `🎯 Phù Hợp Đội Hình (Lv.${session.enemy.level})`
       : `Lv.${session.enemy.level}`;
 
     const battleEmbed = new EmbedBuilder()
       .setTitle(`⚔️ KHIÊU CHIẾN: ${session.enemy.name.toUpperCase()} (Lv.${session.enemy.level})`)
       .setColor('#ff4d4d')
       .setImage('attachment://battle.png')
-      .setDescription(`📊 **Độ Khó**: **${diffText}** | 👹 **Boss**: **${session.enemy.name}**\n⏳ **VÒNG ĐẤU**: Turn ${session.turnCount} / ${session.maxTurns} (Còn lại **${remTurns}** lượt)\n\n${session.logs.slice(-3).join('\n')}`)
+      .setDescription(`📊 **Độ Khó**: **${diffText}** | 👹 **Boss**: **${session.enemy.name}**\n⏳ **VÒNG ĐẤU**: Turn ${session.turn} / ${session.maxTurns} (Còn lại **${remTurns}** lượt)\n\n${session.logs.slice(-3).join('\n')}`)
       .setFooter({ text: 'Nhấn nút bên dưới để điều khiển trận đấu!' });
 
     const battleComponents = createBattleComponents(session);
@@ -113,15 +115,15 @@ async function startBattleMatch(interaction, enemyId, difficultyOpt = 'auto') {
         await ai.channel.send({ embeds: [ultEmbed] }).catch(() => {});
       }
 
-      const newBuffer = renderBattleCard(session);
+      const newBuffer = await drawBattleCanvas(session);
       const newAttachment = new AttachmentBuilder(newBuffer, { name: 'battle.png' });
-      const turnsLeft = session.maxTurns - session.turnCount;
+      const turnsLeft = session.maxTurns - session.turn;
 
       const newEmbed = new EmbedBuilder()
         .setTitle(`⚔️ KHIÊU CHIẾN: ${session.enemy.name.toUpperCase()} (Lv.${session.enemy.level})`)
         .setColor(session.isFinished ? (session.winner === 'player' ? '#10b981' : '#ef4444') : '#ff4d4d')
         .setImage('attachment://battle.png')
-        .setDescription(`📊 **Độ Khó**: **${diffText}** | 👹 **Boss**: **${session.enemy.name}**\n⏳ **VÒNG ĐẤU**: Turn ${session.turnCount} / ${session.maxTurns} (Còn lại **${turnsLeft}** lượt)\n\n${session.logs.slice(-4).join('\n')}`)
+        .setDescription(`📊 **Độ Khó**: **${diffText}** | 👹 **Boss**: **${session.enemy.name}**\n⏳ **VÒNG ĐẤU**: Turn ${session.turn} / ${session.maxTurns} (Còn lại **${turnsLeft}** lượt)\n\n${session.logs.slice(-4).join('\n')}`)
         .setFooter({ text: session.isFinished ? 'Trận đấu đã kết thúc!' : 'Lượt của bạn!' });
 
       const newComponents = session.isFinished ? [] : createBattleComponents(session);
@@ -147,19 +149,17 @@ async function executeBattle(interaction) {
 
   await interaction.deferReply();
 
-  // If user provided slash options directly, launch immediately!
   if (enemyOpt) {
     return startBattleMatch(interaction, enemyOpt, diffOpt);
   }
 
-  // Interactive Single Dashboard Setup
   let currentEnemyId = 'doomsday_beast';
   let currentDiff = diffOpt;
 
   function buildSetupEmbed() {
     const chosenEnemy = enemiesData.find(e => e.id === currentEnemyId) || enemiesData[0];
     const diffLabel = currentDiff === 'auto'
-      ? '🎯 Phù Hợp Đội Hình (Equal Level Matchmaking)'
+      ? '🎯 Phù Hợp Level Đội Hình (Equal Level Matchmaking)'
       : `Lv.${currentDiff}`;
 
     return new EmbedBuilder()
@@ -173,7 +173,6 @@ async function executeBattle(interaction) {
       .setFooter({ text: 'Thoải mái tùy chỉnh Boss và Độ khó trước khi bấm Bắt Đầu!' });
   }
 
-  // 1. Boss Options grouped by Map
   const bossOptions = enemiesData.map(b => {
     let mapEmoji = '🛰️';
     if (b.map === 'belobog') mapEmoji = '❄️';
@@ -191,7 +190,6 @@ async function executeBattle(interaction) {
     .setPlaceholder('1. Chọn Boss Khiêu Chiến...')
     .addOptions(bossOptions);
 
-  // 2. Difficulty Options
   const diffMenu = new StringSelectMenuBuilder()
     .setCustomId('setup_diff_menu')
     .setPlaceholder('2. Chọn Cấp Độ / Độ Khó...')
@@ -203,7 +201,6 @@ async function executeBattle(interaction) {
       { label: '🟣 Cực Khó / Siêu Cấp (Lv.80)', description: 'Boss Lv.80 dành cho Đội hình Max Cấp', value: 'diff_80', emoji: '🟣' }
     );
 
-  // 3. Start Battle Action Button
   const startBtn = new ButtonBuilder()
     .setCustomId('setup_start_battle')
     .setLabel('🚀 BẮT ĐẦU TRẬN ĐẤU')
