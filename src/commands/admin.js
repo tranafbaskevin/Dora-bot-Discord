@@ -1,15 +1,24 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require('discord.js');
 const db = require('../database/db');
 
 const adminCommand = new SlashCommandBuilder()
   .setName('admin')
   .setDescription('Lệnh quản trị viên / Admin Testing Cheats')
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator) // Restrict to Server Admins!
   .addSubcommand(sub =>
     sub.setName('giveall')
       .setDescription('Nhận ngay +100,000 Nguyên Thạch và vô số Vật Liệu Nâng Cấp để test game!')
   );
 
 async function executeAdmin(interaction) {
+  // Check Administrator permission
+  if (!interaction.memberPermissions?.has(PermissionFlagsBits.Administrator) && interaction.guild) {
+    return interaction.reply({
+      content: '❌ Bạn không có quyền Administrator (Quản trị viên) để sử dụng lệnh Admin này!',
+      ephemeral: true
+    });
+  }
+
   const userId = interaction.user.id;
   const user = db.getUser(userId);
 
@@ -28,10 +37,10 @@ async function executeAdmin(interaction) {
   require('fs').writeFileSync(require('path').join(__dirname, '../../database.json'), JSON.stringify(rawDb, null, 2));
 
   const embed = new EmbedBuilder()
-    .setTitle('🎁 CHEAT ADMIN GRANTED - NHẬN VẬT PHẨM MỚI!')
+    .setTitle('👑 ADMIN CHEAT GRANTED - NHẬN TÀI NGUYÊN TEST GAME!')
     .setColor('#10b981')
     .setThumbnail(interaction.user.displayAvatarURL())
-    .setDescription('Đã cộng thành công tài nguyên test game vào tài khoản của bạn:')
+    .setDescription('Đã cộng thành công tài nguyên test game vào tài khoản Admin của bạn:')
     .addFields(
       { name: '💎 Nguyên Thạch (Stellar Jade)', value: `+100,000 Jades (Tổng: **${(user.jades + 100000).toLocaleString()}**)`, inline: false },
       { name: '📘 Sách EXP Nhân Vật', value: `+500 cuốn (Tổng: **${user.materials.char_exp_book}**)`, inline: true },
@@ -39,7 +48,7 @@ async function executeAdmin(interaction) {
       { name: '🔮 Bụi Vàng Di Vật', value: `+500 túi (Tổng: **${user.materials.artifact_dust}**)`, inline: true },
       { name: '📜 Mầm Kỹ Năng', value: `+500 mầm (Tổng: **${user.materials.trace_material}**)`, inline: true }
     )
-    .setFooter({ text: 'Dùng /upgrade hoặc /gacha để thỏa thích test game!' });
+    .setFooter({ text: 'Chỉ Quản Trị Viên / Administrator mới có thể dùng lệnh này!' });
 
   await interaction.reply({ embeds: [embed] });
 }
