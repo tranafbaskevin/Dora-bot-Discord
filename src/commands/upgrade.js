@@ -14,13 +14,13 @@ async function executeUpgrade(interaction) {
     .setTitle('✨ TRUNG TÂM NÂNG CẤP & CƯỜNG HÓA')
     .setColor('#9333ea')
     .setThumbnail(interaction.user.displayAvatarURL())
-    .setDescription(`🌐 **Cấp Thám Hiểm**: Lv.${user.player_level} (${user.player_exp}/${user.player_level * 500} EXP)\n\n📦 **Kho Vật Liệu Hiện Có**:\n- 📘 Sách EXP Nhân Vật: **${user.materials?.char_exp_book || 0}** cuốn\n- ⚔️ Tinh Thể Vũ Khí: **${user.materials?.weapon_exp_crystal || 0}** tinh thể\n- 🔮 Bụi Di Vật: **${user.materials?.artifact_dust || 0}** túi\n- 📜 Vật Liệu Kỹ Năng: **${user.materials?.trace_material || 0}** mầm`)
+    .setDescription(`🌐 **Cấp Thám Hiểm**: Lv.${user.player_level} (${user.player_exp}/${user.player_level * 500} EXP)\n\n📦 **Kho Vật Liệu Hiện Có**:\n- 📘 Sách EXP Nhân Vật: **${user.materials?.char_exp_book || 0}** cuốn\n- ⚔️ Tinh Thể Vũ Khí: **${user.materials?.weapon_exp_crystal || 0}** tinh thể\n- 🔮 Bụi Di Vật: **${user.materials?.artifact_dust || 0}** túi\n- 📜 Mầm Kỹ Năng: **${user.materials?.trace_material || 0}** mầm`)
     .setFooter({ text: 'Chọn 1 trong 4 danh mục nâng cấp bên dưới!' });
 
   const rowButtons = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId('up_cat_char').setLabel('👤 Level Nhân Vật').setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId('up_cat_weapon').setLabel('⚔️ Level Vũ Khí').setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId('up_cat_skill').setLabel('📜 Level Kỹ Năng').setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId('up_cat_skill').setLabel('📜 Level Kỹ Năng & Ult').setStyle(ButtonStyle.Danger),
     new ButtonBuilder().setCustomId('up_cat_artifact').setLabel('🔮 Cường Hóa Di Vật').setStyle(ButtonStyle.Secondary)
   );
 
@@ -42,14 +42,14 @@ async function executeUpgrade(interaction) {
     const userInv = db.getUserInventory(userId);
     const refreshedUser = db.getUser(userId);
 
-    // 1. Character Level Upgrade Category (Auto Max Level Up!)
+    // 1. Character Level Upgrade Category
     if (i.customId === 'up_cat_char') {
       const selectOptions = userInv.map(inv => {
         const char = charactersData.find(c => c.id === inv.char_id);
         if (!char) return null;
         return {
           label: `${char.name} (Lv.${inv.level}/80)`,
-          description: `HP: ${char.baseStats.hp + (inv.level - 1) * 35} | ATK: ${char.baseStats.atk + (inv.level - 1) * 15}`,
+          description: `HP: ${char.baseStats.hp + (inv.level - 1) * 40} | ATK: ${char.baseStats.atk + (inv.level - 1) * 18}`,
           value: `up_char_select_${char.id}`,
           emoji: '👤'
         };
@@ -57,7 +57,7 @@ async function executeUpgrade(interaction) {
 
       const menu = new StringSelectMenuBuilder()
         .setCustomId('up_menu_char')
-        .setPlaceholder('Chọn Nhân vật muốn tự động dùng hết Sách EXP để TĂNG MAX LEVEL...')
+        .setPlaceholder('Chọn Nhân vật để TĂNG MAX LEVEL tự động...')
         .addOptions(selectOptions);
 
       const menuRow = new ActionRowBuilder().addComponents(menu);
@@ -65,25 +65,22 @@ async function executeUpgrade(interaction) {
       const embed = new EmbedBuilder()
         .setTitle('👤 NÂNG CẤP LEVEL NHÂN VẬT (Lv 1 -> 80)')
         .setColor('#3b82f6')
-        .setDescription(`📘 Số Sách EXP khả dụng: **${refreshedUser.materials?.char_exp_book || 0}** cuốn.\nChọn nhân vật bên dưới để **TỰ ĐỘNG TĂNG CẤP TỐI ĐA (Dùng toàn bộ sách)**!`);
+        .setDescription(`📘 Sách EXP khả dụng: **${refreshedUser.materials?.char_exp_book || 0}** cuốn.\nChọn nhân vật bên dưới để **TỰ ĐỘNG TĂNG CẤP TỐI ĐA**!`);
 
       await i.update({ embeds: [embed], components: [menuRow, rowButtons] });
     }
 
-    // Handle Character Max Upgrade Selection
     else if (i.customId === 'up_menu_char') {
       const charId = i.values[0].replace('up_char_select_', '');
       const result = db.upgradeCharacterLevel(userId, charId, true);
 
-      if (!result.success) {
-        return i.reply({ content: result.message, ephemeral: true });
-      }
+      if (!result.success) return i.reply({ content: result.message, ephemeral: true });
 
       const char = charactersData.find(c => c.id === charId);
       const updatedEmbed = new EmbedBuilder()
         .setTitle(`🎉 NÂNG CẤP MAX LEVEL THÀNH CÔNG: ${char.name.toUpperCase()}`)
         .setColor('#10b981')
-        .setDescription(`- Đã dùng: **${result.booksUsed}** Sách EXP Nhân vật\n- Level mới: **Lv.${result.newLevel} / 80**!\n📘 Sách EXP còn lại: **${result.remainingBooks}** cuốn.`);
+        .setDescription(`- Đã dùng: **${result.booksUsed}** Sách EXP\n- Level mới: **Lv.${result.newLevel} / 80**!\n📘 Sách EXP còn lại: **${result.remainingBooks}** cuốn.`);
 
       await i.update({ embeds: [updatedEmbed], components: [rowButtons] });
     }
@@ -103,7 +100,7 @@ async function executeUpgrade(interaction) {
 
       const menu = new StringSelectMenuBuilder()
         .setCustomId('up_menu_weapon')
-        .setPlaceholder('Chọn Vũ khí muốn dùng Tinh thể để TĂNG MAX LEVEL...')
+        .setPlaceholder('Chọn Vũ khí để TĂNG MAX LEVEL...')
         .addOptions(selectOptions);
 
       const menuRow = new ActionRowBuilder().addComponents(menu);
@@ -116,14 +113,11 @@ async function executeUpgrade(interaction) {
       await i.update({ embeds: [embed], components: [menuRow, rowButtons] });
     }
 
-    // Handle Weapon Max Upgrade Selection
     else if (i.customId === 'up_menu_weapon') {
       const charId = i.values[0].replace('up_wpn_select_', '');
       const result = db.upgradeWeaponLevel(userId, charId, true);
 
-      if (!result.success) {
-        return i.reply({ content: result.message, ephemeral: true });
-      }
+      if (!result.success) return i.reply({ content: result.message, ephemeral: true });
 
       const char = charactersData.find(c => c.id === charId);
       const updatedEmbed = new EmbedBuilder()
@@ -134,53 +128,64 @@ async function executeUpgrade(interaction) {
       await i.update({ embeds: [updatedEmbed], components: [rowButtons] });
     }
 
-    // 3. Skill Level Upgrade Category
+    // 3. Skill & Ultimate Level Upgrade Category (Supports upgrading Skill & Ultimate!)
     else if (i.customId === 'up_cat_skill') {
-      const selectOptions = userInv.map(inv => {
+      const skillOptions = [];
+      userInv.forEach(inv => {
         const char = charactersData.find(c => c.id === inv.char_id);
-        if (!char) return null;
-        return {
-          label: `${char.name} (Chiến Kỹ: Lv.${inv.skill_lvl || 1} | Ult: Lv.${inv.ult_lvl || 1})`,
-          description: `Nâng cấp hệ số Sát thương Chiến kỹ & Tuyệt kỹ`,
-          value: `up_skill_select_${char.id}`,
-          emoji: '📜'
-        };
-      }).filter(Boolean);
+        if (!char) return;
+
+        skillOptions.push({
+          label: `${char.name} - Chiến Kỹ (Lv.${inv.skill_lvl || 1}/10)`,
+          description: `Nâng cấp Chiến kỹ: ${char.skills.skill.name}`,
+          value: `up_sk_select_${char.id}_skill`,
+          emoji: '💥'
+        });
+
+        skillOptions.push({
+          label: `${char.name} - Tuyệt Kỹ (Lv.${inv.ult_lvl || 1}/10)`,
+          description: `Nâng cấp Tuyệt kỹ: ${char.skills.ultimate.name}`,
+          value: `up_sk_select_${char.id}_ult`,
+          emoji: '🌟'
+        });
+      });
 
       const menu = new StringSelectMenuBuilder()
         .setCustomId('up_menu_skill')
-        .setPlaceholder('Chọn Nhân vật muốn nâng Cấp Kỹ Năng...')
-        .addOptions(selectOptions);
+        .setPlaceholder('Chọn Chiến Kỹ hoặc Tuyệt Kỹ muốn nâng cấp...')
+        .addOptions(skillOptions.slice(0, 25));
 
       const menuRow = new ActionRowBuilder().addComponents(menu);
 
       const embed = new EmbedBuilder()
-        .setTitle('📜 NÂNG CẤP CẤP KỸ NĂNG (TRACE LEVEL 1 -> 10)')
+        .setTitle('📜 NÂNG CẤP CHIẾN KỸ & TUYỆT KỸ (TRACE LEVEL 1 -> 10)')
         .setColor('#ef4444')
-        .setDescription(`📜 Mầm Kỹ Năng hiện có: **${refreshedUser.materials?.trace_material || 0}**.\nChọn nhân vật để tăng +1 Cấp Kỹ Năng (Tốn 5 mầm)!`);
+        .setDescription(`📜 Mầm Kỹ Năng hiện có: **${refreshedUser.materials?.trace_material || 0}**.\nChọn Chiến Kỹ hoặc Tuyệt Kỹ bên dưới để tăng +1 Level (Tốn 5 mầm)!`);
 
       await i.update({ embeds: [embed], components: [menuRow, rowButtons] });
     }
 
-    // Handle Skill Upgrade Selection
     else if (i.customId === 'up_menu_skill') {
-      const charId = i.values[0].replace('up_skill_select_', '');
-      const result = db.upgradeSkillLevel(userId, charId, 'skill');
+      const parts = i.values[0].replace('up_sk_select_', '').split('_');
+      const charId = parts[0];
+      const skillType = parts[1]; // 'skill' or 'ult'
 
-      if (!result.success) {
-        return i.reply({ content: result.message, ephemeral: true });
-      }
+      const result = db.upgradeSkillLevel(userId, charId, skillType);
+
+      if (!result.success) return i.reply({ content: result.message, ephemeral: true });
 
       const char = charactersData.find(c => c.id === charId);
+      const skillName = skillType === 'ult' ? `Tuyệt Kỹ (${char.skills.ultimate.name})` : `Chiến Kỹ (${char.skills.skill.name})`;
+
       const updatedEmbed = new EmbedBuilder()
-        .setTitle(`🎉 NÂNG CẤP KỸ NĂNG THÀNH CÔNG: ${char.name.toUpperCase()}`)
+        .setTitle(`🎉 NÂNG CẤP ${skillName.toUpperCase()} THÀNH CÔNG`)
         .setColor('#10b981')
-        .setDescription(`Chiến Kỹ mới: **Lv.${result.newLevel}**!\n📜 Mầm kỹ năng còn lại: **${result.remainingMaterials}**.`);
+        .setDescription(`Level mới: **Lv.${result.newLevel} / 10**!\n📜 Mầm kỹ năng còn lại: **${result.remainingMaterials}**.`);
 
       await i.update({ embeds: [updatedEmbed], components: [rowButtons] });
     }
 
-    // 4. Artifact Upgrade Category with RNG Sub-stat Upgrade Roll!
+    // 4. Artifact Upgrade Category
     else if (i.customId === 'up_cat_artifact') {
       const rawDb = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../../database.json'), 'utf8'));
       const userArts = (rawDb.artifacts && rawDb.artifacts[userId]) || [];
@@ -211,14 +216,11 @@ async function executeUpgrade(interaction) {
       await i.update({ embeds: [embed], components: [menuRow, rowButtons] });
     }
 
-    // Handle Artifact RNG Upgrade Selection
     else if (i.customId === 'up_menu_artifact') {
       const artId = i.values[0].replace('up_art_select_', '');
       const result = db.upgradeArtifact(userId, artId, 5);
 
-      if (!result.success) {
-        return i.reply({ content: result.message, ephemeral: true });
-      }
+      if (!result.success) return i.reply({ content: result.message, ephemeral: true });
 
       const subLines = result.subStats.map(s => `• **${s.name}**: +${s.value.toFixed(1)}`).join('\n');
       const rngLog = result.upgradedSubNames.length > 0

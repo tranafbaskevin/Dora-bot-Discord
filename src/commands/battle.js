@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder, ComponentType } = require('discord.js');
 const db = require('../database/db');
 const charactersData = require('../data/characters.json');
+const enemiesData = require('../data/enemies.json');
 const BattleSession = require('../engine/combat');
 const { renderBattleCard } = require('../renderer/canvasBattle');
 const { createBattleComponents } = require('../ui/battleView');
@@ -23,52 +24,55 @@ const battleCommand = new SlashCommandBuilder()
       .setDescription('Chọn Boss / Quái vật')
       .setRequired(false)
       .addChoices(
-        { name: 'Doomsday Beast (Weekly Boss)', value: 'doomsday_beast' },
-        { name: 'Automaton Grizzly (Elite Monster)', value: 'automaton_grizzly' },
-        { name: 'Voidranger: Trampler (Normal Monster)', value: 'voidranger_trampler' }
+        { name: 'Doomsday Beast (Rớt: Bộ Thiên Tài Kim Loại & Thiện Xạ)', value: 'doomsday_beast' },
+        { name: 'Voidranger: Trampler (Rớt: Bộ Chim Ưng & Thiện Xạ)', value: 'voidranger_trampler' },
+        { name: 'Automaton Grizzly (Rớt: Bộ Hiệp Sĩ & Thợ Săn Băng)', value: 'automaton_grizzly' },
+        { name: 'Cocolia (Rớt: Bộ Lãng Khách Âm Thầm & Hiệp Sĩ)', value: 'cocolia' },
+        { name: 'Svarog (Rớt: Bộ Hiệp Sĩ & Thiện Xạ)', value: 'svarog' },
+        { name: 'Phantylia (Rớt: Bộ Thiên Tài Kim Loại & Chim Ưng)', value: 'phantylia' },
+        { name: 'Abundance Deer (Rớt: Bộ Lãng Khách Âm Thầm)', value: 'abundance_deer' },
+        { name: 'Aurumaton Gatekeeper (Rớt: Bộ Chim Ưng & Thợ Săn Băng)', value: 'aurumaton_gatekeeper' }
       )
   )
   .addStringOption(opt =>
     opt.setName('difficulty')
-      .setDescription('Chọn Cấp Độ Khó')
+      .setDescription('Chọn Cấp Độ Boss')
       .setRequired(false)
       .addChoices(
-        { name: '🟢 Dễ (Lv.20)', value: 'easy' },
-        { name: '🔵 Thường (Lv.40)', value: 'normal' },
-        { name: '🔴 Khó (Lv.60)', value: 'hard' },
-        { name: '🟣 Cực Khó / Siêu Cấp (Lv.80)', value: 'nightmare' }
+        { name: '🎯 Phù Hợp Level Đội Hình (Tự Động Equal Level)', value: 'auto' },
+        { name: '🟢 Dễ (Lv.20)', value: '20' },
+        { name: '🔵 Thường (Lv.40)', value: '40' },
+        { name: '🔴 Khó (Lv.60)', value: '60' },
+        { name: '🟣 Cực Khó / Siêu Cấp (Lv.80)', value: '80' }
       )
   );
 
 async function executeBattle(interaction) {
+  const selectedMap = interaction.options.getString('map') || 'herta';
   const enemyId = interaction.options.getString('enemy') || 'doomsday_beast';
-  const difficulty = interaction.options.getString('difficulty') || 'normal';
+  const difficultyOpt = interaction.options.getString('difficulty') || 'auto';
 
   const team = db.getUserTeam(interaction.user.id);
   const teamCharIds = [team.slot1, team.slot2, team.slot3, team.slot4];
 
-  // FIX BUG: Pass interaction.user.id as first parameter!
-  const session = new BattleSession(interaction.user.id, teamCharIds, enemyId);
+  const opts = {};
+  if (difficultyOpt !== 'auto') {
+    opts.difficultyLevel = parseInt(difficultyOpt, 10);
+  }
 
-  // Difficulty scaling
-  let diffMult = 1.0;
-  if (difficulty === 'easy') diffMult = 0.6;
-  else if (difficulty === 'hard') diffMult = 1.5;
-  else if (difficulty === 'nightmare') diffMult = 2.2;
-
-  session.enemy.maxHp = Math.floor(session.enemy.maxHp * diffMult);
-  session.enemy.currentHp = session.enemy.maxHp;
-  session.enemy.atk = Math.floor(session.enemy.atk * diffMult);
+  const session = new BattleSession(interaction.user.id, teamCharIds, enemyId, opts);
 
   // Render initial image
   const imageBuffer = renderBattleCard(session);
   const attachment = new AttachmentBuilder(imageBuffer, { name: 'battle.png' });
 
+  const remainingTurns = session.maxTurns - session.turnCount;
+
   const embed = new EmbedBuilder()
-    .setTitle(`⚔️ TRẬN ĐẤU KHIÊU CHIẾN - ${session.enemy.name} (${difficulty.toUpperCase()})`)
+    .setTitle(`⚔️ KHIÊU CHIẾN: ${session.enemy.name} (Lv.${session.enemy.level})`)
     .setColor('#ff4d4d')
     .setImage('attachment://battle.png')
-    .setDescription(session.logs.slice(-3).join('\n'))
+    .setDescription(`⏳ **VÒNG ĐẤU**: Turn ${session.turnCount} / ${session.maxTurns} (Còn lại **${remainingTurns}** lượt)\n\n${session.logs.slice(-3).join('\n')}`)
     .setFooter({ text: 'Nhấn nút bên dưới để chọn hành động!' });
 
   const components = createBattleComponents(session);
@@ -80,7 +84,6 @@ async function executeBattle(interaction) {
     fetchReply: true
   });
 
-  // Collector for Discord Buttons (5 minutes timeout)
   const collector = response.createMessageComponentCollector({
     componentType: ComponentType.Button,
     time: 300000
@@ -91,7 +94,6 @@ async function executeBattle(interaction) {
       return i.reply({ content: '❌ Bạn không phải là người tham gia trận đấu này!', ephemeral: true });
     }
 
-    // Immediately defer update to prevent Discord 3-second timeout
     await i.deferUpdate().catch(() => {});
 
     const customId = i.customId;
@@ -107,14 +109,12 @@ async function executeBattle(interaction) {
       session.executeUltimate(slot);
     }
 
-    // Check reward on victory
     if (session.isFinished && session.winner === 'player') {
       const user = db.getUser(interaction.user.id);
       const rewardJades = 800;
       db.updateUserJades(interaction.user.id, user.jades + rewardJades);
     }
 
-    // If Ultimate was triggered, send GIF Animation Cut-in message
     if (usedUltChar) {
       const charInfo = charactersData.find(c => c.id === usedUltChar.id) || usedUltChar;
       const ultName = charInfo.skills?.ultimate?.name || 'Tuyệt Kỹ';
@@ -129,15 +129,15 @@ async function executeBattle(interaction) {
       await i.channel.send({ embeds: [ultEmbed] }).catch(() => {});
     }
 
-    // Render updated Canvas
     const newBuffer = renderBattleCard(session);
     const newAttachment = new AttachmentBuilder(newBuffer, { name: 'battle.png' });
+    const remTurns = session.maxTurns - session.turnCount;
 
     const newEmbed = new EmbedBuilder()
-      .setTitle(`⚔️ TRẬN ĐẤU KHIÊU CHIẾN - ${session.enemy.name}`)
+      .setTitle(`⚔️ KHIÊU CHIẾN: ${session.enemy.name} (Lv.${session.enemy.level})`)
       .setColor(session.isFinished ? (session.winner === 'player' ? '#10b981' : '#ef4444') : '#ff4d4d')
       .setImage('attachment://battle.png')
-      .setDescription(session.logs.slice(-4).join('\n'))
+      .setDescription(`⏳ **VÒNG ĐẤU**: Turn ${session.turnCount} / ${session.maxTurns} (Còn lại **${remTurns}** lượt)\n\n${session.logs.slice(-4).join('\n')}`)
       .setFooter({ text: session.isFinished ? 'Trận đấu đã kết thúc!' : 'Lượt của bạn!' });
 
     const newComponents = session.isFinished ? [] : createBattleComponents(session);

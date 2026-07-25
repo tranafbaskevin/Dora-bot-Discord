@@ -14,11 +14,13 @@ const gachaCommand = new SlashCommandBuilder()
   )
   .addStringOption(opt =>
     opt.setName('banner')
-      .setDescription('Chọn Banner Gacha')
+      .setDescription('Chọn Banner Gacha Muốn Roll')
       .setRequired(false)
       .addChoices(
-        { name: '🌟 Banner Nhân Vật - Bước Nhảy Cánh Bướm (Seele 5★)', value: 'character' },
-        { name: '⚔️ Banner Vũ Khí - Nón Ánh Sáng 5★ (Brilliant Fixation)', value: 'weapon' }
+        { name: '🌟 Banner Seele 5★ (Quantum - Hunt)', value: 'seele' },
+        { name: '⚡ Banner Jing Yuan 5★ (Lightning - Erudition)', value: 'jing_yuan' },
+        { name: '🌀 Banner Bronya 5★ (Wind - Harmony)', value: 'bronya' },
+        { name: '⚔️ Banner Nón Ánh Sáng 5★ (Brilliant Fixation)', value: 'weapon' }
       )
   );
 
@@ -41,14 +43,16 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
   const results = [];
   let trashCount = 0;
 
-  const featuredChar5 = charactersData.find(c => c.id === 'seele') || charactersData[0];
-  const standardChars5 = charactersData.filter(c => c.rarity === 5 && c.id !== 'seele');
+  // Determine Featured Rate Up 5-Star Character based on selected Banner
+  const featuredId = (bannerType === 'jing_yuan' || bannerType === 'bronya') ? bannerType : 'seele';
+  const featuredChar5 = charactersData.find(c => c.id === featuredId) || charactersData[0];
+  const standardChars5 = charactersData.filter(c => c.rarity === 5 && c.id !== featuredId);
   const chars4Star = charactersData.filter(c => c.rarity === 4);
 
   const weapons5Star = [
     { name: 'Nón Ánh Sáng 5★: In the Night (Seele)', rarity: 5, type: 'weapon' },
     { name: 'Nón Ánh Sáng 5★: Before Dawn (Jing Yuan)', rarity: 5, type: 'weapon' },
-    { name: 'Nón Ánh Sáng 5★: Something Irreplaceable', rarity: 5, type: 'weapon' }
+    { name: 'Nón Ánh Sáng 5★: But the Battle Isn\'t Over (Bronya)', rarity: 5, type: 'weapon' }
   ];
 
   const weapons4Star = [
@@ -74,16 +78,14 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
       } else {
         // 50/50 Rate Up Mechanic for Character Event Banner!
         if (isGuaranteed || Math.random() < 0.5) {
-          // Won Rate Up!
           item = { type: 'char', ...featuredChar5 };
           wonRateUp = true;
-          isGuaranteed = false; // Reset guaranteed state
+          isGuaranteed = false;
         } else {
-          // Lost 50/50 (Lệch Rate)!
           const randStandard = standardChars5[Math.floor(Math.random() * standardChars5.length)] || charactersData[1];
           item = { type: 'char', ...randStandard };
           lostRateUp = true;
-          isGuaranteed = true; // Next 5★ is 100% Guaranteed!
+          isGuaranteed = true;
         }
       }
       currentPity5 = 0;
@@ -128,7 +130,6 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
     }
   }
 
-  // Deduct Currency & Update Pity & Guaranteed state
   db.updateUserJades(discordId, user.jades - totalCost);
   db.updatePity(discordId, currentPity5, currentPity4);
   db.setGuaranteedState(discordId, isGuaranteed);
@@ -143,6 +144,7 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
     adjusted: actualAmount < requestedAmount,
     isGuaranteed,
     results,
+    featuredChar: featuredChar5,
     remainingJades: user.jades - totalCost,
     pity5: currentPity5,
     pity4: currentPity4,
@@ -152,7 +154,7 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
 
 async function executeGacha(interaction) {
   const requestedAmount = interaction.options.getInteger('amount');
-  const bannerType = interaction.options.getString('banner') || 'character';
+  const bannerType = interaction.options.getString('banner') || 'seele';
 
   const res = handleGachaPull(interaction.user.id, requestedAmount, bannerType);
 
@@ -162,7 +164,7 @@ async function executeGacha(interaction) {
 
   const bannerTitle = bannerType === 'weapon'
     ? '⚔️ BƯỚC NHẢY NÓN ÁNH SÁNG (Brilliant Fixation)'
-    : '🌟 BƯỚC NHẢY CÁNH BƯỚM (Seele 5★ Event Banner)';
+    : `🌟 BƯỚC NHẢY EVENT: ${res.featuredChar.name.toUpperCase()} 5★`;
 
   const autoNotice = res.adjusted
     ? `\n⚠️ *Bạn yêu cầu ${res.requestedAmount} lượt nhưng chỉ đủ Nguyên thạch quay **${res.actualAmount} lượt**.*`

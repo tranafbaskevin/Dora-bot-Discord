@@ -4,194 +4,139 @@ const charactersData = require('../data/characters.json');
 
 const teamCommand = new SlashCommandBuilder()
   .setName('team')
-  .setDescription('Quản lý đội hình thi đấu (4 vị trí)')
+  .setDescription('Quản lý và xem chi tiết đội hình 4 nhân vật')
   .addSubcommand(sub =>
     sub.setName('view')
-      .setDescription('Xem đội hình hiện tại của bạn')
-  )
-  .addSubcommand(sub =>
-    sub.setName('set')
-      .setDescription('Cài đặt 4 vị trí nhân vật trong đội hình')
-      .addStringOption(opt =>
-        opt.setName('slot1')
-          .setDescription('Vị trí 1 (DPS chính)')
-          .setRequired(true)
-          .setAutocomplete(true)
-      )
-      .addStringOption(opt =>
-        opt.setName('slot2')
-          .setDescription('Vị trí 2 (Sub-DPS / Buffer)')
-          .setRequired(true)
-          .setAutocomplete(true)
-      )
-      .addStringOption(opt =>
-        opt.setName('slot3')
-          .setDescription('Vị trí 3 (Shielder / Tank)')
-          .setRequired(true)
-          .setAutocomplete(true)
-      )
-      .addStringOption(opt =>
-        opt.setName('slot4')
-          .setDescription('Vị trí 4 (Healer / Support)')
-          .setRequired(true)
-          .setAutocomplete(true)
-      )
+      .setDescription('Xem thông tin chi tiết chỉ số, vũ khí và di vật của đội hình hiện tại')
   )
   .addSubcommand(sub =>
     sub.setName('select')
-      .setDescription('Chọn đội hình tương tác bằng Menu Dropdown chọn sẵn')
+      .setDescription('Chọn nhanh nhân vật cho các vị trí Slot 1 - 4 trong đội hình')
   );
-
-// Autocomplete handler when typing in Discord slash options
-async function handleAutocomplete(interaction) {
-  const focusedOption = interaction.options.getFocused(true);
-  const userId = interaction.user.id;
-  const userInv = db.getUserInventory(userId);
-
-  const choices = userInv.map(item => {
-    const char = charactersData.find(c => c.id === item.char_id);
-    if (!char) return null;
-    const stars = char.rarity === 5 ? '🌟' : '⭐';
-    return {
-      name: `${stars} ${char.name} (${char.element} • ${char.path})`,
-      value: char.id
-    };
-  }).filter(Boolean);
-
-  const filtered = choices.filter(choice =>
-    choice.name.toLowerCase().includes(focusedOption.value.toLowerCase())
-  );
-
-  await interaction.respond(filtered.slice(0, 25));
-}
 
 async function executeTeam(interaction) {
   const subcommand = interaction.options.getSubcommand();
   const userId = interaction.user.id;
-  const userInv = db.getUserInventory(userId);
-  const ownedCharIds = userInv.map(i => i.char_id);
 
   if (subcommand === 'view') {
     const team = db.getUserTeam(userId);
-    const slots = [team.slot1, team.slot2, team.slot3, team.slot4];
+    const userInv = db.getUserInventory(userId);
+    const rawDb = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../../database.json'), 'utf8'));
+    const userArts = (rawDb.artifacts && rawDb.artifacts[userId]) || [];
+
+    const slots = [
+      { slotNum: 1, charId: team.slot1 },
+      { slotNum: 2, charId: team.slot2 },
+      { slotNum: 3, charId: team.slot3 },
+      { slotNum: 4, charId: team.slot4 }
+    ];
 
     const embed = new EmbedBuilder()
-      .setTitle(`🛡️ ĐỘI HÌNH HIỆN TẠI - ${interaction.user.username}`)
-      .setColor('#3b82f6');
+      .setTitle(`🛡️ THÔNG TIN ĐỘI HÌNH VÀ CHỈ SỐ - ${interaction.user.username}`)
+      .setColor('#3b82f6')
+      .setDescription('Chi tiết thông số, vũ khí và thánh di vật của 4 nhân vật ra trận:');
 
-    slots.forEach((charId, idx) => {
-      const char = charactersData.find(c => c.id === charId) || charactersData[0];
-      embed.addFields({
-        name: `Vị trí ${idx + 1}: ${char.name}`,
-        value: `Nguyên tố: **${char.element}** | Vận mệnh: **${char.path}** | SPD: **${char.baseStats.speed}**`
-      });
+    slots.forEach(s => {
+      const char = charactersData.find(c => c.id === s.charId);
+      const invRecord = userInv.find(i => i.char_id === s.charId) || { level: 1, weapon_level: 1, basic_lvl: 1, skill_lvl: 1, ult_lvl: 1 };
+
+      if (char) {
+        const charLvl = invRecord.level || 1;
+        const wpnLvl = invRecord.weapon_level || 1;
+
+        const hp = char.baseStats.hp + (charLvl - 1) * 40;
+        const atk = char.baseStats.atk + (charLvl - 1) * 18 + (wpnLvl - 1) * 12;
+        const def = char.baseStats.def + (charLvl - 1) * 12;
+        const speed = char.baseStats.speed;
+
+        const charArts = userArts.filter(a => a.char_id === char.id);
+        const artText = charArts.length > 0
+          ? charArts.map(a => `• ${a.setName} (+${a.level}): Main ${a.mainStat} (+${a.mainValue.toFixed(1)})`).join('\n')
+          : `• ${invRecord.artifact_set || 'Bộ Thiện Xạ Tiêu Chuẩn'}`;
+
+        embed.addFields({
+          name: `📌 Vị trí ${s.slotNum}: ${char.name} (Lv.${charLvl} - E${invRecord.eidolon || 0})`,
+          value: `• **Nguyên tố**: ${char.element} | **Vận mệnh**: ${char.path}\n• **Chỉ số tổng**: HP **${hp}** | ATK **${atk}** | DEF **${def}** | SPD **${speed}**\n• **Kỹ năng**: Chiến kỹ Lv.${invRecord.skill_lvl || 1} | Ult Lv.${invRecord.ult_lvl || 1}\n• **Vũ khí**: ${invRecord.light_cone || 'Nón Tiêu Chuẩn'} (Lv.${wpnLvl})\n• **Di vật**:\n${artText}`,
+          inline: false
+        });
+      }
     });
 
-    return interaction.reply({ embeds: [embed] });
-  }
+    embed.setFooter({ text: 'Dùng /upgrade để nâng cấp Level Nhân vật, Vũ khí, Kỹ năng & Di vật!' });
 
-  if (subcommand === 'set') {
-    const s1 = interaction.options.getString('slot1').toLowerCase().trim();
-    const s2 = interaction.options.getString('slot2').toLowerCase().trim();
-    const s3 = interaction.options.getString('slot3').toLowerCase().trim();
-    const s4 = interaction.options.getString('slot4').toLowerCase().trim();
+    await interaction.reply({ embeds: [embed] });
+  } else if (subcommand === 'select') {
+    const userInv = db.getUserInventory(userId);
 
-    const selectedSlots = [s1, s2, s3, s4];
-
-    // Check duplicate
-    if (new Set(selectedSlots).size !== 4) {
-      return interaction.reply({ content: '❌ Không thể chọn trùng lặp nhân vật trong cùng 1 đội hình!', ephemeral: true });
+    if (userInv.length === 0) {
+      return interaction.reply({ content: '⚠️ Bạn chưa có nhân vật nào trong kho!', ephemeral: true });
     }
 
-    // Check ownership
-    for (const charId of selectedSlots) {
-      if (!ownedCharIds.includes(charId)) {
-        const char = charactersData.find(c => c.id === charId);
-        const name = char ? char.name : charId;
-        return interaction.reply({ content: `❌ Bạn chưa sở hữu nhân vật **${name}**! Hãy quay /gacha trước.`, ephemeral: true });
-      }
-    }
-
-    db.updateTeam(userId, s1, s2, s3, s4);
-
-    const getCharName = (id) => {
-      const c = charactersData.find(item => item.id === id);
-      return c ? c.name : id;
-    };
-
-    const embed = new EmbedBuilder()
-      .setTitle('✅ Cập nhật Đội hình Thành công!')
-      .setColor('#10b981')
-      .setDescription(`Đội hình mới của bạn:\n1. ⚔️ **${getCharName(s1)}**\n2. 💥 **${getCharName(s2)}**\n3. 🛡️ **${getCharName(s3)}**\n4. 💚 **${getCharName(s4)}**`);
-
-    return interaction.reply({ embeds: [embed] });
-  }
-
-  if (subcommand === 'select') {
-    const options = userInv.map(item => {
-      const char = charactersData.find(c => c.id === item.char_id);
+    const selectOptions = userInv.map(inv => {
+      const char = charactersData.find(c => c.id === inv.char_id);
       if (!char) return null;
       return {
-        label: `${char.name} (${char.element})`,
-        description: `Vận mệnh: ${char.path} | SPD: ${char.baseStats.speed}`,
+        label: `${char.name} (${char.element} - ${char.path})`,
+        description: `Level: ${inv.level || 1} | Tinh Hồn E${inv.eidolon || 0}`,
         value: char.id,
         emoji: char.rarity === 5 ? '🌟' : '⭐'
       };
     }).filter(Boolean);
 
-    if (options.length < 4) {
-      return interaction.reply({ content: '❌ Bạn cần có ít nhất 4 nhân vật để dùng Menu xếp đội hình!', ephemeral: true });
-    }
+    const menuSlot1 = new StringSelectMenuBuilder().setCustomId('team_select_slot1').setPlaceholder('Chọn nhân vật cho Vị trí 1 (Slot 1)...').addOptions(selectOptions);
+    const menuSlot2 = new StringSelectMenuBuilder().setCustomId('team_select_slot2').setPlaceholder('Chọn nhân vật cho Vị trí 2 (Slot 2)...').addOptions(selectOptions);
+    const menuSlot3 = new StringSelectMenuBuilder().setCustomId('team_select_slot3').setPlaceholder('Chọn nhân vật cho Vị trí 3 (Slot 3)...').addOptions(selectOptions);
+    const menuSlot4 = new StringSelectMenuBuilder().setCustomId('team_select_slot4').setPlaceholder('Chọn nhân vật cho Vị trí 4 (Slot 4)...').addOptions(selectOptions);
 
-    const selectMenu = new StringSelectMenuBuilder()
-      .setCustomId('team_select_menu')
-      .setPlaceholder('Chọn đúng 4 nhân vật cho Đội hình...')
-      .setMinValues(4)
-      .setMaxValues(4)
-      .addOptions(options);
+    const row1 = new ActionRowBuilder().addComponents(menuSlot1);
+    const row2 = new ActionRowBuilder().addComponents(menuSlot2);
+    const row3 = new ActionRowBuilder().addComponents(menuSlot3);
+    const row4 = new ActionRowBuilder().addComponents(menuSlot4);
 
-    const row = new ActionRowBuilder().addComponents(selectMenu);
+    const currentTeam = db.getUserTeam(userId);
 
     const embed = new EmbedBuilder()
-      .setTitle('👥 CHỌN ĐỘI HÌNH BẰNG MENU DROPDOWN')
+      .setTitle('👥 TÙY CHỈNH ĐỘI HÌNH RA TRẬN')
       .setColor('#9333ea')
-      .setDescription('Hãy chọn **đúng 4 nhân vật** trong danh sách sở hữu bên dưới để thiết lập đội hình!');
+      .setDescription(`Chọn nhân vật trực tiếp từ danh sách thả xuống bên dưới cho từng vị trí:\n\n- Slot 1: **${currentTeam.slot1}**\n- Slot 2: **${currentTeam.slot2}**\n- Slot 3: **${currentTeam.slot3}**\n- Slot 4: **${currentTeam.slot4}**`);
 
     const response = await interaction.reply({
       embeds: [embed],
-      components: [row],
-      ephemeral: true,
+      components: [row1, row2, row3, row4],
       fetchReply: true
     });
 
     const collector = response.createMessageComponentCollector({
       componentType: ComponentType.StringSelect,
-      time: 60000
+      time: 120000
     });
 
     collector.on('collect', async i => {
-      if (i.user.id !== interaction.user.id) return;
+      if (i.user.id !== interaction.user.id) {
+        return i.reply({ content: '❌ Bạn không phải là người tùy chỉnh đội hình này!', ephemeral: true });
+      }
 
-      const chosen = i.values;
-      db.updateTeam(userId, chosen[0], chosen[1], chosen[2], chosen[3]);
+      const teamNow = db.getUserTeam(userId);
+      const chosenChar = i.values[0];
 
-      const getCharName = (id) => {
-        const c = charactersData.find(item => item.id === id);
-        return c ? c.name : id;
-      };
+      if (i.customId === 'team_select_slot1') teamNow.slot1 = chosenChar;
+      else if (i.customId === 'team_select_slot2') teamNow.slot2 = chosenChar;
+      else if (i.customId === 'team_select_slot3') teamNow.slot3 = chosenChar;
+      else if (i.customId === 'team_select_slot4') teamNow.slot4 = chosenChar;
 
-      const successEmbed = new EmbedBuilder()
-        .setTitle('✅ Cập nhật Đội hình Thành công!')
+      db.updateTeam(userId, teamNow.slot1, teamNow.slot2, teamNow.slot3, teamNow.slot4);
+
+      const updatedEmbed = new EmbedBuilder()
+        .setTitle('✅ CẬP NHẬT ĐỘI HÌNH THÀNH CÔNG!')
         .setColor('#10b981')
-        .setDescription(`Đội hình mới của bạn:\n1. ⚔️ **${getCharName(chosen[0])}**\n2. 💥 **${getCharName(chosen[1])}**\n3. 🛡️ **${getCharName(chosen[2])}**\n4. 💚 **${getCharName(chosen[3])}**`);
+        .setDescription(`Đội hình mới của bạn:\n- Slot 1: **${teamNow.slot1}**\n- Slot 2: **${teamNow.slot2}**\n- Slot 3: **${teamNow.slot3}**\n- Slot 4: **${teamNow.slot4}**`);
 
-      await i.update({ embeds: [successEmbed], components: [] });
+      await i.update({ embeds: [updatedEmbed], components: [row1, row2, row3, row4] });
     });
   }
 }
 
 module.exports = {
   data: teamCommand,
-  execute: executeTeam,
-  autocomplete: handleAutocomplete
+  execute: executeTeam
 };

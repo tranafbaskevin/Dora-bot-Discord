@@ -1,35 +1,101 @@
 [
   {
     "id": "doomsday_beast",
-    "name": "Doomsday Beast",
-    "hp": 8500,
-    "atk": 240,
-    "def": 280,
-    "speed": 95,
-    "weaknesses": ["Quantum", "Fire", "Ice"],
-    "toughness": 120,
-    "color": "#800000"
-  },
-  {
-    "id": "automaton_grizzly",
-    "name": "Automaton Grizzly",
-    "hp": 4800,
-    "atk": 180,
-    "def": 220,
-    "speed": 90,
-    "weaknesses": ["Lightning", "Ice", "Wind"],
-    "toughness": 80,
-    "color": "#d2691e"
+    "name": "Doomsday Beast (Quái Thú Diệt Vong)",
+    "map": "herta",
+    "hp": 22000,
+    "atk": 1100,
+    "def": 450,
+    "speed": 105,
+    "weakness": ["Fire", "Ice", "Quantum"],
+    "dropArtifacts": ["genius", "musketeer"]
   },
   {
     "id": "voidranger_trampler",
-    "name": "Voidranger: Trampler",
-    "hp": 2500,
-    "atk": 140,
-    "def": 150,
+    "name": "Voidranger: Trampler (Kẻ Lang Thang Hư Không)",
+    "map": "herta",
+    "hp": 14000,
+    "atk": 850,
+    "def": 350,
+    "speed": 95,
+    "weakness": ["Physical", "Wind", "Imaginary"],
+    "dropArtifacts": ["eagle", "musketeer"]
+  },
+  {
+    "id": "antimatter_legionnaire",
+    "name": "Anti-Matter Legionnaire (Lĩnh Chủ Phản Vật Chất)",
+    "map": "herta",
+    "hp": 10000,
+    "atk": 700,
+    "def": 300,
+    "speed": 90,
+    "weakness": ["Fire", "Quantum"],
+    "dropArtifacts": ["musketeer"]
+  },
+  {
+    "id": "automaton_grizzly",
+    "name": "Automaton Grizzly (Gấu Máy Tự Động)",
+    "map": "belobog",
+    "hp": 18000,
+    "atk": 950,
+    "def": 500,
+    "speed": 85,
+    "weakness": ["Fire", "Ice", "Lightning"],
+    "dropArtifacts": ["knight", "hunter"]
+  },
+  {
+    "id": "cocolia",
+    "name": "Cocolia (Mẫu Thần Dối Tráp)",
+    "map": "belobog",
+    "hp": 26000,
+    "atk": 1250,
+    "def": 480,
+    "speed": 110,
+    "weakness": ["Fire", "Lightning", "Quantum"],
+    "dropArtifacts": ["passerby", "knight"]
+  },
+  {
+    "id": "svarog",
+    "name": "Svarog (Thủ Vệ Robot Belobog)",
+    "map": "belobog",
+    "hp": 20000,
+    "atk": 1050,
+    "def": 460,
+    "speed": 100,
+    "weakness": ["Fire", "Lightning", "Wind"],
+    "dropArtifacts": ["knight", "musketeer"]
+  },
+  {
+    "id": "phantylia",
+    "name": "Phantylia (Tai Họa Huyễn Lung)",
+    "map": "xianzhou",
+    "hp": 30000,
+    "atk": 1400,
+    "def": 520,
+    "speed": 115,
+    "weakness": ["Wind", "Quantum", "Imaginary"],
+    "dropArtifacts": ["genius", "eagle"]
+  },
+  {
+    "id": "abundance_deer",
+    "name": "Abundance Deer (Hươu Trù Phú)",
+    "map": "xianzhou",
+    "hp": 24000,
+    "atk": 1000,
+    "def": 440,
     "speed": 105,
-    "weaknesses": ["Physical", "Wind", "Imaginary"],
-    "toughness": 50,
-    "color": "#4b0082"
+    "weakness": ["Fire", "Ice", "Quantum"],
+    "dropArtifacts": ["passerby"]
+  },
+  {
+    "id": "aurumaton_gatekeeper",
+    "name": "Aurumaton Gatekeeper (Kim Nhân Thủ Vệ)",
+    "map": "xianzhou",
+    "hp": 19000,
+    "atk": 980,
+    "def": 470,
+    "speed": 98,
+    "weakness": ["Lightning", "Wind", "Quantum"],
+    "dropArtifacts": ["eagle", "hunter"]
   }
 ]

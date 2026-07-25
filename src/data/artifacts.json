@@ -1,0 +1,74 @@
+[
+  {
+    "id": "musketeer",
+    "name": "Bộ Thiện Xạ Trường Hoang",
+    "rarity": 5,
+    "twoPieceDescription": "Tăng +12% Sát thương Tấn công (ATK).",
+    "fourPieceDescription": "Tăng +6% Tốc độ (SPD) & +10% Sát thương Đánh thường.",
+    "recommendedChars": ["Seele", "Dan Heng", "Tingyun"],
+    "bonuses": {
+      "twoPiece": { "atkPercent": 0.12 },
+      "fourPiece": { "speedPercent": 0.06, "basicDmgPercent": 0.10 }
+    }
+  },
+  {
+    "id": "genius",
+    "name": "Bộ Thiên Tài Kim Loại",
+    "rarity": 5,
+    "twoPieceDescription": "Tăng +10% Sát thương Lượng tử (Quantum DMG).",
+    "fourPieceDescription": "Bỏ qua 10% Phòng thủ (DEF) của kẻ địch khi tấn công!",
+    "recommendedChars": ["Seele", "Silver Wolf"],
+    "bonuses": {
+      "twoPiece": { "quantumDmgPercent": 0.10 },
+      "fourPiece": { "defPenetration": 0.10 }
+    }
+  },
+  {
+    "id": "hunter",
+    "name": "Bộ Thợ Săn Băng Tuyết",
+    "rarity": 5,
+    "twoPieceDescription": "Tăng +10% Sát thương Băng (Ice DMG).",
+    "fourPieceDescription": "Sau khi tung Tuyệt Kỹ, tăng +25% Sát thương Bạo Kích (CRIT DMG) trong 2 lượt!",
+    "recommendedChars": ["March 7th", "Yanqing"],
+    "bonuses": {
+      "twoPiece": { "iceDmgPercent": 0.10 },
+      "fourPiece": { "critDmgPercent": 0.25 }
+    }
+  },
+  {
+    "id": "knight",
+    "name": "Bộ Hiệp Sĩ Cung Điện",
+    "rarity": 5,
+    "twoPieceDescription": "Tăng +15% Phòng thủ (DEF).",
+    "fourPieceDescription": "Tăng +20% Độ dày của Khiên do nhân vật tạo ra!",
+    "recommendedChars": ["March 7th", "Gepard"],
+    "bonuses": {
+      "twoPiece": { "defPercent": 0.15 },
+      "fourPiece": { "shieldBoostPercent": 0.20 }
+    }
+  },
+  {
+    "id": "passerby",
+    "name": "Bộ Lãng Khách Âm Thầm",
+    "rarity": 5,
+    "twoPieceDescription": "Tăng +10% Lượng Hồi Máu (Outgoing Healing).",
+    "fourPieceDescription": "Tự động hồi +1 Điểm SP ngay khi vào trận đấu!",
+    "recommendedChars": ["Natasha", "Bailu"],
+    "bonuses": {
+      "twoPiece": { "healPercent": 0.10 },
+      "fourPiece": { "bonusStartSp": 1 }
+    }
+  },
+  {
+    "id": "eagle",
+    "name": "Bộ Chim Ưng Ranh Ma",
+    "rarity": 5,
+    "twoPieceDescription": "Tăng +10% Sát thương Phong (Wind DMG).",
+    "fourPieceDescription": "Sau khi thi triển Tuyệt Kỹ, ưu tiên ưu tiên kéo lượt đánh lên 25% (Advance Action)!",
+    "recommendedChars": ["Dan Heng", "Sampo"],
+    "bonuses": {
+      "twoPiece": { "windDmgPercent": 0.10 },
+      "fourPiece": { "actionAdvancePercent": 0.25 }
+    }
+  }
+]
