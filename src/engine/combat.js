@@ -164,14 +164,22 @@ class CombatEngine {
       return;
     }
 
-    const minAv = this.currentActor?.actionValue || 10;
+    const elapsedAv = this.currentActor ? (this.currentActor.actionValue || 10) : 10;
 
+    // Reset current actor's AV for their NEXT turn
+    if (this.currentActor) {
+      this.currentActor.actionValue = Math.round(10000 / (this.currentActor.speed || 100));
+    }
+
+    // Deduct elapsed AV from other team members
     this.team.forEach(c => {
-      if (c.isAlive) c.actionValue -= minAv;
+      if (c.isAlive && c !== this.currentActor) {
+        c.actionValue = Math.max(1, c.actionValue - elapsedAv);
+      }
     });
 
-    if (this.enemy.isAlive) {
-      this.enemy.actionValue -= minAv;
+    if (this.enemy.isAlive && this.enemy !== this.currentActor) {
+      this.enemy.actionValue = Math.max(1, this.enemy.actionValue - elapsedAv);
     }
 
     this.turn++;
@@ -183,6 +191,11 @@ class CombatEngine {
     }
 
     this.determineNextActor();
+
+    // AUTOMATICALLY EXECUTE ENEMY TURN UNTIL IT'S A PLAYER TURN OR BATTLE FINISHES!
+    while (!this.isFinished && this.currentActor === this.enemy && this.enemy.isAlive) {
+      this.executeEnemyTurn();
+    }
   }
 
   handleVictoryRewards() {
@@ -266,10 +279,6 @@ class CombatEngine {
     const res = this.calculateDamage(char.atk, this.enemy.def, skillMultiplier, char.critRate, char.critDmg);
 
     this.enemy.currentHp = Math.max(0, this.enemy.currentHp - res.damage);
-    if (this.enemy.currentHp <= 0) {
-      this.checkVictoryCondition();
-      return;
-    }
 
     this.sp = Math.min(this.maxSp, this.sp + 1);
     char.currentEnergy = Math.min(char.maxEnergy, char.currentEnergy + skill.energyGain);
@@ -277,12 +286,16 @@ class CombatEngine {
     const critTag = res.isCrit ? ' 💥 [CRIT!]' : '';
     this.logs.push(`⚔️ **${char.name}** dùng **${skill.name} (Lv.${char.basicLvl})** gây **${res.damage}** sát thương!${critTag} (+1 SP)`);
 
-    char.actionValue = Math.round(10000 / char.speed);
+    if (this.enemy.currentHp <= 0) {
+      this.checkVictoryCondition();
+      return;
+    }
+
     this.advanceToNextTurn();
   }
 
   executeSkill() {
-    if (this.isFinished || this.currentActor === this.enemy) return;
+    if (this.isFinished || this.currentActor === this.enemy) return false;
     if (this.sp < 1) {
       this.logs.push(`⚠️ Không đủ điểm Chiến kỹ (SP)!`);
       return false;
@@ -318,7 +331,6 @@ class CombatEngine {
       this.logs.push(`💥 **${char.name}** dùng **${skill.name} (Lv.${char.skillLvl})** gây **${res.damage}** sát thương!${critTag} (-1 SP)`);
     }
 
-    char.actionValue = Math.round(10000 / char.speed);
     this.advanceToNextTurn();
     return true;
   }
@@ -362,13 +374,18 @@ class CombatEngine {
   }
 
   executeEnemyTurn() {
-    if (this.enemy.currentHp <= 0) {
+    if (this.isFinished || this.enemy.currentHp <= 0) {
       this.checkVictoryCondition();
       return;
     }
 
     const aliveTeam = this.team.filter(c => c.isAlive && c.currentHp > 0);
-    if (aliveTeam.length === 0) return;
+    if (aliveTeam.length === 0) {
+      this.isFinished = true;
+      this.winner = 'enemy';
+      this.logs.push(`💀 **Toàn bộ đội hình của bạn đã gục ngã! Thất bại trong thử thách.**`);
+      return;
+    }
 
     const target = aliveTeam[Math.floor(Math.random() * aliveTeam.length)];
     let res = this.calculateDamage(this.enemy.atk, target.def, 1.4, 0.10, 0.30);
@@ -387,13 +404,21 @@ class CombatEngine {
     target.currentHp = Math.max(0, target.currentHp - dmg);
     if (target.currentHp === 0) target.isAlive = false;
 
-    this.logs.push(`⚔️ **${this.enemy.name}** giáng đòn vào **${target.name}** gây **${res.damage}** sát thương!`);
+    this.logs.push(`👹 **${this.enemy.name}** giáng đòn vào **${target.name}** gây **${res.damage}** sát thương!`);
 
     if (target.currentHp === 0) {
       this.logs.push(`💀 **${target.name}** đã gục ngã!`);
     }
 
-    this.enemy.actionValue = Math.round(10000 / this.enemy.speed);
+    const elapsedAv = this.enemy.actionValue || 100;
+    this.enemy.actionValue = Math.round(10000 / (this.enemy.speed || 100));
+
+    this.team.forEach(c => {
+      if (c.isAlive) {
+        c.actionValue = Math.max(1, c.actionValue - elapsedAv);
+      }
+    });
+
     this.determineNextActor();
   }
 }
