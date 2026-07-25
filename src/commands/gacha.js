@@ -26,23 +26,23 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
   const user = db.getUser(discordId);
   const singleCost = 160;
 
-  // Calculate max affordable rolls if requested exceeds balance
   const maxAffordable = Math.floor(user.jades / singleCost);
 
   if (maxAffordable <= 0) {
     return { success: false, message: `❌ Bạn không đủ Nguyên Thạch/Stellar Jade! (Cần ít nhất 160, bạn có ${user.jades.toLocaleString()}).` };
   }
 
-  // Auto-adjust to max affordable if requested > maxAffordable
   const actualAmount = Math.min(requestedAmount, maxAffordable);
   const totalCost = actualAmount * singleCost;
 
   let currentPity5 = user.pity_5star;
   let currentPity4 = user.pity_4star;
+  let isGuaranteed = user.is_guaranteed || false;
   const results = [];
   let trashCount = 0;
 
-  const chars5Star = charactersData.filter(c => c.rarity === 5);
+  const featuredChar5 = charactersData.find(c => c.id === 'seele') || charactersData[0];
+  const standardChars5 = charactersData.filter(c => c.rarity === 5 && c.id !== 'seele');
   const chars4Star = charactersData.filter(c => c.rarity === 4);
 
   const weapons5Star = [
@@ -63,6 +63,8 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
 
     let pulledRarity = 3;
     let item = null;
+    let wonRateUp = false;
+    let lostRateUp = false;
 
     // Hard Pity 5-Star (90) or 0.6% chance
     if (currentPity5 >= 90 || Math.random() < 0.006 + Math.max(0, currentPity5 - 74) * 0.06) {
@@ -70,7 +72,19 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
       if (bannerType === 'weapon') {
         item = weapons5Star[Math.floor(Math.random() * weapons5Star.length)];
       } else {
-        item = { type: 'char', ...chars5Star[Math.floor(Math.random() * chars5Star.length)] };
+        // 50/50 Rate Up Mechanic for Character Event Banner!
+        if (isGuaranteed || Math.random() < 0.5) {
+          // Won Rate Up!
+          item = { type: 'char', ...featuredChar5 };
+          wonRateUp = true;
+          isGuaranteed = false; // Reset guaranteed state
+        } else {
+          // Lost 50/50 (Lệch Rate)!
+          const randStandard = standardChars5[Math.floor(Math.random() * standardChars5.length)] || charactersData[1];
+          item = { type: 'char', ...randStandard };
+          lostRateUp = true;
+          isGuaranteed = true; // Next 5★ is 100% Guaranteed!
+        }
       }
       currentPity5 = 0;
     }
@@ -94,6 +108,8 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
         results.push({
           item,
           rarity: pulledRarity,
+          wonRateUp,
+          lostRateUp,
           isNew: invResult.isNew,
           eidolon: invResult.eidolon
         });
@@ -112,9 +128,10 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
     }
   }
 
-  // Deduct Currency & Update Pity & Add Trash items
+  // Deduct Currency & Update Pity & Guaranteed state
   db.updateUserJades(discordId, user.jades - totalCost);
   db.updatePity(discordId, currentPity5, currentPity4);
+  db.setGuaranteedState(discordId, isGuaranteed);
   if (trashCount > 0) {
     db.addTrashItems(discordId, trashCount);
   }
@@ -124,6 +141,7 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
     actualAmount,
     requestedAmount,
     adjusted: actualAmount < requestedAmount,
+    isGuaranteed,
     results,
     remainingJades: user.jades - totalCost,
     pity5: currentPity5,
@@ -147,13 +165,15 @@ async function executeGacha(interaction) {
     : '🌟 BƯỚC NHẢY CÁNH BƯỚM (Seele 5★ Event Banner)';
 
   const autoNotice = res.adjusted
-    ? `\n⚠️ *Bạn yêu cầu ${res.requestedAmount} lượt nhưng chỉ đủ Nguyên thạch quay **${res.actualAmount} lượt** (đã tự động quay tối đa).*`
+    ? `\n⚠️ *Bạn yêu cầu ${res.requestedAmount} lượt nhưng chỉ đủ Nguyên thạch quay **${res.actualAmount} lượt**.*`
     : '';
+
+  const guaranteedBadge = res.isGuaranteed ? '🛡️ **BẢO HIỂM 100% CHO LẦN 5★ TIẾP THEO!**' : '🎲 50/50 Rate Up';
 
   const embed = new EmbedBuilder()
     .setTitle(`✨ KẾT QUẢ GACHA (${res.actualAmount} LƯỢT)`)
     .setColor('#ffd700')
-    .setDescription(`**${bannerTitle}**${autoNotice}\n\n💎 **Nguyên thạch còn lại**: **${res.remainingJades.toLocaleString()}** | 🎯 **Pity 5★**: **${res.pity5}/90**`)
+    .setDescription(`**${bannerTitle}**${autoNotice}\n\n💎 **Nguyên thạch còn lại**: **${res.remainingJades.toLocaleString()}** | 🎯 **Pity 5★**: **${res.pity5}/90**\n${guaranteedBadge}`)
     .setFooter({ text: `Người quay: ${interaction.user.username} | Dùng /inventory recycle để phân tách món 3★!` });
 
   let resultLines = [];
@@ -161,7 +181,8 @@ async function executeGacha(interaction) {
     if (r.rarity === 5) {
       if (r.item && r.item.type === 'char') {
         const status = r.isNew ? '🆕 [MỚI!]' : `✨ [Tinh Hồn E${r.eidolon}]`;
-        resultLines.push(`\`${idx + 1}.\` 🌟🌟🌟🌟🌟 **${r.item.name}** (${r.item.element}) - ${status}`);
+        const rateTag = r.lostRateUp ? '🔴 [LỆCH RATE 50/50!]' : (r.wonRateUp ? '🌟 [WIN RATE UP!]' : '');
+        resultLines.push(`\`${idx + 1}.\` 🌟🌟🌟🌟🌟 **${r.item.name}** (${r.item.element}) ${rateTag} - ${status}`);
       } else {
         resultLines.push(`\`${idx + 1}.\` 🌟🌟🌟🌟🌟 **${r.name}** ⚔️`);
       }

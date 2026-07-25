@@ -9,30 +9,63 @@ const battleCommand = new SlashCommandBuilder()
   .setName('battle')
   .setDescription('Bắt đầu trận chiến theo lượt (Turn-based RPG)')
   .addStringOption(opt =>
+    opt.setName('map')
+      .setDescription('Chọn Map / Khu vực khiêu chiến')
+      .setRequired(false)
+      .addChoices(
+        { name: '🛰️ Trạm Không Gian Herta', value: 'herta' },
+        { name: '❄️ Thành Phố Belobog', value: 'belobog' },
+        { name: '⛩️ Xianzhou Luofu', value: 'xianzhou' }
+      )
+  )
+  .addStringOption(opt =>
     opt.setName('enemy')
-      .setDescription('Chọn Boss / Quái vật muốn khiêu chiến')
+      .setDescription('Chọn Boss / Quái vật')
       .setRequired(false)
       .addChoices(
         { name: 'Doomsday Beast (Weekly Boss)', value: 'doomsday_beast' },
         { name: 'Automaton Grizzly (Elite Monster)', value: 'automaton_grizzly' },
         { name: 'Voidranger: Trampler (Normal Monster)', value: 'voidranger_trampler' }
       )
+  )
+  .addStringOption(opt =>
+    opt.setName('difficulty')
+      .setDescription('Chọn Cấp Độ Khó')
+      .setRequired(false)
+      .addChoices(
+        { name: '🟢 Dễ (Lv.20)', value: 'easy' },
+        { name: '🔵 Thường (Lv.40)', value: 'normal' },
+        { name: '🔴 Khó (Lv.60)', value: 'hard' },
+        { name: '🟣 Cực Khó / Siêu Cấp (Lv.80)', value: 'nightmare' }
+      )
   );
 
 async function executeBattle(interaction) {
   const enemyId = interaction.options.getString('enemy') || 'doomsday_beast';
+  const difficulty = interaction.options.getString('difficulty') || 'normal';
+
   const team = db.getUserTeam(interaction.user.id);
   const teamCharIds = [team.slot1, team.slot2, team.slot3, team.slot4];
 
-  // Initialize Battle Session
-  const session = new BattleSession(teamCharIds, enemyId);
+  // FIX BUG: Pass interaction.user.id as first parameter!
+  const session = new BattleSession(interaction.user.id, teamCharIds, enemyId);
+
+  // Difficulty scaling
+  let diffMult = 1.0;
+  if (difficulty === 'easy') diffMult = 0.6;
+  else if (difficulty === 'hard') diffMult = 1.5;
+  else if (difficulty === 'nightmare') diffMult = 2.2;
+
+  session.enemy.maxHp = Math.floor(session.enemy.maxHp * diffMult);
+  session.enemy.currentHp = session.enemy.maxHp;
+  session.enemy.atk = Math.floor(session.enemy.atk * diffMult);
 
   // Render initial image
   const imageBuffer = renderBattleCard(session);
   const attachment = new AttachmentBuilder(imageBuffer, { name: 'battle.png' });
 
   const embed = new EmbedBuilder()
-    .setTitle(`⚔️ TRẬN ĐẤU KHIÊU CHIẾN - ${session.enemy.name}`)
+    .setTitle(`⚔️ TRẬN ĐẤU KHIÊU CHIẾN - ${session.enemy.name} (${difficulty.toUpperCase()})`)
     .setColor('#ff4d4d')
     .setImage('attachment://battle.png')
     .setDescription(session.logs.slice(-3).join('\n'))
@@ -54,12 +87,11 @@ async function executeBattle(interaction) {
   });
 
   collector.on('collect', async i => {
-    // Only original user can play
     if (i.user.id !== interaction.user.id) {
       return i.reply({ content: '❌ Bạn không phải là người tham gia trận đấu này!', ephemeral: true });
     }
 
-    // Immediately defer update to prevent Discord 3-second timeout ("Bot không phản hồi")
+    // Immediately defer update to prevent Discord 3-second timeout
     await i.deferUpdate().catch(() => {});
 
     const customId = i.customId;
@@ -80,7 +112,6 @@ async function executeBattle(interaction) {
       const user = db.getUser(interaction.user.id);
       const rewardJades = 800;
       db.updateUserJades(interaction.user.id, user.jades + rewardJades);
-      session.logs.push(`🎁 **Phần thưởng chiến thắng**: +${rewardJades} Nguyên thạch!`);
     }
 
     // If Ultimate was triggered, send GIF Animation Cut-in message
@@ -122,9 +153,7 @@ async function executeBattle(interaction) {
     }
   });
 
-  collector.on('end', () => {
-    // Clean up or disable buttons if timed out
-  });
+  collector.on('end', () => {});
 }
 
 module.exports = {

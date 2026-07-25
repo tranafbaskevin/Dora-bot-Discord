@@ -36,6 +36,7 @@ function getUser(discordId) {
       jades: 16000,
       pity_5star: 0,
       pity_4star: 0,
+      is_guaranteed: false, // 50/50 Guaranteed Pity state
       trash_items: 0,
       player_level: 1,
       player_exp: 0,
@@ -48,7 +49,6 @@ function getUser(discordId) {
       created_at: new Date().toISOString()
     };
 
-    // Starter characters with levels & skills
     if (!data.inventory[discordId]) {
       data.inventory[discordId] = [
         { char_id: 'seele', level: 1, exp: 0, weapon_level: 1, weapon_exp: 0, basic_lvl: 1, skill_lvl: 1, ult_lvl: 1, eidolon: 0, light_cone: 'In the Night (5★)', artifact_set: 'Bộ Thợ Lặn Ranh Ma' },
@@ -58,7 +58,6 @@ function getUser(discordId) {
       ];
     }
 
-    // Default Team
     if (!data.teams[discordId]) {
       data.teams[discordId] = {
         discord_id: discordId,
@@ -72,10 +71,10 @@ function getUser(discordId) {
     saveDb(data);
   }
 
-  // Ensure default structures
   const u = data.users[discordId];
   if (u.player_level === undefined) u.player_level = 1;
   if (u.player_exp === undefined) u.player_exp = 0;
+  if (u.is_guaranteed === undefined) u.is_guaranteed = false;
   if (!u.materials) {
     u.materials = { char_exp_book: 50, weapon_exp_crystal: 50, artifact_dust: 50, trace_material: 30 };
     saveDb(data);
@@ -87,83 +86,115 @@ function getUser(discordId) {
 // Add Player Trailblaze EXP
 function addPlayerExp(discordId, expGained) {
   const data = readDb();
-  const user = getUser(discordId);
-  data.users[discordId].player_exp += expGained;
+  const user = data.users[discordId] || getUser(discordId);
+  user.player_exp += expGained;
 
-  let reqExp = data.users[discordId].player_level * 500;
+  let reqExp = user.player_level * 500;
   let leveledUp = false;
 
-  while (data.users[discordId].player_exp >= reqExp && data.users[discordId].player_level < 70) {
-    data.users[discordId].player_exp -= reqExp;
-    data.users[discordId].player_level += 1;
-    data.users[discordId].jades += 300; // Reward 300 Jades per Trailblaze level
-    reqExp = data.users[discordId].player_level * 500;
+  while (user.player_exp >= reqExp && user.player_level < 70) {
+    user.player_exp -= reqExp;
+    user.player_level += 1;
+    user.jades += 300;
+    reqExp = user.player_level * 500;
     leveledUp = true;
   }
 
   saveDb(data);
-  return { leveledUp, newLevel: data.users[discordId].player_level, totalJades: data.users[discordId].jades };
+  return { leveledUp, newLevel: user.player_level, totalJades: user.jades };
 }
 
-// Upgrade Character Level
-function upgradeCharacterLevel(discordId, charId, booksToUse) {
+// Upgrade Character Level (Auto Max Upgrade supported)
+function upgradeCharacterLevel(discordId, charId, useMax = true) {
   const data = readDb();
-  const user = getUser(discordId);
+  const user = data.users[discordId] || getUser(discordId);
   const inv = data.inventory[discordId] || [];
   const char = inv.find(c => c.char_id === charId);
 
-  if (!char || (user.materials.char_exp_book || 0) < booksToUse) {
-    return { success: false, message: '❌ Không đủ Sách Kinh Nghiệm Nhân Vật!' };
+  let booksAvailable = user.materials?.char_exp_book || 0;
+  if (!char || booksAvailable <= 0) {
+    return { success: false, message: '❌ Bạn không có Sách Kinh Nghiệm Nhân Vật nào!' };
   }
 
-  user.materials.char_exp_book -= booksToUse;
-  char.exp = (char.exp || 0) + booksToUse * 1000;
-
-  let reqExp = char.level * 800;
-  while (char.exp >= reqExp && char.level < 80) {
-    char.exp -= reqExp;
-    char.level += 1;
-    reqExp = char.level * 800;
+  if (char.level >= 80) {
+    return { success: false, message: '⚠️ Nhân vật đã đạt cấp độ tối đa (Lv 80)!' };
   }
 
+  let booksUsed = 0;
+  while (booksAvailable > 0 && char.level < 80) {
+    booksAvailable--;
+    booksUsed++;
+    char.exp = (char.exp || 0) + 1000;
+
+    let reqExp = char.level * 800;
+    while (char.exp >= reqExp && char.level < 80) {
+      char.exp -= reqExp;
+      char.level += 1;
+      reqExp = char.level * 800;
+    }
+  }
+
+  user.materials.char_exp_book = booksAvailable;
   saveDb(data);
-  return { success: true, newLevel: char.level, remainingBooks: user.materials.char_exp_book };
+
+  return {
+    success: true,
+    newLevel: char.level,
+    booksUsed,
+    remainingBooks: user.materials.char_exp_book
+  };
 }
 
-// Upgrade Weapon Level
-function upgradeWeaponLevel(discordId, charId, crystalsToUse) {
+// Upgrade Weapon Level (Auto Max Upgrade supported)
+function upgradeWeaponLevel(discordId, charId, useMax = true) {
   const data = readDb();
-  const user = getUser(discordId);
+  const user = data.users[discordId] || getUser(discordId);
   const inv = data.inventory[discordId] || [];
   const char = inv.find(c => c.char_id === charId);
 
-  if (!char || (user.materials.weapon_exp_crystal || 0) < crystalsToUse) {
-    return { success: false, message: '❌ Không đủ Tinh Thể Điệm Kim Vũ Khí!' };
+  let crystalsAvailable = user.materials?.weapon_exp_crystal || 0;
+  if (!char || crystalsAvailable <= 0) {
+    return { success: false, message: '❌ Bạn không có Tinh Thể Vũ Khí nào!' };
   }
 
-  user.materials.weapon_exp_crystal -= crystalsToUse;
-  char.weapon_exp = (char.weapon_exp || 0) + crystalsToUse * 1000;
-
-  let reqExp = (char.weapon_level || 1) * 800;
-  while (char.weapon_exp >= reqExp && char.weapon_level < 80) {
-    char.weapon_exp -= reqExp;
-    char.weapon_level = (char.weapon_level || 1) + 1;
-    reqExp = char.weapon_level * 800;
+  if ((char.weapon_level || 1) >= 80) {
+    return { success: false, message: '⚠️ Vũ khí đã đạt cấp độ tối đa (Lv 80)!' };
   }
 
+  let crystalsUsed = 0;
+  while (crystalsAvailable > 0 && (char.weapon_level || 1) < 80) {
+    crystalsAvailable--;
+    crystalsUsed++;
+    char.weapon_exp = (char.weapon_exp || 0) + 1000;
+
+    let reqExp = (char.weapon_level || 1) * 800;
+    while (char.weapon_exp >= reqExp && (char.weapon_level || 1) < 80) {
+      char.weapon_exp -= reqExp;
+      char.weapon_level = (char.weapon_level || 1) + 1;
+      reqExp = char.weapon_level * 800;
+    }
+  }
+
+  user.materials.weapon_exp_crystal = crystalsAvailable;
   saveDb(data);
-  return { success: true, newLevel: char.weapon_level, remainingCrystals: user.materials.weapon_exp_crystal };
+
+  return {
+    success: true,
+    newLevel: char.weapon_level,
+    crystalsUsed,
+    remainingCrystals: user.materials.weapon_exp_crystal
+  };
 }
 
-// Upgrade Skill Level (basic | skill | ult)
+// Upgrade Skill Level
 function upgradeSkillLevel(discordId, charId, skillType) {
   const data = readDb();
-  const user = getUser(discordId);
+  const user = data.users[discordId] || getUser(discordId);
   const inv = data.inventory[discordId] || [];
   const char = inv.find(c => c.char_id === charId);
 
-  const cost = 5; // 5 trace materials per level up
-  if (!char || (user.materials.trace_material || 0) < cost) {
+  const cost = 5;
+  if (!char || (user.materials?.trace_material || 0) < cost) {
     return { success: false, message: '❌ Không đủ Vật Liệu Vết Kích Kỹ Năng (Cần 5 vật liệu)!' };
   }
 
@@ -181,7 +212,7 @@ function upgradeSkillLevel(discordId, charId, skillType) {
   return { success: true, skillType, newLevel: char[key], remainingMaterials: user.materials.trace_material };
 }
 
-// Artifact Management & Upgrades
+// Add Artifact
 function addArtifact(discordId, artifact) {
   const data = readDb();
   if (!data.artifacts[discordId]) data.artifacts[discordId] = [];
@@ -189,7 +220,7 @@ function addArtifact(discordId, artifact) {
   const newArt = {
     id: `art_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
     char_id: artifact.char_id || null,
-    setName: artifact.setName || 'Bộ Thiện Xạ Trường Hoang',
+    setName: artifact.setName || 'Bộ Thiện Xạ Trường Hoang (5★)',
     slot: artifact.slot || 'Head',
     mainStat: artifact.mainStat || 'CRIT Rate%',
     mainValue: artifact.mainValue || 5.0,
@@ -207,45 +238,76 @@ function addArtifact(discordId, artifact) {
   return newArt;
 }
 
-function upgradeArtifact(discordId, artifactId, dustToUse) {
+// RNG Artifact Upgrade System (Lv 1 - 15) with random Sub-stat Rolls on +3 levels
+function upgradeArtifact(discordId, artifactId, dustToUse = 5) {
   const data = readDb();
-  const user = getUser(discordId);
+  const user = data.users[discordId] || getUser(discordId);
   const userArts = data.artifacts[discordId] || [];
   const art = userArts.find(a => a.id === artifactId);
 
-  if (!art || (user.materials.artifact_dust || 0) < dustToUse) {
+  let dustAvailable = user.materials?.artifact_dust || 0;
+  if (!art || dustAvailable <= 0) {
     return { success: false, message: '❌ Không đủ Bụi Vàng Cường Hóa Di Vật!' };
   }
 
-  user.materials.artifact_dust -= dustToUse;
-  art.exp = (art.exp || 0) + dustToUse * 500;
-
-  const subStatPool = ['ATK%', 'DEF%', 'HP%', 'CRIT Rate%', 'CRIT DMG%', 'SPD', 'Quantum DMG%', 'Fire DMG%'];
-  let upgradedSubCount = 0;
-
-  let reqExp = (art.level + 1) * 600;
-  while (art.exp >= reqExp && art.level < 15) {
-    art.exp -= reqExp;
-    art.level += 1;
-    art.mainValue += 1.5; // Main stat scales
-
-    // Every +3 levels (+3, +6, +9, +12, +15), upgrade a random sub-stat or add new!
-    if (art.level % 3 === 0) {
-      upgradedSubCount++;
-      if (art.subStats.length < 4) {
-        const nextStat = subStatPool[Math.floor(Math.random() * subStatPool.length)];
-        art.subStats.push({ name: nextStat, value: 3.0 });
-      } else {
-        const randSub = art.subStats[Math.floor(Math.random() * art.subStats.length)];
-        randSub.value += 2.5;
-      }
-    }
-
-    reqExp = (art.level + 1) * 600;
+  if (art.level >= 15) {
+    return { success: false, message: '⚠️ Di vật đã đạt cấp độ cường hóa tối đa (+15)!' };
   }
 
+  let dustUsed = 0;
+  const subStatPool = ['ATK%', 'DEF%', 'HP%', 'CRIT Rate%', 'CRIT DMG%', 'SPD', 'Quantum DMG%', 'Fire DMG%'];
+  let upgradedSubNames = [];
+
+  while (dustAvailable > 0 && art.level < 15) {
+    dustAvailable--;
+    dustUsed++;
+    art.exp = (art.exp || 0) + 500;
+
+    let reqExp = (art.level + 1) * 600;
+    while (art.exp >= reqExp && art.level < 15) {
+      art.exp -= reqExp;
+      art.level += 1;
+      art.mainValue += 1.8;
+
+      // Every +3 levels (+3, +6, +9, +12, +15), RNG 100% Roll to upgrade an existing sub-stat or add a new one!
+      if (art.level % 3 === 0) {
+        if (art.subStats.length < 4) {
+          const nextStat = subStatPool[Math.floor(Math.random() * subStatPool.length)];
+          art.subStats.push({ name: nextStat, value: 3.2 });
+          upgradedSubNames.push(`Mở dòng mới: ${nextStat}`);
+        } else {
+          // RNG Roll: Pick 1 random sub-stat out of existing ones!
+          const randSubIndex = Math.floor(Math.random() * art.subStats.length);
+          const rollBoost = 2.0 + Math.random() * 2.5;
+          art.subStats[randSubIndex].value += rollBoost;
+          upgradedSubNames.push(`Cộng dồn dòng: ${art.subStats[randSubIndex].name} (+${rollBoost.toFixed(1)})`);
+        }
+      }
+      reqExp = (art.level + 1) * 600;
+    }
+  }
+
+  user.materials.artifact_dust = dustAvailable;
   saveDb(data);
-  return { success: true, newLevel: art.level, mainValue: art.mainValue, subStats: art.subStats, remainingDust: user.materials.artifact_dust };
+
+  return {
+    success: true,
+    newLevel: art.level,
+    mainValue: art.mainValue,
+    subStats: art.subStats,
+    upgradedSubNames,
+    dustUsed,
+    remainingDust: user.materials.artifact_dust
+  };
+}
+
+// 50/50 Gacha Guaranteed Pity State Helper
+function setGuaranteedState(discordId, state) {
+  const data = readDb();
+  if (data.users[discordId]) {
+    data.users[discordId].is_guaranteed = state;
+    saveDb(data);
+  }
 }
 
 // Update Currency
@@ -361,6 +423,7 @@ module.exports = {
   upgradeSkillLevel,
   addArtifact,
   upgradeArtifact,
+  setGuaranteedState,
   updateUserJades,
   updatePity,
   addTrashItems,

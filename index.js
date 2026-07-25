@@ -8,6 +8,7 @@ const battleCommand = require('./src/commands/battle');
 const infoCommand = require('./src/commands/info');
 const inventoryCommand = require('./src/commands/inventory');
 const upgradeCommand = require('./src/commands/upgrade');
+const lahoanCommand = require('./src/commands/lahoan');
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
@@ -22,7 +23,8 @@ const commandsList = [
   battleCommand,
   infoCommand,
   inventoryCommand,
-  upgradeCommand
+  upgradeCommand,
+  lahoanCommand
 ];
 
 commandsList.forEach(cmd => {
@@ -30,7 +32,7 @@ commandsList.forEach(cmd => {
 });
 
 // Khi bot online
-client.once('clientReady', async () => {
+client.once('ready', async () => {
   console.log(`🔥 Bot Dora-Bot online thành công với tên: ${client.user.tag}`);
 
   const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
@@ -45,7 +47,7 @@ client.once('clientReady', async () => {
       { body: commandsData }
     );
 
-    console.log('✅ Đã đăng ký thành công các lệnh: /gacha, /profile, /team, /battle, /info, /inventory, /upgrade');
+    console.log('✅ Đã đăng ký thành công 8 lệnh Slash Commands: /gacha, /profile, /team, /battle, /info, /inventory, /upgrade, /lahoan');
   } catch (error) {
     console.error('❌ Lỗi đăng ký Slash Commands:', error);
   }
