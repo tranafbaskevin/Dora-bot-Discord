@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, ComponentType } = require('discord.js');
 const db = require('../database/db');
 const charactersData = require('../data/characters.json');
 
@@ -43,7 +43,6 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
   const results = [];
   let trashCount = 0;
 
-  // Determine Featured Rate Up 5-Star Character based on selected Banner
   const featuredId = (bannerType === 'jing_yuan' || bannerType === 'bronya') ? bannerType : 'seele';
   const featuredChar5 = charactersData.find(c => c.id === featuredId) || charactersData[0];
   const standardChars5 = charactersData.filter(c => c.rarity === 5 && c.id !== featuredId);
@@ -70,13 +69,11 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
     let wonRateUp = false;
     let lostRateUp = false;
 
-    // Hard Pity 5-Star (90) or 0.6% chance
     if (currentPity5 >= 90 || Math.random() < 0.006 + Math.max(0, currentPity5 - 74) * 0.06) {
       pulledRarity = 5;
       if (bannerType === 'weapon') {
         item = weapons5Star[Math.floor(Math.random() * weapons5Star.length)];
       } else {
-        // 50/50 Rate Up Mechanic for Character Event Banner!
         if (isGuaranteed || Math.random() < 0.5) {
           item = { type: 'char', ...featuredChar5 };
           wonRateUp = true;
@@ -89,9 +86,7 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
         }
       }
       currentPity5 = 0;
-    }
-    // Hard Pity 4-Star (10) or 5.1% chance
-    else if (currentPity4 >= 10 || Math.random() < 0.051) {
+    } else if (currentPity4 >= 10 || Math.random() < 0.051) {
       pulledRarity = 4;
       if (bannerType === 'weapon') {
         item = weapons4Star[Math.floor(Math.random() * weapons4Star.length)];
@@ -152,16 +147,7 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
   };
 }
 
-async function executeGacha(interaction) {
-  const requestedAmount = interaction.options.getInteger('amount');
-  const bannerType = interaction.options.getString('banner') || 'seele';
-
-  const res = handleGachaPull(interaction.user.id, requestedAmount, bannerType);
-
-  if (!res.success) {
-    return interaction.reply({ content: res.message, ephemeral: true });
-  }
-
+function buildGachaEmbed(username, res, bannerType) {
   const bannerTitle = bannerType === 'weapon'
     ? '⚔️ BƯỚC NHẢY NÓN ÁNH SÁNG (Brilliant Fixation)'
     : `🌟 BƯỚC NHẢY EVENT: ${res.featuredChar.name.toUpperCase()} 5★`;
@@ -176,7 +162,7 @@ async function executeGacha(interaction) {
     .setTitle(`✨ KẾT QUẢ GACHA (${res.actualAmount} LƯỢT)`)
     .setColor('#ffd700')
     .setDescription(`**${bannerTitle}**${autoNotice}\n\n💎 **Nguyên thạch còn lại**: **${res.remainingJades.toLocaleString()}** | 🎯 **Pity 5★**: **${res.pity5}/90**\n${guaranteedBadge}`)
-    .setFooter({ text: `Người quay: ${interaction.user.username} | Dùng /inventory recycle để phân tách món 3★!` });
+    .setFooter({ text: `Người quay: ${username} | Chọn các nút bên dưới để tiếp tục quay!` });
 
   let resultLines = [];
   res.results.forEach((r, idx) => {
@@ -201,8 +187,94 @@ async function executeGacha(interaction) {
   });
 
   embed.addFields({ name: '🎁 Vật phẩm thu được:', value: resultLines.join('\n') });
+  return embed;
+}
 
-  await interaction.reply({ embeds: [embed] });
+function buildGachaButtons() {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId('gacha_btn_1').setLabel('🎯 Roll 1 Lần').setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId('gacha_btn_max').setLabel('💫 Roll Max (Tối Đa 10 Lượt)').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId('gacha_btn_change_banner').setLabel('🔄 Đổi Banner').setStyle(ButtonStyle.Secondary)
+  );
+}
+
+async function executeGacha(interaction) {
+  const requestedAmount = interaction.options.getInteger('amount');
+  let currentBanner = interaction.options.getString('banner') || 'seele';
+
+  const res = handleGachaPull(interaction.user.id, requestedAmount, currentBanner);
+
+  if (!res.success) {
+    return interaction.reply({ content: res.message, ephemeral: true });
+  }
+
+  const embed = buildGachaEmbed(interaction.user.username, res, currentBanner);
+  const buttonsRow = buildGachaButtons();
+
+  const response = await interaction.reply({
+    embeds: [embed],
+    components: [buttonsRow],
+    fetchReply: true
+  });
+
+  const collector = response.createMessageComponentCollector({
+    time: 300000
+  });
+
+  collector.on('collect', async i => {
+    if (i.user.id !== interaction.user.id) {
+      return i.reply({ content: '❌ Bạn không phải là người quay gacha này!', ephemeral: true });
+    }
+
+    // 1. Roll 1 Lần
+    if (i.customId === 'gacha_btn_1') {
+      const pullRes = handleGachaPull(interaction.user.id, 1, currentBanner);
+      if (!pullRes.success) {
+        return i.reply({ content: pullRes.message, ephemeral: true });
+      }
+      const newEmbed = buildGachaEmbed(interaction.user.username, pullRes, currentBanner);
+      await i.update({ embeds: [newEmbed], components: [buildGachaButtons()] });
+    }
+
+    // 2. Roll Max (Up to 10 pulls)
+    else if (i.customId === 'gacha_btn_max') {
+      const pullRes = handleGachaPull(interaction.user.id, 10, currentBanner);
+      if (!pullRes.success) {
+        return i.reply({ content: pullRes.message, ephemeral: true });
+      }
+      const newEmbed = buildGachaEmbed(interaction.user.username, pullRes, currentBanner);
+      await i.update({ embeds: [newEmbed], components: [buildGachaButtons()] });
+    }
+
+    // 3. Đổi Banner
+    else if (i.customId === 'gacha_btn_change_banner') {
+      const bannerMenu = new StringSelectMenuBuilder()
+        .setCustomId('gacha_menu_select_banner')
+        .setPlaceholder('Chọn Banner Gacha Muốn Đổi...')
+        .addOptions(
+          { label: '🌟 Banner Seele 5★ (Quantum - Hunt)', value: 'seele' },
+          { label: '⚡ Banner Jing Yuan 5★ (Lightning - Erudition)', value: 'jing_yuan' },
+          { label: '🌀 Banner Bronya 5★ (Wind - Harmony)', value: 'bronya' },
+          { label: '⚔️ Banner Nón Ánh Sáng 5★ (Brilliant Fixation)', value: 'weapon' }
+        );
+
+      const menuRow = new ActionRowBuilder().addComponents(bannerMenu);
+      await i.update({ components: [menuRow] });
+    }
+
+    // Handle Banner Select Menu
+    else if (i.customId === 'gacha_menu_select_banner') {
+      currentBanner = i.values[0];
+      const pullRes = handleGachaPull(interaction.user.id, 10, currentBanner);
+
+      if (!pullRes.success) {
+        return i.reply({ content: pullRes.message, ephemeral: true });
+      }
+
+      const newEmbed = buildGachaEmbed(interaction.user.username, pullRes, currentBanner);
+      await i.update({ embeds: [newEmbed], components: [buildGachaButtons()] });
+    }
+  });
 }
 
 module.exports = {
