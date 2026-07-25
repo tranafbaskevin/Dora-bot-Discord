@@ -58,20 +58,16 @@ async function startBattleMatch(interaction, enemyId, difficultyOpt = 'auto') {
     const remTurns = session.maxTurns - session.turn;
 
     const diffText = difficultyOpt === 'auto'
-      ? `🎯 Phù Hợp Đội Hình (Lv.${session.enemy.level})`
+      ? `🎯 Equal Level (Lv.${session.enemy.level})`
       : `Lv.${session.enemy.level}`;
 
-    const battleEmbed = new EmbedBuilder()
-      .setTitle(`⚔️ KHIÊU CHIẾN: ${session.enemy.name.toUpperCase()} (Lv.${session.enemy.level})`)
-      .setColor('#ff4d4d')
-      .setImage('attachment://battle.png')
-      .setDescription(`📊 **Độ Khó**: **${diffText}** | 👹 **Boss**: **${session.enemy.name}**\n⏳ **VÒNG ĐẤU**: Turn ${session.turn} / ${session.maxTurns} (Còn lại **${remTurns}** lượt)\n\n${session.logs.slice(-3).join('\n')}`)
-      .setFooter({ text: 'Nhấn nút bên dưới để điều khiển trận đấu!' });
+    const headerText = `⚔️ **KHIÊU CHIẾN: ${session.enemy.name.toUpperCase()} (Lv.${session.enemy.level})** | 📊 Độ Khó: **${diffText}** | ⏳ VÒNG ĐẤU: **Turn ${session.turn}/${session.maxTurns}** *(Còn lại ${remTurns} lượt)*`;
 
     const battleComponents = createBattleComponents(session);
 
+    // DIRECT FULL-BLEED FILE ATTACHMENT FOR MAXIMUM CHAT WIDTH DISPLAY!
     await interaction.editReply({
-      embeds: [battleEmbed],
+      content: headerText,
       files: [attachment],
       components: battleComponents
     });
@@ -119,17 +115,15 @@ async function startBattleMatch(interaction, enemyId, difficultyOpt = 'auto') {
       const newAttachment = new AttachmentBuilder(newBuffer, { name: 'battle.png' });
       const turnsLeft = session.maxTurns - session.turn;
 
-      const newEmbed = new EmbedBuilder()
-        .setTitle(`⚔️ KHIÊU CHIẾN: ${session.enemy.name.toUpperCase()} (Lv.${session.enemy.level})`)
-        .setColor(session.isFinished ? (session.winner === 'player' ? '#10b981' : '#ef4444') : '#ff4d4d')
-        .setImage('attachment://battle.png')
-        .setDescription(`📊 **Độ Khó**: **${diffText}** | 👹 **Boss**: **${session.enemy.name}**\n⏳ **VÒNG ĐẤU**: Turn ${session.turn} / ${session.maxTurns} (Còn lại **${turnsLeft}** lượt)\n\n${session.logs.slice(-4).join('\n')}`)
-        .setFooter({ text: session.isFinished ? 'Trận đấu đã kết thúc!' : 'Lượt của bạn!' });
+      const updatedText = session.isFinished
+        ? (session.winner === 'player' ? `🎉 **BẠN ĐÃ CHIẾN THẮNG KẺ ĐỊCH ${session.enemy.name.toUpperCase()}!**` : `💀 **TRẬN ĐẤU KẾT THÚC!**`)
+        : `⚔️ **KHIÊU CHIẾN: ${session.enemy.name.toUpperCase()} (Lv.${session.enemy.level})** | 📊 Độ Khó: **${diffText}** | ⏳ VÒNG ĐẤU: **Turn ${session.turn}/${session.maxTurns}** *(Còn lại ${turnsLeft} lượt)*`;
 
       const newComponents = session.isFinished ? [] : createBattleComponents(session);
 
+      // IN-PLACE UPDATE ON THE EXACT SAME MESSAGE! NO MESSAGE SPAM!
       await interaction.editReply({
-        embeds: [newEmbed],
+        content: updatedText,
         files: [newAttachment],
         components: newComponents
       }).catch(err => console.error('❌ Lỗi editReply battle action:', err));
