@@ -1,5 +1,15 @@
 const { Client, GatewayIntentBits, REST, Routes, Collection } = require('discord.js');
+const http = require('http');
 require('dotenv').config();
+
+// Simple HTTP Keep-Alive Server for Render Free Web Service & Cloud Hosting
+const PORT = process.env.PORT || 3000;
+http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('DoraBot is online 24/7!');
+}).listen(PORT, () => {
+  console.log(`🌐 HTTP Keep-Alive Server đang chạy tại port ${PORT}`);
+});
 
 // Global Error Handlers (Prevents Bot Process from Crashing!)
 process.on('unhandledRejection', (reason, promise) => {
