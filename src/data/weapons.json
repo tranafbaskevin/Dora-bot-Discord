@@ -1,0 +1,292 @@
+[
+  {
+    "id": "in_the_night",
+    "name": "Nón Ánh Sáng 5★: In the Night (Trong Đêm Tối)",
+    "rarity": 5,
+    "path": "Hunt",
+    "passiveDescription": "Tăng +18% Tỷ lệ Bạo Kích (CRIT Rate). Với mỗi 10 SPD vượt quá 100, tăng +6% Sát thương Đánh Thường & Chiến Kỹ, đồng thời tăng +12% Sát thương Bạo Kích của Tuyệt Kỹ.",
+    "baseStats": { "hp": 1058, "atk": 582, "def": 463 }
+  },
+  {
+    "id": "before_dawn",
+    "name": "Nón Ánh Sáng 5★: Before Dawn (Trước Bình Minh)",
+    "rarity": 5,
+    "path": "Erudition",
+    "passiveDescription": "Tăng +36% Sát Thương Bạo Kích (CRIT DMG). Tăng +18% Sát thương Chiến Kỹ và Tuyệt Kỹ. Sau khi thi triển, nhận trạng thái 'Mộng Thân' tăng +48% Sát thương Đòn Tấn Công Tăng Cường.",
+    "baseStats": { "hp": 1058, "atk": 582, "def": 463 }
+  },
+  {
+    "id": "but_the_battle_isnt_over",
+    "name": "Nón Ánh Sáng 5★: But the Battle Isn't Over (Cuộc Chiến Chưa Nguôi)",
+    "rarity": 5,
+    "path": "Harmony",
+    "passiveDescription": "Tăng +10% Tốc Độ Hồi Năng Lượng EP. Khi thi triển Tuyệt Kỹ lên đồng đội, hồi +1 Điểm Chiến Kỹ (SP). Sau khi người trang bị dùng Chiến Kỹ, tăng +30% ATK cho đồng đội kế tiếp.",
+    "baseStats": { "hp": 1164, "atk": 529, "def": 463 }
+  },
+  {
+    "id": "moment_of_victory",
+    "name": "Nón Ánh Sáng 5★: Moment of Victory (Thời Khắc Chiến Thắng)",
+    "rarity": 5,
+    "path": "Preservation",
+    "passiveDescription": "Tăng +24% DEF và +24% Chế Ngự Khống Chế. Tăng khả năng bị kẻ địch tấn công. Khi bị tấn công, tăng thêm +24% DEF đến khi kết thúc lượt.",
+    "baseStats": { "hp": 1058, "atk": 476, "def": 595 }
+  },
+  {
+    "id": "time_waits_for_no_one",
+    "name": "Nón Ánh Sáng 5★: Time Waits for No One (Thời Gian Không Chờ Ai)",
+    "rarity": 5,
+    "path": "Abundance",
+    "passiveDescription": "Tăng +18% HP tối đa và +12% Lượng Hồi Máu (Outgoing Healing). Khi hồi máu cho đồng đội, ghi nhớ lượng trị liệu để gây thêm Sát thương thuộc tính cho kẻ địch ngẫu nhiên.",
+    "baseStats": { "hp": 1270, "atk": 476, "def": 463 }
+  },
+  {
+    "id": "sleep_like_the_dead",
+    "name": "Nón Ánh Sáng 5★: Sleep Like the Dead (Giấc Ngủ Tựa Chết)",
+    "rarity": 5,
+    "path": "Hunt",
+    "passiveDescription": "Tăng +30% Sát Thương Bạo Kích (CRIT DMG). Khi Đánh Thường hoặc Chiến Kỹ không gây bạo kích, tăng +36% Tỷ lệ Bạo Kích trong 1 lượt.",
+    "baseStats": { "hp": 1058, "atk": 582, "def": 463 }
+  },
+  {
+    "id": "night_on_the_milky_way",
+    "name": "Nón Ánh Sáng 5★: Night on the Milky Way (Đêm Trên Dải Ngân Hà)",
+    "rarity": 5,
+    "path": "Erudition",
+    "passiveDescription": "Với mỗi kẻ địch trên sân, tăng +9% ATK (tối đa 5 cộng dồn). Khi có kẻ địch bị Phá Vỡ Điểm Yếu, tăng +30% Sát thương gây ra trong 1 lượt.",
+    "baseStats": { "hp": 1058, "atk": 582, "def": 463 }
+  },
+  {
+    "id": "something_irreplaceable",
+    "name": "Nón Ánh Sáng 5★: Something Irreplaceable (Vật Phẩm Không Thể Thay Thế)",
+    "rarity": 5,
+    "path": "Destruction",
+    "passiveDescription": "Tăng +24% ATK. Khi tiêu diệt kẻ địch hoặc bị tấn công, hồi lại 8% HP tối đa, đồng thời tăng +24% Sát thương đến hết lượt kế tiếp.",
+    "baseStats": { "hp": 1164, "atk": 582, "def": 396 }
+  },
+  {
+    "id": "on_the_fall_of_an_aeon",
+    "name": "Nón Ánh Sáng 5★: On the Fall of an Aeon (Sự Sụp Đổ Của Aeon)",
+    "rarity": 5,
+    "path": "Destruction",
+    "passiveDescription": "Khi người trang bị tấn công, tăng +8% ATK (tối đa 4 cộng dồn). Khi Phá Vỡ Điểm Yếu kẻ địch, tăng +12% Sát thương gây ra trong 2 lượt.",
+    "baseStats": { "hp": 1058, "atk": 529, "def": 396 }
+  },
+  {
+    "id": "patience_is_all_you_need",
+    "name": "Nón Ánh Sáng 5★: Patience Is All You Need (Chỉ Cần Kiên Nhẫn)",
+    "rarity": 5,
+    "path": "Nihility",
+    "passiveDescription": "Tăng +24% Sát thương gây ra. Sau mỗi đòn tấn công, tăng +4.8% SPD (tối đa 3 cộng dồn) và có 100% xác suất cơ bản khiến mục tiêu bị Thiêu Đốt/Sốc Điện.",
+    "baseStats": { "hp": 1058, "atk": 582, "def": 463 }
+  },
+
+  {
+    "id": "only_silence_remains",
+    "name": "Nón Ánh Sáng 4★: Only Silence Remains (Chỉ Còn Lại Chốn Lặng Yên)",
+    "rarity": 4,
+    "path": "Hunt",
+    "passiveDescription": "Tăng +24% ATK. Khi có ít hơn 2 kẻ địch trên sân đấu, tăng +12% Tỷ lệ Bạo Kích (CRIT Rate).",
+    "baseStats": { "hp": 952, "atk": 476, "def": 330 }
+  },
+  {
+    "id": "swordplay",
+    "name": "Nón Ánh Sáng 4★: Swordplay (Luận Kiếm)",
+    "rarity": 4,
+    "path": "Hunt",
+    "passiveDescription": "Khi đánh liên tục vào cùng một mục tiêu, mỗi đòn đánh tăng +8% Sát thương (tối đa 5 cộng dồn). Hiệu ứng biến mất khi đổi mục tiêu.",
+    "baseStats": { "hp": 952, "atk": 476, "def": 330 }
+  },
+  {
+    "id": "river_flows_in_spring",
+    "name": "Nón Ánh Sáng 4★: River Flows in Spring (Suối Mùa Xuân)",
+    "rarity": 4,
+    "path": "Hunt",
+    "passiveDescription": "Sau khi vào trận, tăng +8% SPD và +12% Sát thương gây ra. Hiệu ứng bị hủy khi chịu sát thương.",
+    "baseStats": { "hp": 846, "atk": 476, "def": 396 }
+  },
+  {
+    "id": "the_birth_of_the_self",
+    "name": "Nón Ánh Sáng 4★: The Birth of the Self (Sự Ra Đời Của Bản Thể)",
+    "rarity": 4,
+    "path": "Erudition",
+    "passiveDescription": "Tăng +24% Sát thương Đòn Tấn Công Tăng Cường. Nếu HP mục tiêu dưới 50%, tăng thêm +24% Sát thương.",
+    "baseStats": { "hp": 952, "atk": 476, "def": 330 }
+  },
+  {
+    "id": "geniuses_repose",
+    "name": "Nón Ánh Sáng 4★: Geniuses' Repose (Sự Nghỉ Ngơi Của Thiên Tài)",
+    "rarity": 4,
+    "path": "Erudition",
+    "passiveDescription": "Tăng +16% ATK. Khi tiêu diệt kẻ địch, tăng +24% Sát Thương Bạo Kích (CRIT DMG) trong 3 lượt.",
+    "baseStats": { "hp": 846, "atk": 476, "def": 396 }
+  },
+  {
+    "id": "make_the_world_clamor",
+    "name": "Nón Ánh Sáng 4★: Make the World Clamor (Hãy Làm Thế Giới Ồ Ạt)",
+    "rarity": 4,
+    "path": "Erudition",
+    "passiveDescription": "Ngay khi vào trận, người trang bị tự hồi +20 EP, đồng thời tăng +32% Sát thương Tuyệt Kỹ.",
+    "baseStats": { "hp": 846, "atk": 476, "def": 396 }
+  },
+  {
+    "id": "day_one_of_my_new_life",
+    "name": "Nón Ánh Sáng 4★: Day One of My New Life (Ngày Đầu Tiên Cuộc Sống Mới)",
+    "rarity": 4,
+    "path": "Preservation",
+    "passiveDescription": "Tăng +16% DEF. Sau khi vào trận, giảm 8% Sát thương gánh chịu cho toàn bộ đồng đội.",
+    "baseStats": { "hp": 952, "atk": 370, "def": 463 }
+  },
+  {
+    "id": "landaus_choice",
+    "name": "Nón Ánh Sáng 4★: Landau's Choice (Sự Lựa Chọn Của Landau)",
+    "rarity": 4,
+    "path": "Preservation",
+    "passiveDescription": "Tăng khả năng bị kẻ địch tấn công, đồng thời giảm 16% Sát thương gánh chịu.",
+    "baseStats": { "hp": 952, "atk": 370, "def": 463 }
+  },
+  {
+    "id": "trend_of_the_universal_market",
+    "name": "Nón Ánh Sáng 4★: Trend of the Universal Market (Xu Hướng Thị Trường)",
+    "rarity": 4,
+    "path": "Preservation",
+    "passiveDescription": "Tăng +16% DEF. Khi bị tấn công, có 100% xác suất cơ bản thiêu đốt kẻ địch gây sát thương theo DEF.",
+    "baseStats": { "hp": 1058, "atk": 370, "def": 396 }
+  },
+  {
+    "id": "shared_feeling",
+    "name": "Nón Ánh Sáng 4★: Shared Feeling (Cùng Dốc Lòng)",
+    "rarity": 4,
+    "path": "Abundance",
+    "passiveDescription": "Tăng +10% Lượng Hồi Máu. Khi thi triển Chiến Kỹ, hồi +2 EP cho toàn bộ đồng đội.",
+    "baseStats": { "hp": 952, "atk": 423, "def": 396 }
+  },
+  {
+    "id": "post_op_conversation",
+    "name": "Nón Ánh Sáng 4★: Post-Op Conversation (Trò Chuyện Sau Phẫu Thuật)",
+    "rarity": 4,
+    "path": "Abundance",
+    "passiveDescription": "Tăng +8% Tốc Độ Hồi Năng Lượng EP. Khi thi triển Tuyệt Kỹ, tăng +12% Lượng Hồi Máu.",
+    "baseStats": { "hp": 1058, "atk": 423, "def": 330 }
+  },
+  {
+    "id": "perfect_timing",
+    "name": "Nón Ánh Sáng 4★: Perfect Timing (Thời Điểm Thích Hợp)",
+    "rarity": 4,
+    "path": "Abundance",
+    "passiveDescription": "Tăng +16% Kháng Hiệu Ứng. Tăng Lượng Hồi Máu dựa trên 33% Kháng Hiệu Ứng của nhân vật.",
+    "baseStats": { "hp": 952, "atk": 423, "def": 396 }
+  },
+  {
+    "id": "past_and_future",
+    "name": "Nón Ánh Sáng 4★: Past and Future (Quá Khứ và Tương Lai)",
+    "rarity": 4,
+    "path": "Harmony",
+    "passiveDescription": "Sau khi thi triển Chiến Kỹ, tăng +16% Sát thương cho đồng đội hành động tiếp theo trong 1 lượt.",
+    "baseStats": { "hp": 952, "atk": 423, "def": 396 }
+  },
+  {
+    "id": "planetary_rendezvous",
+    "name": "Nón Ánh Sáng 4★: Planetary Rendezvous (Điểm Hẹn Hành Tinh)",
+    "rarity": 4,
+    "path": "Harmony",
+    "passiveDescription": "Khi vào trận, tất cả đồng đội gây cùng loại thuộc tính với người trang bị được tăng +12% Sát thương.",
+    "baseStats": { "hp": 1058, "atk": 423, "def": 330 }
+  },
+  {
+    "id": "eyes_of_the_prey",
+    "name": "Nón Ánh Sáng 4★: Eyes of the Prey (Ánh Mắt Con Mồi)",
+    "rarity": 4,
+    "path": "Nihility",
+    "passiveDescription": "Tăng +20% Chính Xác Hiệu Ứng và +24% Sát Thương Theo Thời Gian (DoT).",
+    "baseStats": { "hp": 952, "atk": 476, "def": 330 }
+  },
+  {
+    "id": "secret_vow",
+    "name": "Nón Ánh Sáng 4★: A Secret Vow (Lời Thề Thầm Kín)",
+    "rarity": 4,
+    "path": "Destruction",
+    "passiveDescription": "Tăng +20% Sát thương gây ra. Nếu tỷ lệ HP% của mục tiêu cao hơn người trang bị, tăng thêm +20% Sát thương.",
+    "baseStats": { "hp": 1058, "atk": 476, "def": 264 }
+  },
+
+  {
+    "id": "arrows",
+    "name": "Nón Ánh Sáng 3★: Arrows (Mũi Tên)",
+    "rarity": 3,
+    "path": "Hunt",
+    "passiveDescription": "Sau khi vào trận, tăng +12% Tỷ lệ Bạo Kích (CRIT Rate) trong 3 lượt.",
+    "baseStats": { "hp": 846, "atk": 317, "def": 264 }
+  },
+  {
+    "id": "darting_arrow",
+    "name": "Nón Ánh Sáng 3★: Darting Arrow (Tên Vút Bay)",
+    "rarity": 3,
+    "path": "Hunt",
+    "passiveDescription": "Khi tiêu diệt kẻ địch, tăng +24% ATK trong 3 lượt.",
+    "baseStats": { "hp": 740, "atk": 370, "def": 264 }
+  },
+  {
+    "id": "adversary",
+    "name": "Nón Ánh Sáng 3★: Adversary (Kẻ Thù)",
+    "rarity": 3,
+    "path": "Hunt",
+    "passiveDescription": "Khi tiêu diệt kẻ địch, tăng +10% SPD trong 2 lượt.",
+    "baseStats": { "hp": 740, "atk": 370, "def": 264 }
+  },
+  {
+    "id": "cornucopia",
+    "name": "Nón Ánh Sáng 3★: Cornucopia (Cột Sừng Sung Túc)",
+    "rarity": 3,
+    "path": "Abundance",
+    "passiveDescription": "Khi thi triển Chiến Kỹ hoặc Tuyệt Kỹ, tăng +12% Lượng Hồi Máu.",
+    "baseStats": { "hp": 952, "atk": 264, "def": 264 }
+  },
+  {
+    "id": "fine_fruit",
+    "name": "Nón Ánh Sáng 3★: Fine Fruit (Trái Cây Tươi)",
+    "rarity": 3,
+    "path": "Abundance",
+    "passiveDescription": "Khi bắt đầu trận đấu, hồi +6 EP cho toàn bộ đồng đội.",
+    "baseStats": { "hp": 952, "atk": 264, "def": 264 }
+  },
+  {
+    "id": "passkey",
+    "name": "Nón Ánh Sáng 3★: Passkey (Chìa Khóa Vạn Năng)",
+    "rarity": 3,
+    "path": "Erudition",
+    "passiveDescription": "Sau khi thi triển Chiến Kỹ, tự hồi +8 EP.",
+    "baseStats": { "hp": 740, "atk": 370, "def": 264 }
+  },
+  {
+    "id": "meshing_cogs",
+    "name": "Nón Ánh Sáng 3★: Meshing Cogs (Bánh Răng Nhảy Dù)",
+    "rarity": 3,
+    "path": "Harmony",
+    "passiveDescription": "Khi tấn công hoặc bị kẻ địch tấn công, tự hồi +4 EP.",
+    "baseStats": { "hp": 846, "atk": 317, "def": 264 }
+  },
+  {
+    "id": "amber",
+    "name": "Nón Ánh Sáng 3★: Amber (Hổ Phách)",
+    "rarity": 3,
+    "path": "Preservation",
+    "passiveDescription": "Tăng +16% DEF. Khi HP của người trang bị dưới 50%, tăng thêm +16% DEF.",
+    "baseStats": { "hp": 846, "atk": 264, "def": 330 }
+  },
+  {
+    "id": "defense",
+    "name": "Nón Ánh Sáng 3★: Defense (Phòng Thủ)",
+    "rarity": 3,
+    "path": "Preservation",
+    "passiveDescription": "Khi thi triển Tuyệt Kỹ, hồi lại 18% HP tối đa cho bản thân.",
+    "baseStats": { "hp": 952, "atk": 264, "def": 264 }
+  },
+  {
+    "id": "collapsing_sky",
+    "name": "Nón Ánh Sáng 3★: Collapsing Sky (Bầu Trời Sụp Đổ)",
+    "rarity": 3,
+    "path": "Destruction",
+    "passiveDescription": "Tăng +20% Sát thương Đánh Thường và Chiến Kỹ.",
+    "baseStats": { "hp": 846, "atk": 317, "def": 264 }
+  }
+]

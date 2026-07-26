@@ -39,29 +39,29 @@ const battleCommand = new SlashCommandBuilder()
   );
 
 function sendVictoryEmbed(interaction, userId, session) {
-  const user = db.getUser(userId);
-  db.updateUserJades(userId, user.jades + 800);
-
   const vData = session.victoryData || {};
-  const relic = vData.artifact || {};
-  const subLines = (relic.subStats || []).map((s, idx) => `   ${idx + 1}. **${s.name}**: \`+${s.value}${s.name.includes('%') ? '%' : ''}\``).join('\n');
+  const artifacts = vData.artifacts || [vData.artifact].filter(Boolean);
+
+  const artFields = artifacts.map((relic, idx) => {
+    const subLines = (relic.subStats || []).map((s, sIdx) => `   ${sIdx + 1}. **${s.name}**: \`+${s.value}${s.name.includes('%') ? '%' : ''}\``).join('\n');
+    return {
+      name: `🛡️ DI VẬT MỚI #${idx + 1}: ${relic.setName || 'Di Vật'} (${relic.rarity || 5}★) [${relic.slot || 'Head'}]`,
+      value: `🔹 **Chỉ Số Chính**: \`${relic.mainStat || 'ATK%'} +${relic.mainValue || '8.5'}\`\n🔸 **Dòng Buff Chỉ Số Phụ**:\n${subLines || '   1. ATK%: +3.2%'}`,
+      inline: false
+    };
+  });
 
   const victoryEmbed = new EmbedBuilder()
     .setTitle(`🎉 PHẦN THƯỞNG CHIẾN THẮNG BOSS ${session.enemy.name.toUpperCase()}!`)
     .setColor('#f59e0b')
     .setDescription(`Chúc mừng **<@${userId}>** đã xuất sắc tiêu diệt Boss **${session.enemy.name}** (Lv.${session.enemy.level})!`)
     .addFields(
-      { name: '💎 Ngọc Ánh Sao', value: '`+800 Jades`', inline: true },
-      { name: '🌟 EXP Thám Hiểm', value: `\`+450 EXP\` ${vData.leveledUp ? `🎉 **LÊN CẤP ${vData.newLevel}!** (+300 Jades)` : ''}`, inline: true },
-      { name: '📦 Nguyên Liệu Nâng Cấp', value: '• `+6` Sách EXP Nhân Vật\n• `+6` Tinh Thể Vũ Khí\n• `+12` Bụi Di Vật', inline: false },
-      {
-        name: `🛡️ DI VẬT 5★ MỚI NHẬN: ${relic.setName || 'Di Vật 5★'} [${relic.slot || 'Head'}]`,
-        value: `🔹 **Chỉ Số Chính**: \`${relic.mainStat || 'ATK%'} +${relic.mainValue || '8.5'}\`\n` +
-               `🔸 **4 Dòng Buff Chỉ Số Phụ**:\n${subLines || '   1. ATK%: +3.2%\n   2. CRIT Rate%: +2.8%\n   3. SPD: +3.0\n   4. DEF%: +4.1%'}`,
-        inline: false
-      }
+      { name: '💎 Ngọc Ánh Sao', value: `\`+${vData.jades?.toLocaleString() || 800} Jades\``, inline: true },
+      { name: '🌟 EXP Thám Hiểm', value: `\`+${vData.exp || 450} EXP\` ${vData.leveledUp ? `🎉 **LÊN CẤP ${vData.newLevel}!** (+300 Jades)` : ''}`, inline: true },
+      { name: '📦 Nguyên Liệu Nâng Cấp Chuyên Biệt', value: `• \`+${vData.charExpBooks || 6}\` Sách EXP Nhân Vật\n• \`+${vData.weaponExpCrystals || 6}\` Tinh Thể Vũ Khí\n• \`+${vData.artifactDust || 12}\` Bụi Di Vật`, inline: false },
+      ...artFields
     )
-    .setFooter({ text: 'Di vật 5★ đã được tự động bảo quản trong Inventory! Dùng /equipment để trang bị.' });
+    .setFooter({ text: 'Cả 2 Di vật đã được tự động bảo quản trong Inventory! Dùng /equipment để trang bị.' });
 
   interaction.followUp({ embeds: [victoryEmbed] }).catch(err => console.error('❌ Lỗi followUp victoryEmbed:', err));
 }
@@ -188,13 +188,16 @@ async function executeBattle(interaction) {
       ? '🎯 Phù Hợp Level Đội Hình (Equal Level Matchmaking)'
       : `Lv.${currentDiff}`;
 
+    const r = chosenEnemy.rewards || { jades: 800, charExpBooks: 6, weaponExpCrystals: 6, artifactDust: 12 };
+
     return new EmbedBuilder()
       .setTitle('⚔️ THIẾT LẬP KHIÊU CHIẾN BOSS TRẬN ĐẤU')
       .setColor('#3b82f6')
       .setDescription('Chọn Boss và Độ Khó từ các menu bên dưới, sau đó bấm nút **🚀 BẮT ĐẦU TRẬN ĐẤU** để vào trận!')
       .addFields(
-        { name: '👹 Boss Được Chọn', value: `**${chosenEnemy.name}** *(Rớt: ${chosenEnemy.dropArtifacts.map(a => a.toUpperCase()).join(' & ')})*`, inline: true },
-        { name: '📊 Độ Khó / Level', value: `**${diffLabel}**`, inline: true }
+        { name: '👹 Boss Được Chọn', value: `**${chosenEnemy.name}**\n• Rớt: **${chosenEnemy.dropArtifacts.map(a => a.toUpperCase()).join(' & ')}**`, inline: true },
+        { name: '🎁 Thưởng Chuyên Biệt', value: `• **${r.jades}** Jades\n• **+${r.charExpBooks}** Sách EXP | **+${r.weaponExpCrystals}** Tinh Thể\n• **+${r.artifactDust}** Bụi Di Vật`, inline: true },
+        { name: '📊 Độ Khó / Level', value: `**${diffLabel}**`, inline: false }
       )
       .setFooter({ text: 'Thoải mái tùy chỉnh Boss và Độ khó trước khi bấm Bắt Đầu!' });
   }

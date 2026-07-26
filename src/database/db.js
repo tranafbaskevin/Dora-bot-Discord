@@ -38,6 +38,36 @@ function normalizeWeaponName(name) {
     .trim();
 }
 
+// 100% RANDOM SUBSTAT GENERATOR FOR WEAPONS
+function generateRandomWeaponSubstats(rarity = 4) {
+  const subPool = [
+    { name: 'ATK%', min: 3.0, max: 8.0, isPercent: true },
+    { name: 'CRIT Rate%', min: 2.5, max: 6.0, isPercent: true },
+    { name: 'CRIT DMG%', min: 5.0, max: 12.0, isPercent: true },
+    { name: 'SPD', min: 2, max: 6, isPercent: false },
+    { name: 'DEF%', min: 4.0, max: 9.0, isPercent: true },
+    { name: 'HP%', min: 4.0, max: 9.0, isPercent: true },
+    { name: 'Hồi EP%', min: 2.0, max: 5.0, isPercent: true },
+    { name: 'Tấn Công Phá Vỡ%', min: 5.0, max: 12.0, isPercent: true },
+    { name: 'Tăng Hồi Máu%', min: 3.0, max: 7.0, isPercent: true },
+    { name: 'Chính Xác Hiệu Ứng%', min: 3.0, max: 8.0, isPercent: true }
+  ];
+
+  const count = rarity === 5 ? 4 : (rarity === 4 ? 3 : 2);
+  const selected = [];
+  while (selected.length < count) {
+    const pick = subPool[Math.floor(Math.random() * subPool.length)];
+    if (!selected.some(s => s.name === pick.name)) {
+      const mult = rarity === 5 ? 1.0 : (rarity === 4 ? 0.8 : 0.6);
+      const val = pick.isPercent
+        ? parseFloat(((pick.min + Math.random() * (pick.max - pick.min)) * mult).toFixed(1))
+        : Math.round((pick.min + Math.random() * (pick.max - pick.min)) * mult);
+      selected.push({ name: pick.name, value: val });
+    }
+  }
+  return selected;
+}
+
 // Get or Create User
 function getUser(discordId) {
   const data = readDb();
@@ -122,7 +152,7 @@ function addPlayerExp(discordId, expGained) {
   let reqExp = user.player_level * 500;
   let leveledUp = false;
 
-  while (user.player_exp >= reqExp && user.player_level < 70) {
+  while (user.player_exp >= reqExp && user.player_level < 80) {
     user.player_exp -= reqExp;
     user.player_level += 1;
     user.jades += 300;
@@ -175,7 +205,7 @@ function upgradeCharacterLevel(discordId, charId, useMax = true) {
   };
 }
 
-// Upgrade Weapon Level (SYNCS BOTH inventory and weapons table!)
+// Upgrade Weapon Level
 function upgradeWeaponLevel(discordId, charId, useMax = true) {
   const data = readDb();
   const user = data.users[discordId] || getUser(discordId);
@@ -257,19 +287,21 @@ function addArtifact(discordId, artifact) {
   const data = readDb();
   if (!data.artifacts[discordId]) data.artifacts[discordId] = [];
 
+  const rarity = artifact.rarity || 5;
   const newArt = {
     id: `art_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
     char_id: artifact.char_id || null,
-    setName: artifact.setName || 'Bộ Thiện Xạ Trường Hoang (5★)',
+    setName: artifact.setName || 'Bộ Thiện Xạ Trường Hoang',
+    rarity: rarity,
     slot: artifact.slot || 'Head',
     mainStat: artifact.mainStat || 'CRIT Rate%',
-    mainValue: artifact.mainValue || 5.0,
+    mainValue: artifact.mainValue || (rarity === 5 ? 5.0 : 3.2),
     level: 0,
     exp: 0,
     subStats: artifact.subStats || [
-      { name: 'ATK%', value: 3.5 },
+      { name: 'ATK%', value: rarity === 5 ? 3.5 : 2.2 },
       { name: 'SPD', value: 2 },
-      { name: 'CRIT DMG%', value: 5.0 }
+      { name: 'CRIT DMG%', value: rarity === 5 ? 5.0 : 3.0 }
     ]
   };
 
@@ -284,10 +316,10 @@ function addWeapon(discordId, weapon) {
   if (!data.weapons) data.weapons = {};
   if (!data.weapons[discordId]) {
     data.weapons[discordId] = [
-      { id: 'wpn_seele', name: 'In the Night (5★)', rarity: 5, level: 1, superimpose: 1, char_id: 'seele' },
-      { id: 'wpn_danheng', name: 'Only Silence Remains (4★)', rarity: 4, level: 1, superimpose: 1, char_id: 'dan_heng' },
-      { id: 'wpn_march', name: 'Day One of My New Life (4★)', rarity: 4, level: 1, superimpose: 1, char_id: 'march_7th' },
-      { id: 'wpn_natasha', name: 'Shared Feeling (4★)', rarity: 4, level: 1, superimpose: 1, char_id: 'natasha' }
+      { id: 'wpn_seele', name: 'In the Night (5★)', rarity: 5, level: 1, superimpose: 1, path: 'Hunt', passiveDescription: 'Tăng +18% Tỷ lệ Bạo Kích. Với mỗi 10 SPD vượt quá 100, tăng +6% Sát thương Đánh Thường & Chiến Kỹ.', subStats: generateRandomWeaponSubstats(5), char_id: 'seele' },
+      { id: 'wpn_danheng', name: 'Only Silence Remains (4★)', rarity: 4, level: 1, superimpose: 1, path: 'Hunt', passiveDescription: 'Tăng +24% ATK. Khi có ít hơn 2 kẻ địch trên sân đấu, tăng +12% Tỷ lệ Bạo Kích.', subStats: generateRandomWeaponSubstats(4), char_id: 'dan_heng' },
+      { id: 'wpn_march', name: 'Day One of My New Life (4★)', rarity: 4, level: 1, superimpose: 1, path: 'Preservation', passiveDescription: 'Tăng +16% DEF. Giảm 8% Sát thương gánh chịu cho toàn bộ đồng đội.', subStats: generateRandomWeaponSubstats(4), char_id: 'march_7th' },
+      { id: 'wpn_natasha', name: 'Shared Feeling (4★)', rarity: 4, level: 1, superimpose: 1, path: 'Abundance', passiveDescription: 'Tăng +10% Lượng Hồi Máu. Khi thi triển Chiến Kỹ, hồi +2 EP cho đồng đội.', subStats: generateRandomWeaponSubstats(4), char_id: 'natasha' }
     ];
   }
 
@@ -310,6 +342,9 @@ function addWeapon(discordId, weapon) {
       level: 1,
       exp: 0,
       superimpose: 1,
+      path: weapon.path || 'Hunt',
+      passiveDescription: weapon.passiveDescription || 'Tăng sát thương và các chỉ số bổ trợ cho nhân vật trang bị.',
+      subStats: generateRandomWeaponSubstats(weapon.rarity || 4),
       char_id: null
     };
     data.weapons[discordId].push(newWpn);
@@ -323,10 +358,10 @@ function getUserWeapons(discordId) {
   if (!data.weapons) data.weapons = {};
   if (!data.weapons[discordId]) {
     data.weapons[discordId] = [
-      { id: 'wpn_seele', name: 'In the Night (5★)', rarity: 5, level: 1, superimpose: 1, char_id: 'seele' },
-      { id: 'wpn_danheng', name: 'Only Silence Remains (4★)', rarity: 4, level: 1, superimpose: 1, char_id: 'dan_heng' },
-      { id: 'wpn_march', name: 'Day One of My New Life (4★)', rarity: 4, level: 1, superimpose: 1, char_id: 'march_7th' },
-      { id: 'wpn_natasha', name: 'Shared Feeling (4★)', rarity: 4, level: 1, superimpose: 1, char_id: 'natasha' }
+      { id: 'wpn_seele', name: 'In the Night (5★)', rarity: 5, level: 1, superimpose: 1, path: 'Hunt', passiveDescription: 'Tăng +18% Tỷ lệ Bạo Kích. Với mỗi 10 SPD vượt quá 100, tăng +6% Sát thương Đánh Thường & Chiến Kỹ.', subStats: generateRandomWeaponSubstats(5), char_id: 'seele' },
+      { id: 'wpn_danheng', name: 'Only Silence Remains (4★)', rarity: 4, level: 1, superimpose: 1, path: 'Hunt', passiveDescription: 'Tăng +24% ATK. Khi có ít hơn 2 kẻ địch trên sân đấu, tăng +12% Tỷ lệ Bạo Kích.', subStats: generateRandomWeaponSubstats(4), char_id: 'dan_heng' },
+      { id: 'wpn_march', name: 'Day One of My New Life (4★)', rarity: 4, level: 1, superimpose: 1, path: 'Preservation', passiveDescription: 'Tăng +16% DEF. Giảm 8% Sát thương gánh chịu cho toàn bộ đồng đội.', subStats: generateRandomWeaponSubstats(4), char_id: 'march_7th' },
+      { id: 'wpn_natasha', name: 'Shared Feeling (4★)', rarity: 4, level: 1, superimpose: 1, path: 'Abundance', passiveDescription: 'Tăng +10% Lượng Hồi Máu. Khi thi triển Chiến Kỹ, hồi +2 EP cho đồng đội.', subStats: generateRandomWeaponSubstats(4), char_id: 'natasha' }
     ];
     saveDb(data);
   }
@@ -534,6 +569,7 @@ module.exports = {
   upgradeArtifact,
   addWeapon,
   getUserWeapons,
+  generateRandomWeaponSubstats,
   setGuaranteedState,
   updateUserJades,
   updatePity,

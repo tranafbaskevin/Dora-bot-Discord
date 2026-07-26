@@ -4,10 +4,11 @@ const fs = require('fs');
 const db = require('../database/db');
 const charactersData = require('../data/characters.json');
 const artifactsData = require('../data/artifacts.json');
+const weaponsData = require('../data/weapons.json');
 
 const infoCommand = new SlashCommandBuilder()
   .setName('info')
-  .setDescription('Thư viện tra cứu Nhân vật, Thánh Di Vật và Vũ khí Nón Ánh Sáng');
+  .setDescription('Thư viện tra cứu Nhân vật, Thánh Di Vật và Vũ khí Nón Ánh Sáng vĩnh cửu');
 
 function getCharAvatarAttachment(char) {
   if (!char || !char.icon) return { url: null, attachment: null };
@@ -118,11 +119,11 @@ async function executeInfo(interaction) {
 
       const artLines = artifactsData.map((art, idx) => {
         const recs = art.recommendedChars.map(c => `\`[${c}]\``).join(', ');
-        return `**${idx + 1}. ${art.name} (5★)**\n   • **Bộ 2 món**: ${art.twoPieceDescription}\n   • **Bộ 4 món**: ${art.fourPieceDescription}\n   💡 **Phù hợp nhất cho**: ${recs}`;
+        return `**${idx + 1}. ${art.name} (4★ / 5★)**\n   • **Bộ 2 món**: ${art.twoPieceDescription}\n   • **Bộ 4 món**: ${art.fourPieceDescription}\n   💡 **Phù hợp nhất cho**: ${recs}`;
       }).join('\n\n');
 
       const artEmbed = new EmbedBuilder()
-        .setTitle('🛡️ THƯ VIỆN THÁNH DI VẬT & GỢI Ý CHO NEWBIE')
+        .setTitle('🛡️ THƯ VIỆN THÁNH DI VẬT (4★ & 5★) & GỢI Ý CHO NEWBIE')
         .setColor('#10b981')
         .setDescription(artLines)
         .setFooter({ text: 'Khiêu chiến Boss ở /battle để farm các bộ Di vật tương ứng!' });
@@ -130,20 +131,31 @@ async function executeInfo(interaction) {
       await i.editReply({ embeds: [artEmbed], components: [rowButtons] });
     }
 
-    // 3. Weapons Category
+    // 3. Weapons Category (36+ WEAPONS DATABASE WITH PASSIVE & RANDOM SUBSTATS)
     else if (customId === 'info_cat_weapon') {
       await i.deferUpdate().catch(() => {});
 
+      const wpn5 = weaponsData.filter(w => w.rarity === 5);
+      const wpn4 = weaponsData.filter(w => w.rarity === 4);
+
+      const fields5 = wpn5.slice(0, 5).map(w => ({
+        name: `🌟 ${w.name} [Vận Mệnh: ${w.path}]`,
+        value: `📜 **Dòng Nội Tại**: ${w.passiveDescription}\n🎲 **4 Dòng Buff Ngẫu Nhiên**: \`ATK% +6.5%, CRIT Rate% +4.2%, SPD +4, CRIT DMG% +8.5%\``,
+        inline: false
+      }));
+
+      const fields4 = wpn4.slice(0, 4).map(w => ({
+        name: `⭐ ${w.name} [Vận Mệnh: ${w.path}]`,
+        value: `📜 **Dòng Nội Tại**: ${w.passiveDescription}\n🎲 **3 Dòng Buff Ngẫu Nhiên**: \`ATK% +4.5%, DEF% +5.2%, SPD +3\``,
+        inline: false
+      }));
+
       const wpnEmbed = new EmbedBuilder()
-        .setTitle('⚔️ THƯ VIỆN VŨ KHÍ / NÓN ÁNH SÁNG')
+        .setTitle(`⚔️ THƯ VIỆN NÓN ÁNH SÁNG VĨNH CỬU (36+ VŨ KHÍ)`)
         .setColor('#eab308')
-        .setDescription('Danh sách các Nón Ánh Sáng mạnh nhất trong game:')
-        .addFields(
-          { name: '🌟 Nón Ánh Sáng 5★: In the Night (Trong Đêm Tối)', value: 'Tăng +18% CRIT Rate. Với mỗi 10 SPD vượt quá 100, tăng +6% Sát thương Đánh thường & Chiến kỹ.', inline: false },
-          { name: '🌟 Nón Ánh Sáng 5★: Before Dawn (Trước Bình Minh)', value: 'Tăng +36% CRIT DMG & +18% Sát thương Chiến kỹ/Tuyệt kỹ cho nhân vật.', inline: false },
-          { name: '⭐ Nón Ánh Sáng 4★: Only Silence Remains (Chỉ Còn Lại Chốn Lặng Yên)', value: 'Tăng +24% ATK. Khi có ít hơn 2 kẻ địch trên sân, tăng +12% CRIT Rate.', inline: false },
-          { name: '⭐ Nón Ánh Sáng 4★: Day One of My New Life (Ngày Đầu Tiên)', value: 'Tăng +24% DEF. Giảm 8% Sát thương gánh chịu cho toàn bộ đồng đội.', inline: false }
-        );
+        .setDescription(`Tổng hợp **${weaponsData.length} Nón Ánh Sáng** thuộc 7 Vận Mệnh. Mọi Vũ Khí khi nhận được đều có **Dòng Nội Tại Đặc Biệt** cố định + **4 Dòng Buff Chỉ Số % Ngẫu Nhiên 100%**!`)
+        .addFields(...fields5, ...fields4)
+        .setFooter({ text: 'Dùng /gacha Banner Vũ Khí Vĩnh Cửu để quay nhận các loại Nón Ánh Sáng!' });
 
       await i.editReply({ embeds: [wpnEmbed], components: [rowButtons] });
     }

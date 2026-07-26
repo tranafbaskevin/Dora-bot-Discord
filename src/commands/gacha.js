@@ -3,10 +3,11 @@ const path = require('path');
 const fs = require('fs');
 const db = require('../database/db');
 const charactersData = require('../data/characters.json');
+const weaponsData = require('../data/weapons.json');
 
 const gachaCommand = new SlashCommandBuilder()
   .setName('gacha')
-  .setDescription('Bước nhảy không gian / Cầu nguyện gacha nhân vật & vũ khí')
+  .setDescription('Bước nhảy không gian / Cầu nguyện gacha nhân vật & vũ khí vĩnh cửu')
   .addIntegerOption(opt =>
     opt.setName('amount')
       .setDescription('Số lượt quay (1 - 10 lượt)')
@@ -22,7 +23,7 @@ const gachaCommand = new SlashCommandBuilder()
         { name: '🌟 Banner Seele 5★ (Quantum - Hunt)', value: 'seele' },
         { name: '⚡ Banner Jing Yuan 5★ (Lightning - Erudition)', value: 'jing_yuan' },
         { name: '🌀 Banner Bronya 5★ (Wind - Harmony)', value: 'bronya' },
-        { name: '⚔️ Banner Nón Ánh Sáng 5★ (Brilliant Fixation)', value: 'weapon' }
+        { name: '⚔️ Banner Nón Ánh Sáng Vĩnh Cửu 36+ (Brilliant Fixation)', value: 'weapon' }
       )
   );
 
@@ -64,17 +65,9 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
   const standardChars5 = charactersData.filter(c => c.rarity === 5 && c.id !== featuredId);
   const chars4Star = charactersData.filter(c => c.rarity === 4);
 
-  const weapons5Star = [
-    { name: 'Nón Ánh Sáng 5★: In the Night (Seele)', rarity: 5, type: 'weapon' },
-    { name: 'Nón Ánh Sáng 5★: Before Dawn (Jing Yuan)', rarity: 5, type: 'weapon' },
-    { name: 'Nón Ánh Sáng 5★: But the Battle Isn\'t Over (Bronya)', rarity: 5, type: 'weapon' }
-  ];
-
-  const weapons4Star = [
-    { name: 'Nón Ánh Sáng 4★: Only Silence Remains', rarity: 4, type: 'weapon' },
-    { name: 'Nón Ánh Sáng 4★: Shared Feeling', rarity: 4, type: 'weapon' },
-    { name: 'Nón Ánh Sáng 4★: Swordplay', rarity: 4, type: 'weapon' }
-  ];
+  const weapons5Star = weaponsData.filter(w => w.rarity === 5);
+  const weapons4Star = weaponsData.filter(w => w.rarity === 4);
+  const weapons3Star = weaponsData.filter(w => w.rarity === 3);
 
   for (let i = 0; i < actualAmount; i++) {
     currentPity5++;
@@ -88,7 +81,8 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
     if (currentPity5 >= 90 || Math.random() < 0.006 + Math.max(0, currentPity5 - 74) * 0.06) {
       pulledRarity = 5;
       if (bannerType === 'weapon') {
-        item = weapons5Star[Math.floor(Math.random() * weapons5Star.length)];
+        const randWpn = weapons5Star[Math.floor(Math.random() * weapons5Star.length)];
+        item = { type: 'weapon', ...randWpn };
       } else {
         if (isGuaranteed || Math.random() < 0.5) {
           item = { type: 'char', ...featuredChar5 };
@@ -105,14 +99,20 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
     } else if (currentPity4 >= 10 || Math.random() < 0.051) {
       pulledRarity = 4;
       if (bannerType === 'weapon') {
-        item = weapons4Star[Math.floor(Math.random() * weapons4Star.length)];
+        const randWpn = weapons4Star[Math.floor(Math.random() * weapons4Star.length)];
+        item = { type: 'weapon', ...randWpn };
       } else {
         item = { type: 'char', ...chars4Star[Math.floor(Math.random() * chars4Star.length)] };
       }
       currentPity4 = 0;
     } else {
       pulledRarity = 3;
-      trashCount++;
+      if (bannerType === 'weapon') {
+        const randWpn = weapons3Star[Math.floor(Math.random() * weapons3Star.length)];
+        item = { type: 'weapon', ...randWpn };
+      } else {
+        trashCount++;
+      }
     }
 
     if (item) {
@@ -132,6 +132,7 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
           item,
           rarity: pulledRarity,
           name: item.name,
+          weaponObj: wpnResult.weapon,
           isNew: wpnResult.isNew,
           superimpose: wpnResult.superimpose
         });
@@ -168,7 +169,7 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
 
 function buildGachaEmbedPayload(username, res, bannerType) {
   const bannerTitle = bannerType === 'weapon'
-    ? '⚔️ BƯỚC NHẢY NÓN ÁNH SÁNG (Brilliant Fixation)'
+    ? '⚔️ BƯỚC NHẢY VŨ KHÍ VĨNH CỬU (Brilliant Fixation - 36+ Nón Ánh Sáng)'
     : `🌟 BƯỚC NHẢY EVENT: ${res.featuredChar.name.toUpperCase()} 5★`;
 
   const autoNotice = res.adjusted
@@ -195,7 +196,8 @@ function buildGachaEmbedPayload(username, res, bannerType) {
         resultLines.push(`\`${idx + 1}.\` 🌟🌟🌟🌟🌟 **${r.item.name}** (${r.item.element}) ${rateTag} - ${status}`);
       } else {
         const status = r.isNew ? '🆕 [MỚI!]' : `⚔️ [TÍCH CHỒNG S${r.superimpose}]`;
-        resultLines.push(`\`${idx + 1}.\` 🌟🌟🌟🌟🌟 **${r.name}** - ${status}`);
+        const subs = (r.weaponObj?.subStats || []).map(s => `${s.name} +${s.value}`).join(', ');
+        resultLines.push(`\`${idx + 1}.\` 🌟🌟🌟🌟🌟 **${r.name}** - ${status}\n      🎲 Buff ngẫu nhiên: \`${subs || 'ATK% +5.2%, CRIT Rate% +3.8%'}\``);
       }
     } else if (r.rarity === 4) {
       if (r.item && r.item.type === 'char') {
@@ -203,10 +205,15 @@ function buildGachaEmbedPayload(username, res, bannerType) {
         resultLines.push(`\`${idx + 1}.\` ⭐⭐⭐⭐ **${r.item.name}** (${r.item.element}) - ${status}`);
       } else {
         const status = r.isNew ? '🆕 [MỚI!]' : `⚔️ [TÍCH CHỒNG S${r.superimpose}]`;
-        resultLines.push(`\`${idx + 1}.\` ⭐⭐⭐⭐ **${r.name}** - ${status}`);
+        const subs = (r.weaponObj?.subStats || []).map(s => `${s.name} +${s.value}`).join(', ');
+        resultLines.push(`\`${idx + 1}.\` ⭐⭐⭐⭐ **${r.name}** - ${status}\n      🎲 Buff ngẫu nhiên: \`${subs || 'ATK% +3.2%, SPD +3'}\``);
       }
     } else {
-      resultLines.push(`\`${idx + 1}.\` ⚪ 3★ Nón Ánh Sáng Rác (Đã lưu vào Túi đồ)`);
+      if (r.item && r.item.type === 'weapon') {
+        resultLines.push(`\`${idx + 1}.\` ⚪ ⭐⭐⭐ **${r.name}** (Vũ khí 3★)`);
+      } else {
+        resultLines.push(`\`${idx + 1}.\` ⚪ 3★ Nón Ánh Sáng Rác (Đã lưu vào Túi đồ)`);
+      }
     }
   });
 
@@ -278,7 +285,7 @@ async function executeGacha(interaction) {
           { label: '🌟 Banner Seele 5★ (Quantum - Hunt)', value: 'seele' },
           { label: '⚡ Banner Jing Yuan 5★ (Lightning - Erudition)', value: 'jing_yuan' },
           { label: '🌀 Banner Bronya 5★ (Wind - Harmony)', value: 'bronya' },
-          { label: '⚔️ Banner Nón Ánh Sáng 5★ (Brilliant Fixation)', value: 'weapon' }
+          { label: '⚔️ Banner Nón Ánh Sáng Vĩnh Cửu 36+ (Brilliant Fixation)', value: 'weapon' }
         );
 
       const menuRow = new ActionRowBuilder().addComponents(bannerMenu);

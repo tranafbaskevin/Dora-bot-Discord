@@ -9,7 +9,8 @@
     "speed": 105,
     "icon": "assets/bosses/doomsday_beast.png",
     "weakness": ["Fire", "Ice", "Quantum"],
-    "dropArtifacts": ["genius", "musketeer"]
+    "dropArtifacts": ["genius", "musketeer"],
+    "rewards": { "jades": 1200, "exp": 450, "charExpBooks": 4, "weaponExpCrystals": 4, "artifactDust": 8 }
   },
   {
     "id": "voidranger_trampler",
@@ -21,7 +22,8 @@
     "speed": 95,
     "icon": "assets/bosses/voidranger_trampler.png",
     "weakness": ["Physical", "Wind", "Imaginary"],
-    "dropArtifacts": ["eagle", "musketeer"]
+    "dropArtifacts": ["eagle", "musketeer"],
+    "rewards": { "jades": 600, "exp": 450, "charExpBooks": 16, "weaponExpCrystals": 4, "artifactDust": 8 }
   },
   {
     "id": "antimatter_legionnaire",
@@ -33,7 +35,8 @@
     "speed": 90,
     "icon": "assets/bosses/antimatter_legionnaire.png",
     "weakness": ["Fire", "Quantum"],
-    "dropArtifacts": ["musketeer"]
+    "dropArtifacts": ["musketeer"],
+    "rewards": { "jades": 600, "exp": 450, "charExpBooks": 4, "weaponExpCrystals": 16, "artifactDust": 8 }
   },
   {
     "id": "automaton_grizzly",
@@ -45,7 +48,8 @@
     "speed": 85,
     "icon": "assets/bosses/automaton_grizzly.png",
     "weakness": ["Fire", "Ice", "Lightning"],
-    "dropArtifacts": ["knight", "hunter"]
+    "dropArtifacts": ["knight", "hunter"],
+    "rewards": { "jades": 600, "exp": 450, "charExpBooks": 4, "weaponExpCrystals": 4, "artifactDust": 28 }
   },
   {
     "id": "cocolia",
@@ -57,7 +61,8 @@
     "speed": 110,
     "icon": "assets/bosses/cocolia.png",
     "weakness": ["Fire", "Lightning", "Quantum"],
-    "dropArtifacts": ["passerby", "knight"]
+    "dropArtifacts": ["passerby", "knight"],
+    "rewards": { "jades": 1500, "exp": 600, "charExpBooks": 10, "weaponExpCrystals": 10, "artifactDust": 20 }
   },
   {
     "id": "svarog",
@@ -69,7 +74,8 @@
     "speed": 100,
     "icon": "assets/bosses/svarog.png",
     "weakness": ["Fire", "Lightning", "Wind"],
-    "dropArtifacts": ["knight", "musketeer"]
+    "dropArtifacts": ["knight", "musketeer"],
+    "rewards": { "jades": 800, "exp": 450, "charExpBooks": 5, "weaponExpCrystals": 14, "artifactDust": 10 }
   },
   {
     "id": "phantylia",
@@ -81,7 +87,8 @@
     "speed": 115,
     "icon": "assets/bosses/phantylia.png",
     "weakness": ["Wind", "Quantum", "Imaginary"],
-    "dropArtifacts": ["genius", "eagle"]
+    "dropArtifacts": ["genius", "eagle"],
+    "rewards": { "jades": 1800, "exp": 800, "charExpBooks": 8, "weaponExpCrystals": 8, "artifactDust": 36 }
   },
   {
     "id": "abundance_deer",
@@ -93,7 +100,8 @@
     "speed": 105,
     "icon": "assets/bosses/abundance_deer.png",
     "weakness": ["Fire", "Ice", "Quantum"],
-    "dropArtifacts": ["passerby"]
+    "dropArtifacts": ["passerby"],
+    "rewards": { "jades": 700, "exp": 450, "charExpBooks": 22, "weaponExpCrystals": 4, "artifactDust": 10 }
   },
   {
     "id": "aurumaton_gatekeeper",
@@ -105,6 +113,7 @@
     "speed": 98,
     "icon": "assets/bosses/aurumaton_gatekeeper.png",
     "weakness": ["Lightning", "Wind", "Quantum"],
-    "dropArtifacts": ["eagle", "hunter"]
+    "dropArtifacts": ["eagle", "hunter"],
+    "rewards": { "jades": 800, "exp": 450, "charExpBooks": 5, "weaponExpCrystals": 12, "artifactDust": 25 }
   }
 ]
