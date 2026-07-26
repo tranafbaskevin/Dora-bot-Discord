@@ -245,16 +245,19 @@ async function executeGacha(interaction) {
   const payload = buildGachaEmbedPayload(interaction.user.username, res, currentBanner);
   payload.components = [buildGachaButtons()];
 
-  await interaction.reply(payload);
+  const response = await interaction.reply({
+    ...payload,
+    fetchReply: true
+  });
 
-  const collector = interaction.channel.createMessageComponentCollector({
+  // STRICT MESSAGE-SPECIFIC COLLECTOR (PER-USER & PER-MESSAGE ISOLATION)
+  const collector = response.createMessageComponentCollector({
+    filter: i => i.message.id === response.id && i.user.id === interaction.user.id,
     time: 300000
   });
 
   collector.on('collect', async i => {
-    if (i.user.id !== interaction.user.id) {
-      return i.reply({ content: '❌ Bạn không phải là người quay gacha này!', ephemeral: true });
-    }
+    if (i.message.id !== response.id || i.user.id !== interaction.user.id) return;
 
     const customId = i.customId;
 

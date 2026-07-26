@@ -95,7 +95,7 @@ async function startBattleMatch(interaction, enemyId, difficultyOpt = 'auto') {
 
     const battleComponents = session.isFinished ? [] : createBattleComponents(session);
 
-    await interaction.editReply({
+    const responseMsg = await interaction.editReply({
       content: headerText,
       files: [attachment],
       components: battleComponents
@@ -106,13 +106,14 @@ async function startBattleMatch(interaction, enemyId, difficultyOpt = 'auto') {
       return;
     }
 
-    const actionCollector = interaction.channel.createMessageComponentCollector({
-      componentType: ComponentType.Button,
+    // STRICT MESSAGE-SPECIFIC COLLECTOR (PER-USER & PER-MESSAGE ISOLATION)
+    const actionCollector = responseMsg.createMessageComponentCollector({
+      filter: ai => ai.message.id === responseMsg.id && ai.user.id === userId,
       time: 300000
     });
 
     actionCollector.on('collect', async ai => {
-      if (ai.user.id !== userId) return;
+      if (ai.message.id !== responseMsg.id || ai.user.id !== userId) return;
       await ai.deferUpdate().catch(() => {});
 
       const customId = ai.customId;
@@ -239,19 +240,19 @@ async function executeBattle(interaction) {
   const row2 = new ActionRowBuilder().addComponents(diffMenu);
   const row3 = new ActionRowBuilder().addComponents(startBtn);
 
-  await interaction.editReply({
+  const setupResponse = await interaction.editReply({
     embeds: [buildSetupEmbed()],
     components: [row1, row2, row3]
   });
 
-  const collector = interaction.channel.createMessageComponentCollector({
+  // STRICT MESSAGE-SPECIFIC COLLECTOR
+  const collector = setupResponse.createMessageComponentCollector({
+    filter: i => i.message.id === setupResponse.id && i.user.id === userId,
     time: 180000
   });
 
   collector.on('collect', async i => {
-    if (i.user.id !== userId) {
-      return i.reply({ content: '❌ Bạn không phải người gọi lệnh này!', ephemeral: true });
-    }
+    if (i.message.id !== setupResponse.id || i.user.id !== userId) return;
 
     await i.deferUpdate().catch(() => {});
 

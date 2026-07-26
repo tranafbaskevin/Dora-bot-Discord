@@ -47,13 +47,14 @@ async function executeInfo(interaction) {
     fetchReply: true
   });
 
+  // STRICT MESSAGE-SPECIFIC COLLECTOR (PER-USER & PER-MESSAGE ISOLATION)
   const collector = response.createMessageComponentCollector({
-    filter: i => i.user.id === userId && i.customId.startsWith('info_'),
+    filter: i => i.message.id === response.id && i.user.id === userId,
     time: 300000
   });
 
   collector.on('collect', async i => {
-    if (!i.customId.startsWith('info_')) return;
+    if (i.message.id !== response.id || i.user.id !== userId) return;
 
     const customId = i.customId;
 

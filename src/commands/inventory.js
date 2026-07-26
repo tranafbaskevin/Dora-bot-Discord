@@ -51,14 +51,14 @@ async function executeInventory(interaction) {
     fetchReply: true
   });
 
-  // STRICT COLLECTOR FILTER ISOLATION
+  // STRICT MESSAGE-SPECIFIC COLLECTOR (PER-USER & PER-MESSAGE ISOLATION)
   const collector = response.createMessageComponentCollector({
-    filter: i => i.user.id === interaction.user.id && i.customId.startsWith('inv_'),
+    filter: i => i.message.id === response.id && i.user.id === interaction.user.id,
     time: 300000
   });
 
   collector.on('collect', async i => {
-    if (!i.customId.startsWith('inv_')) return;
+    if (i.message.id !== response.id || i.user.id !== interaction.user.id) return;
 
     await i.deferUpdate().catch(() => {});
 

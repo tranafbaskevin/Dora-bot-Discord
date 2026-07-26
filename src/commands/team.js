@@ -59,31 +59,31 @@ async function executeTeam(interaction) {
 
     slots.forEach(s => {
       const char = charactersData.find(c => c.id === s.charId);
-      const invRecord = userInv.find(i => i.char_id === s.charId) || { level: 1, weapon_level: 1, basic_lvl: 1, skill_lvl: 1, ult_lvl: 1 };
+      const invRecord = userInv.find(i => i.char_id === s.charId) || { level: 1, weapon_level: 1, light_cone: 'Nón Ánh Sáng Tiêu Chuẩn', artifact_set: 'Bộ Duyên Kiếp', eidolon: 0 };
+      const charLvl = invRecord.level || 1;
+      const wpnLvl = invRecord.weapon_level || 1;
 
-      if (char) {
-        const charLvl = invRecord.level || 1;
-        const wpnLvl = invRecord.weapon_level || 1;
-
-        const hp = (char.baseStats?.hp || 900) + (charLvl - 1) * 40;
-        const atk = (char.baseStats?.atk || 600) + (charLvl - 1) * 18 + (wpnLvl - 1) * 12;
-        const def = (char.baseStats?.def || 350) + (charLvl - 1) * 12;
-        const speed = char.baseStats?.speed || 100;
-
-        const charArts = userArts.filter(a => a.char_id === char.id);
-        const artText = charArts.length > 0
-          ? charArts.map(a => `• ${a.setName} (+${a.level}): Main ${a.mainStat} (+${a.mainValue.toFixed(1)})`).join('\n')
-          : `• ${invRecord.artifact_set || 'Bộ Thiện Xạ Tiêu Chuẩn'}`;
-
-        embed.addFields({
-          name: `📌 Vị trí ${s.slotNum}: ${char.name} (Lv.${charLvl} - E${invRecord.eidolon || 0})`,
-          value: `• **Nguyên tố**: ${char.element} | **Vận mệnh**: ${char.path}\n• **Chỉ số tổng**: HP **${hp}** | ATK **${atk}** | DEF **${def}** | SPD **${speed}**\n• **Kỹ năng**: Chiến kỹ Lv.${invRecord.skill_lvl || 1} | Ult Lv.${invRecord.ult_lvl || 1}\n• **Vũ khí**: ${invRecord.light_cone || 'Nón Tiêu Chuẩn'} (Lv.${wpnLvl})\n• **Di vật**:\n${artText}`,
-          inline: false
-        });
+      if (!char) {
+        embed.addFields({ name: `Slot ${s.slotNum}: Trống`, value: 'Chưa trang bị nhân vật', inline: false });
+        return;
       }
-    });
 
-    embed.setFooter({ text: 'Dùng /upgrade để nâng cấp Level Nhân vật, Vũ khí, Kỹ năng & Di vật!' });
+      const hp = char.baseStats.hp + (charLvl - 1) * 40;
+      const atk = char.baseStats.atk + (charLvl - 1) * 18 + (wpnLvl - 1) * 12;
+      const def = char.baseStats.def + (charLvl - 1) * 12;
+      const spd = char.baseStats.speed;
+
+      const userWpns = db.getUserWeapons(userId);
+      const equippedWpn = userWpns.find(w => w.char_id === s.charId || w.name.includes(invRecord.light_cone)) || { name: invRecord.light_cone, superimpose: 1 };
+      const wpnMsg = `⚔️ ${equippedWpn.name} (Lv.${wpnLvl} • S${equippedWpn.superimpose || 1})`;
+      const artMsg = `🔮 ${invRecord.artifact_set || 'Bộ Tiêu Chuẩn (5★)'}`;
+
+      embed.addFields({
+        name: `👤 Slot ${s.slotNum}: ${char.name.toUpperCase()} (Lv.${charLvl} • E${invRecord.eidolon || 0})`,
+        value: `**Vận Mệnh**: ${char.path} | **Thuộc Tính**: ${char.element}\n${wpnMsg}\n${artMsg}\n📊 **Chỉ số**: HP **${hp}** | ATK **${atk}** | DEF **${def}** | SPD **${spd}**`,
+        inline: false
+      });
+    });
 
     const payload = { embeds: [embed] };
     if (avatarInfo.attachment) payload.files = [avatarInfo.attachment];
@@ -91,10 +91,6 @@ async function executeTeam(interaction) {
     await interaction.reply(payload);
   } else if (subcommand === 'select') {
     const userInv = db.getUserInventory(userId);
-
-    if (userInv.length === 0) {
-      return interaction.reply({ content: '⚠️ Bạn chưa có nhân vật nào trong kho!', ephemeral: true });
-    }
 
     const selectOptions = userInv.map(inv => {
       const char = charactersData.find(c => c.id === inv.char_id);
@@ -133,42 +129,41 @@ async function executeTeam(interaction) {
 
     const response = await interaction.reply(payload);
 
-    // FILTER ISOLATION: ONLY LISTEN TO STRICT team_select_slot CUSTOM IDS!
+    // STRICT MESSAGE-SPECIFIC COLLECTOR (PER-USER & PER-MESSAGE ISOLATION)
     const collector = response.createMessageComponentCollector({
-      filter: i => i.user.id === userId && i.customId.startsWith('team_select_slot'),
+      filter: i => i.message.id === response.id && i.user.id === userId,
       time: 120000
     });
 
     collector.on('collect', async i => {
-      if (!i.customId.startsWith('team_select_slot')) return;
+      if (i.message.id !== response.id || i.user.id !== userId) return;
 
       await i.deferUpdate().catch(() => {});
 
-      const teamNow = db.getUserTeam(userId);
-      const chosenChar = i.values[0];
+      const updatedTeam = db.getUserTeam(userId);
+      const chosenCharId = i.values[0];
 
-      if (i.customId === 'team_select_slot1') teamNow.slot1 = chosenChar;
-      else if (i.customId === 'team_select_slot2') teamNow.slot2 = chosenChar;
-      else if (i.customId === 'team_select_slot3') teamNow.slot3 = chosenChar;
-      else if (i.customId === 'team_select_slot4') teamNow.slot4 = chosenChar;
-      else return;
+      if (i.customId === 'team_select_slot1') updatedTeam.slot1 = chosenCharId;
+      if (i.customId === 'team_select_slot2') updatedTeam.slot2 = chosenCharId;
+      if (i.customId === 'team_select_slot3') updatedTeam.slot3 = chosenCharId;
+      if (i.customId === 'team_select_slot4') updatedTeam.slot4 = chosenCharId;
 
-      db.updateTeam(userId, teamNow.slot1, teamNow.slot2, teamNow.slot3, teamNow.slot4);
+      db.updateTeam(userId, updatedTeam.slot1, updatedTeam.slot2, updatedTeam.slot3, updatedTeam.slot4);
 
-      const newSlot1Char = charactersData.find(c => c.id === teamNow.slot1);
+      const newSlot1Char = charactersData.find(c => c.id === updatedTeam.slot1);
       const newAvatarInfo = getCharAvatarAttachment(newSlot1Char);
 
-      const updatedEmbed = new EmbedBuilder()
-        .setTitle('✅ CẬP NHẬT ĐỘI HÌNH THÀNH CÔNG!')
-        .setColor('#10b981')
-        .setDescription(`Đội hình mới của bạn:\n- Slot 1: **${teamNow.slot1.toUpperCase()}**\n- Slot 2: **${teamNow.slot2.toUpperCase()}**\n- Slot 3: **${teamNow.slot3.toUpperCase()}**\n- Slot 4: **${teamNow.slot4.toUpperCase()}**`);
+      const newEmbed = new EmbedBuilder()
+        .setTitle('👥 TÙY CHỈNH ĐỘI HÌNH RA TRẬN')
+        .setColor('#9333ea')
+        .setDescription(`✅ **Đã cập nhật đội hình thành công!**\n\n- Slot 1: **${updatedTeam.slot1.toUpperCase()}**\n- Slot 2: **${updatedTeam.slot2.toUpperCase()}**\n- Slot 3: **${updatedTeam.slot3.toUpperCase()}**\n- Slot 4: **${updatedTeam.slot4.toUpperCase()}**`);
 
-      if (newAvatarInfo.url) updatedEmbed.setThumbnail(newAvatarInfo.url);
+      if (newAvatarInfo.url) newEmbed.setThumbnail(newAvatarInfo.url);
 
-      const updatePayload = { embeds: [updatedEmbed], components: [row1, row2, row3, row4] };
+      const updatePayload = { embeds: [newEmbed], components: [row1, row2, row3, row4] };
       if (newAvatarInfo.attachment) updatePayload.files = [newAvatarInfo.attachment];
 
-      await i.editReply(updatePayload).catch(err => console.error('❌ Lỗi update team select:', err));
+      await i.editReply(updatePayload).catch(err => console.error('❌ Lỗi editReply team select:', err));
     });
   }
 }
