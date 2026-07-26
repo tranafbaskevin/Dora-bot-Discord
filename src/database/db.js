@@ -482,7 +482,13 @@ function addTrashItems(discordId, count) {
 function recycleTrashItems(discordId) {
   const data = readDb();
   const user = getUser(discordId);
-  const trashCount = data.users[discordId].trash_items || 0;
+  let trashCount = data.users[discordId].trash_items || 0;
+
+  if (data.weapons && data.weapons[discordId]) {
+    const trash3Wpns = data.weapons[discordId].filter(w => w.rarity === 3);
+    trashCount += trash3Wpns.length;
+    data.weapons[discordId] = data.weapons[discordId].filter(w => w.rarity !== 3);
+  }
 
   if (trashCount <= 0) {
     return { success: false, count: 0, jadesGained: 0, totalJades: user.jades };
