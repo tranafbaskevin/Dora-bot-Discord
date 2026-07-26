@@ -1,6 +1,5 @@
 const { createCanvas, loadImage } = require('@napi-rs/canvas');
 const path = require('path');
-const fs = require('fs');
 
 async function drawBattleCanvas(battleState) {
   const width = 1920;
@@ -63,12 +62,12 @@ async function drawBattleCanvas(battleState) {
 
   // Boss Name & Level
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 30px Sans-Serif';
+  ctx.font = 'bold 30px sans-serif';
   ctx.fillText(`👹 ${enemy.name.toUpperCase()} (Lv.${enemy.level})`, bossHudX + 30, bossHudY + 48);
 
   // Elemental Weaknesses
   const weaknesses = enemy.weaknesses || enemy.weakness || ['Fire', 'Quantum'];
-  ctx.font = 'bold 22px Sans-Serif';
+  ctx.font = 'bold 22px sans-serif';
   ctx.fillStyle = '#94a3b8';
   ctx.fillText('Điểm Yếu:', bossHudX + bossHudW - 380, bossHudY + 46);
   ctx.fillStyle = '#ef4444';
@@ -102,14 +101,14 @@ async function drawBattleCanvas(battleState) {
 
   // Boss HP Text
   ctx.fillStyle = '#ffffff';
-  ctx.font = 'bold 24px Sans-Serif';
+  ctx.font = 'bold 24px sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText(`❤️ HP BOSS: ${enemy.currentHp.toLocaleString()} / ${enemy.maxHp.toLocaleString()} (${Math.ceil(hpPct * 100)}%)`, bossHudX + bossHudW / 2, bossHudY + 120);
   ctx.textAlign = 'left';
   ctx.restore();
 
   // ----------------------------------------------------
-  // 3. LEFT VERTICAL ACTION VALUE TURN ORDER BAR
+  // 3. LEFT VERTICAL ACTION VALUE TURN ORDER BAR (LARGE AVATARS)
   // ----------------------------------------------------
   ctx.save();
   const avX = 30;
@@ -126,15 +125,15 @@ async function drawBattleCanvas(battleState) {
 
   // Header Title
   ctx.fillStyle = '#38bdf8';
-  ctx.font = 'bold 24px Sans-Serif';
+  ctx.font = 'bold 24px sans-serif';
   ctx.fillText('⚡ LƯỢT ĐẤU (AV)', avX + 25, avY + 48);
 
   // Vertical Line
   ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.moveTo(avX + 65, avY + 75);
-  ctx.lineTo(avX + 65, avY + avH - 30);
+  ctx.moveTo(avX + 70, avY + 75);
+  ctx.lineTo(avX + 70, avY + avH - 30);
   ctx.stroke();
 
   // Build Turn Actors List
@@ -149,40 +148,40 @@ async function drawBattleCanvas(battleState) {
 
     ctx.save();
     if (isCurrent) {
-      drawRoundedRect(avX + 15, actorY - 8, avW - 30, 110, 12);
-      ctx.fillStyle = 'rgba(234, 179, 8, 0.25)';
+      drawRoundedRect(avX + 12, actorY - 8, avW - 24, 120, 14);
+      ctx.fillStyle = 'rgba(234, 179, 8, 0.28)';
       ctx.fill();
       ctx.strokeStyle = '#eab308';
-      ctx.lineWidth = 3;
+      ctx.lineWidth = 3.5;
       ctx.stroke();
     }
 
-    // Avatar Circle (Radius 35px)
+    // EXTRA LARGE AVATAR CIRCLE (Radius 45px, Size 90x90px)
     ctx.beginPath();
-    ctx.arc(avX + 65, actorY + 45, 35, 0, Math.PI * 2);
+    ctx.arc(avX + 65, actorY + 52, 45, 0, Math.PI * 2);
     ctx.closePath();
     ctx.clip();
 
     ctx.fillStyle = act.id === enemy.id ? '#ef4444' : '#3b82f6';
-    ctx.fillRect(avX + 30, actorY + 10, 70, 70);
+    ctx.fillRect(avX + 20, actorY + 7, 90, 90);
 
     if (act.icon) {
       try {
         const iconPath = act.icon.startsWith('http') ? act.icon : path.join(__dirname, '../../', act.icon);
         const img = await loadImage(iconPath);
-        ctx.drawImage(img, avX + 30, actorY + 10, 70, 70);
+        ctx.drawImage(img, avX + 20, actorY + 7, 90, 90);
       } catch (err) {}
     }
     ctx.restore();
 
     // Name & AV Text
     ctx.fillStyle = isCurrent ? '#fde047' : '#ffffff';
-    ctx.font = isCurrent ? 'bold 22px Sans-Serif' : 'bold 19px Sans-Serif';
-    ctx.fillText(act.name.length > 10 ? act.name.substring(0, 9) + '..' : act.name, avX + 115, actorY + 42);
+    ctx.font = isCurrent ? 'bold 22px sans-serif' : 'bold 19px sans-serif';
+    ctx.fillText(act.name.length > 10 ? act.name.substring(0, 9) + '..' : act.name, avX + 125, actorY + 48);
 
     ctx.fillStyle = '#94a3b8';
-    ctx.font = 'bold 16px Sans-Serif';
-    ctx.fillText(`AV ${act.actionValue || 100}`, avX + 115, actorY + 68);
+    ctx.font = 'bold 17px sans-serif';
+    ctx.fillText(`AV ${act.actionValue || 100}`, avX + 125, actorY + 76);
 
     actorY += 150;
   }
@@ -206,7 +205,7 @@ async function drawBattleCanvas(battleState) {
 
   // Header Title
   ctx.fillStyle = '#eab308';
-  ctx.font = 'bold 26px Sans-Serif';
+  ctx.font = 'bold 26px sans-serif';
   ctx.fillText(`⚔️ VÒNG ĐẤU: ${turn} / ${maxTurns}`, logX + 35, logY + 48);
 
   ctx.fillStyle = '#38bdf8';
@@ -222,7 +221,7 @@ async function drawBattleCanvas(battleState) {
     ctx.stroke();
 
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 22px Sans-Serif';
+    ctx.font = 'bold 22px sans-serif';
     ctx.fillText(`👉 ĐANG ĐẾN LƯỢT: ${currentActor.name.toUpperCase()} (Tốc độ: ${currentActor.speed || 100})`, logX + 55, logY + 106);
   }
 
@@ -232,7 +231,7 @@ async function drawBattleCanvas(battleState) {
 
   recentLogs.forEach(line => {
     let cleanLine = line.replace(/\*\*/g, '').replace(/__/g, '');
-    ctx.font = 'bold 23px Sans-Serif';
+    ctx.font = 'bold 23px sans-serif';
 
     if (cleanLine.includes('TUYỆT KỸ') || cleanLine.includes('CHÍ MẠNG')) {
       ctx.fillStyle = '#facc15';
@@ -250,7 +249,7 @@ async function drawBattleCanvas(battleState) {
   ctx.restore();
 
   // ----------------------------------------------------
-  // 5. BOTTOM 4 TEAM CHARACTER STATUS CARDS
+  // 5. BOTTOM 4 TEAM CHARACTER STATUS CARDS (SUPER LARGE AVATARS)
   // ----------------------------------------------------
   ctx.save();
   const cardW = 360;
@@ -275,69 +274,69 @@ async function drawBattleCanvas(battleState) {
     // Active Glow Banner
     if (isCurrent) {
       ctx.fillStyle = '#eab308';
-      ctx.font = 'bold 16px Sans-Serif';
-      ctx.fillText('⚡ ĐANG HÀNH ĐỘNG', x + 110, cardY + 28);
+      ctx.font = 'bold 16px sans-serif';
+      ctx.fillText('⚡ ĐANG HÀNH ĐỘNG', x + 140, cardY + 26);
     }
 
-    // Avatar Circle (Radius 35px)
+    // SUPER LARGE AVATAR CIRCLE (Radius 52px, Size 104x104px - Gấp Đôi Kích Thước Cũ!)
     ctx.save();
     ctx.beginPath();
-    ctx.arc(x + 55, cardY + 80, 35, 0, Math.PI * 2);
+    ctx.arc(x + 68, cardY + 70, 52, 0, Math.PI * 2);
     ctx.closePath();
     ctx.clip();
 
     ctx.fillStyle = char.isAlive ? '#3b82f6' : '#64748b';
-    ctx.fillRect(x + 20, cardY + 45, 70, 70);
+    ctx.fillRect(x + 16, cardY + 18, 104, 104);
 
     if (char.icon) {
       try {
         const iconPath = char.icon.startsWith('http') ? char.icon : path.join(__dirname, '../../', char.icon);
         const img = await loadImage(iconPath);
-        ctx.drawImage(img, x + 20, cardY + 45, 70, 70);
+        ctx.drawImage(img, x + 16, cardY + 18, 104, 104);
       } catch (err) {}
     }
     ctx.restore();
 
     // Name & Level
     ctx.fillStyle = char.isAlive ? '#ffffff' : '#94a3b8';
-    ctx.font = 'bold 23px Sans-Serif';
-    ctx.fillText(`${char.name.length > 9 ? char.name.substring(0, 8) + '..' : char.name}`, x + 105, cardY + 75);
+    ctx.font = 'bold 24px sans-serif';
+    ctx.fillText(`${char.name.length > 8 ? char.name.substring(0, 7) + '..' : char.name}`, x + 135, cardY + 65);
 
     ctx.fillStyle = '#94a3b8';
-    ctx.font = 'bold 18px Sans-Serif';
-    ctx.fillText(`Lv.${char.level} • E${char.eidolon}`, x + 105, cardY + 100);
+    ctx.font = 'bold 18px sans-serif';
+    ctx.fillText(`Lv.${char.level} • E${char.eidolon}`, x + 135, cardY + 95);
 
     // HP Bar
     const charHpPct = Math.max(0, Math.min(1, char.currentHp / char.maxHp));
-    drawRoundedRect(x + 20, cardY + 130, cardW - 40, 32, 8);
+    drawRoundedRect(x + 20, cardY + 132, cardW - 40, 32, 8);
     ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
     ctx.fill();
 
     if (charHpPct > 0) {
-      drawRoundedRect(x + 20, cardY + 130, (cardW - 40) * charHpPct, 32, 8);
+      drawRoundedRect(x + 20, cardY + 132, (cardW - 40) * charHpPct, 32, 8);
       ctx.fillStyle = charHpPct > 0.3 ? '#22c55e' : '#ef4444';
       ctx.fill();
     }
 
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 18px Sans-Serif';
-    ctx.fillText(`❤️ ${char.currentHp}/${char.maxHp}`, x + 35, cardY + 153);
+    ctx.font = 'bold 18px sans-serif';
+    ctx.fillText(`❤️ ${char.currentHp}/${char.maxHp}`, x + 35, cardY + 155);
 
     // EP Energy Bar
     const charEpPct = Math.max(0, Math.min(1, char.currentEnergy / char.maxEnergy));
-    drawRoundedRect(x + 20, cardY + 172, cardW - 40, 28, 6);
+    drawRoundedRect(x + 20, cardY + 174, cardW - 40, 28, 6);
     ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
     ctx.fill();
 
     if (charEpPct > 0) {
-      drawRoundedRect(x + 20, cardY + 172, (cardW - 40) * charEpPct, 28, 6);
+      drawRoundedRect(x + 20, cardY + 174, (cardW - 40) * charEpPct, 28, 6);
       ctx.fillStyle = charEpPct >= 1.0 ? '#a855f7' : '#3b82f6';
       ctx.fill();
     }
 
     ctx.fillStyle = charEpPct >= 1.0 ? '#fde047' : '#ffffff';
-    ctx.font = 'bold 16px Sans-Serif';
-    ctx.fillText(charEpPct >= 1.0 ? '🌟 ULT SẴN SÀNG!' : `⚡ EP: ${char.currentEnergy}/${char.maxEnergy}`, x + 35, cardY + 192);
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillText(charEpPct >= 1.0 ? '🌟 ULT SẴN SÀNG!' : `⚡ EP: ${char.currentEnergy}/${char.maxEnergy}`, x + 35, cardY + 194);
   }
   ctx.restore();
 
