@@ -61,6 +61,11 @@ async function drawBattleCanvas(battleState) {
 
   const { team, enemy, currentActor, turn, maxTurns, sp, maxSp, logs } = battleState;
 
+  // BULLETPROOF BOSS AVATAR FALLBACK
+  if (!enemy.icon) {
+    enemy.icon = `assets/bosses/${enemy.id}.png`;
+  }
+
   // ----------------------------------------------------
   // 2. TOP CENTER BOSS HUD (WITH BOSS AVATAR PORTRAIT)
   // ----------------------------------------------------
@@ -202,9 +207,11 @@ async function drawBattleCanvas(battleState) {
     ctx.fillStyle = act.id === enemy.id ? '#ef4444' : '#3b82f6';
     ctx.fillRect(avX + 20, actorY + 7, 90, 90);
 
-    if (act.icon) {
+    const actorIcon = act.icon || (act.id === enemy.id ? `assets/bosses/${enemy.id}.png` : null);
+
+    if (actorIcon) {
       try {
-        const iconPath = act.icon.startsWith('http') ? act.icon : path.join(__dirname, '../../', act.icon);
+        const iconPath = actorIcon.startsWith('http') ? actorIcon : path.join(__dirname, '../../', actorIcon);
         const img = await loadImage(iconPath);
         ctx.drawImage(img, avX + 20, actorY + 7, 90, 90);
       } catch (err) {}
