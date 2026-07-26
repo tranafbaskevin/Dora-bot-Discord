@@ -1,4 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, ComponentType } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, AttachmentBuilder } = require('discord.js');
+const path = require('path');
+const fs = require('fs');
 const db = require('../database/db');
 const charactersData = require('../data/characters.json');
 
@@ -23,6 +25,20 @@ const gachaCommand = new SlashCommandBuilder()
         { name: '⚔️ Banner Nón Ánh Sáng 5★ (Brilliant Fixation)', value: 'weapon' }
       )
   );
+
+function getCharAvatarAttachment(char) {
+  if (!char || !char.icon) return { url: null, attachment: null };
+  if (char.icon.startsWith('http')) return { url: char.icon, attachment: null };
+
+  const localPath = path.join(__dirname, '../../', char.icon);
+  if (fs.existsSync(localPath)) {
+    const ext = path.extname(localPath).replace('.', '') || 'jpg';
+    const filename = `gacha_avatar_${char.id}.${ext}`;
+    const attachment = new AttachmentBuilder(localPath, { name: filename });
+    return { url: `attachment://${filename}`, attachment };
+  }
+  return { url: null, attachment: null };
+}
 
 function handleGachaPull(discordId, requestedAmount, bannerType) {
   const user = db.getUser(discordId);
@@ -111,7 +127,6 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
           eidolon: invResult.eidolon
         });
       } else {
-        // Weapon Superimposition S1-S5
         const wpnResult = db.addWeapon(discordId, item);
         results.push({
           item,
@@ -151,7 +166,7 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
   };
 }
 
-function buildGachaEmbed(username, res, bannerType) {
+function buildGachaEmbedPayload(username, res, bannerType) {
   const bannerTitle = bannerType === 'weapon'
     ? '⚔️ BƯỚC NHẢY NÓN ÁNH SÁNG (Brilliant Fixation)'
     : `🌟 BƯỚC NHẢY EVENT: ${res.featuredChar.name.toUpperCase()} 5★`;
@@ -167,6 +182,9 @@ function buildGachaEmbed(username, res, bannerType) {
     .setColor('#ffd700')
     .setDescription(`**${bannerTitle}**${autoNotice}\n\n💎 **Nguyên thạch còn lại**: **${res.remainingJades.toLocaleString()}** | 🎯 **Pity 5★**: **${res.pity5}/90**\n${guaranteedBadge}`)
     .setFooter({ text: `Người quay: ${username} | Chọn các nút bên dưới để tiếp tục quay!` });
+
+  const avatarInfo = getCharAvatarAttachment(res.featuredChar);
+  if (avatarInfo.url) embed.setThumbnail(avatarInfo.url);
 
   let resultLines = [];
   res.results.forEach((r, idx) => {
@@ -193,7 +211,10 @@ function buildGachaEmbed(username, res, bannerType) {
   });
 
   embed.addFields({ name: '🎁 Vật phẩm thu được:', value: resultLines.join('\n') });
-  return embed;
+
+  const payload = { embeds: [embed] };
+  if (avatarInfo.attachment) payload.files = [avatarInfo.attachment];
+  return payload;
 }
 
 function buildGachaButtons() {
@@ -214,16 +235,12 @@ async function executeGacha(interaction) {
     return interaction.reply({ content: res.message, ephemeral: true });
   }
 
-  const embed = buildGachaEmbed(interaction.user.username, res, currentBanner);
-  const buttonsRow = buildGachaButtons();
+  const payload = buildGachaEmbedPayload(interaction.user.username, res, currentBanner);
+  payload.components = [buildGachaButtons()];
 
-  const response = await interaction.reply({
-    embeds: [embed],
-    components: [buttonsRow],
-    fetchReply: true
-  });
+  await interaction.reply(payload);
 
-  const collector = response.createMessageComponentCollector({
+  const collector = interaction.channel.createMessageComponentCollector({
     time: 300000
   });
 
@@ -232,21 +249,28 @@ async function executeGacha(interaction) {
       return i.reply({ content: '❌ Bạn không phải là người quay gacha này!', ephemeral: true });
     }
 
-    if (i.customId === 'gacha_btn_1') {
+    const customId = i.customId;
+
+    if (customId === 'gacha_btn_1') {
+      await i.deferUpdate().catch(() => {});
       const pullRes = handleGachaPull(interaction.user.id, 1, currentBanner);
       if (!pullRes.success) {
-        return i.reply({ content: pullRes.message, ephemeral: true });
+        return i.followUp({ content: pullRes.message, ephemeral: true });
       }
-      const newEmbed = buildGachaEmbed(interaction.user.username, pullRes, currentBanner);
-      await i.update({ embeds: [newEmbed], components: [buildGachaButtons()] });
-    } else if (i.customId === 'gacha_btn_max') {
+      const newPayload = buildGachaEmbedPayload(interaction.user.username, pullRes, currentBanner);
+      newPayload.components = [buildGachaButtons()];
+      await i.editReply(newPayload);
+    } else if (customId === 'gacha_btn_max') {
+      await i.deferUpdate().catch(() => {});
       const pullRes = handleGachaPull(interaction.user.id, 10, currentBanner);
       if (!pullRes.success) {
-        return i.reply({ content: pullRes.message, ephemeral: true });
+        return i.followUp({ content: pullRes.message, ephemeral: true });
       }
-      const newEmbed = buildGachaEmbed(interaction.user.username, pullRes, currentBanner);
-      await i.update({ embeds: [newEmbed], components: [buildGachaButtons()] });
-    } else if (i.customId === 'gacha_btn_change_banner') {
+      const newPayload = buildGachaEmbedPayload(interaction.user.username, pullRes, currentBanner);
+      newPayload.components = [buildGachaButtons()];
+      await i.editReply(newPayload);
+    } else if (customId === 'gacha_btn_change_banner') {
+      await i.deferUpdate().catch(() => {});
       const bannerMenu = new StringSelectMenuBuilder()
         .setCustomId('gacha_menu_select_banner')
         .setPlaceholder('Chọn Banner Gacha Muốn Đổi...')
@@ -258,17 +282,19 @@ async function executeGacha(interaction) {
         );
 
       const menuRow = new ActionRowBuilder().addComponents(bannerMenu);
-      await i.update({ components: [menuRow] });
-    } else if (i.customId === 'gacha_menu_select_banner') {
+      await i.editReply({ components: [menuRow] });
+    } else if (customId === 'gacha_menu_select_banner') {
+      await i.deferUpdate().catch(() => {});
       currentBanner = i.values[0];
       const pullRes = handleGachaPull(interaction.user.id, 10, currentBanner);
 
       if (!pullRes.success) {
-        return i.reply({ content: pullRes.message, ephemeral: true });
+        return i.followUp({ content: pullRes.message, ephemeral: true });
       }
 
-      const newEmbed = buildGachaEmbed(interaction.user.username, pullRes, currentBanner);
-      await i.update({ embeds: [newEmbed], components: [buildGachaButtons()] });
+      const newPayload = buildGachaEmbedPayload(interaction.user.username, pullRes, currentBanner);
+      newPayload.components = [buildGachaButtons()];
+      await i.editReply(newPayload);
     }
   });
 }

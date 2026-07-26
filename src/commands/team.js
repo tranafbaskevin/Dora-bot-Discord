@@ -1,4 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ComponentType } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ComponentType, AttachmentBuilder } = require('discord.js');
+const path = require('path');
+const fs = require('fs');
 const db = require('../database/db');
 const charactersData = require('../data/characters.json');
 
@@ -14,6 +16,20 @@ const teamCommand = new SlashCommandBuilder()
       .setDescription('Chọn nhanh nhân vật cho các vị trí Slot 1 - 4 trong đội hình')
   );
 
+function getCharAvatarAttachment(char) {
+  if (!char || !char.icon) return { url: null, attachment: null };
+  if (char.icon.startsWith('http')) return { url: char.icon, attachment: null };
+
+  const localPath = path.join(__dirname, '../../', char.icon);
+  if (fs.existsSync(localPath)) {
+    const ext = path.extname(localPath).replace('.', '') || 'jpg';
+    const filename = `team_avatar_${char.id}.${ext}`;
+    const attachment = new AttachmentBuilder(localPath, { name: filename });
+    return { url: `attachment://${filename}`, attachment };
+  }
+  return { url: null, attachment: null };
+}
+
 async function executeTeam(interaction) {
   const subcommand = interaction.options.getSubcommand();
   const userId = interaction.user.id;
@@ -21,7 +37,7 @@ async function executeTeam(interaction) {
   if (subcommand === 'view') {
     const team = db.getUserTeam(userId);
     const userInv = db.getUserInventory(userId);
-    const rawDb = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../../database.json'), 'utf8'));
+    const rawDb = JSON.parse(fs.readFileSync(path.join(__dirname, '../../database.json'), 'utf8'));
     const userArts = (rawDb.artifacts && rawDb.artifacts[userId]) || [];
 
     const slots = [
@@ -31,10 +47,15 @@ async function executeTeam(interaction) {
       { slotNum: 4, charId: team.slot4 }
     ];
 
+    const slot1Char = charactersData.find(c => c.id === team.slot1);
+    const avatarInfo = getCharAvatarAttachment(slot1Char);
+
     const embed = new EmbedBuilder()
       .setTitle(`🛡️ THÔNG TIN ĐỘI HÌNH VÀ CHỈ SỐ - ${interaction.user.username}`)
       .setColor('#3b82f6')
       .setDescription('Chi tiết thông số, vũ khí và thánh di vật của 4 nhân vật ra trận:');
+
+    if (avatarInfo.url) embed.setThumbnail(avatarInfo.url);
 
     slots.forEach(s => {
       const char = charactersData.find(c => c.id === s.charId);
@@ -44,10 +65,10 @@ async function executeTeam(interaction) {
         const charLvl = invRecord.level || 1;
         const wpnLvl = invRecord.weapon_level || 1;
 
-        const hp = char.baseStats.hp + (charLvl - 1) * 40;
-        const atk = char.baseStats.atk + (charLvl - 1) * 18 + (wpnLvl - 1) * 12;
-        const def = char.baseStats.def + (charLvl - 1) * 12;
-        const speed = char.baseStats.speed;
+        const hp = (char.baseStats?.hp || 900) + (charLvl - 1) * 40;
+        const atk = (char.baseStats?.atk || 600) + (charLvl - 1) * 18 + (wpnLvl - 1) * 12;
+        const def = (char.baseStats?.def || 350) + (charLvl - 1) * 12;
+        const speed = char.baseStats?.speed || 100;
 
         const charArts = userArts.filter(a => a.char_id === char.id);
         const artText = charArts.length > 0
@@ -64,7 +85,10 @@ async function executeTeam(interaction) {
 
     embed.setFooter({ text: 'Dùng /upgrade để nâng cấp Level Nhân vật, Vũ khí, Kỹ năng & Di vật!' });
 
-    await interaction.reply({ embeds: [embed] });
+    const payload = { embeds: [embed] };
+    if (avatarInfo.attachment) payload.files = [avatarInfo.attachment];
+
+    await interaction.reply(payload);
   } else if (subcommand === 'select') {
     const userInv = db.getUserInventory(userId);
 
@@ -94,19 +118,22 @@ async function executeTeam(interaction) {
     const row4 = new ActionRowBuilder().addComponents(menuSlot4);
 
     const currentTeam = db.getUserTeam(userId);
+    const slot1Char = charactersData.find(c => c.id === currentTeam.slot1);
+    const avatarInfo = getCharAvatarAttachment(slot1Char);
 
     const embed = new EmbedBuilder()
       .setTitle('👥 TÙY CHỈNH ĐỘI HÌNH RA TRẬN')
       .setColor('#9333ea')
-      .setDescription(`Chọn nhân vật trực tiếp từ danh sách thả xuống bên dưới cho từng vị trí:\n\n- Slot 1: **${currentTeam.slot1}**\n- Slot 2: **${currentTeam.slot2}**\n- Slot 3: **${currentTeam.slot3}**\n- Slot 4: **${currentTeam.slot4}**`);
+      .setDescription(`Chọn nhân vật trực tiếp từ danh sách thả xuống bên dưới cho từng vị trí:\n\n- Slot 1: **${currentTeam.slot1.toUpperCase()}**\n- Slot 2: **${currentTeam.slot2.toUpperCase()}**\n- Slot 3: **${currentTeam.slot3.toUpperCase()}**\n- Slot 4: **${currentTeam.slot4.toUpperCase()}**`);
 
-    const response = await interaction.reply({
-      embeds: [embed],
-      components: [row1, row2, row3, row4],
-      fetchReply: true
-    });
+    if (avatarInfo.url) embed.setThumbnail(avatarInfo.url);
 
-    const collector = response.createMessageComponentCollector({
+    const payload = { embeds: [embed], components: [row1, row2, row3, row4] };
+    if (avatarInfo.attachment) payload.files = [avatarInfo.attachment];
+
+    await interaction.reply(payload);
+
+    const collector = interaction.channel.createMessageComponentCollector({
       componentType: ComponentType.StringSelect,
       time: 120000
     });
@@ -115,6 +142,8 @@ async function executeTeam(interaction) {
       if (i.user.id !== interaction.user.id) {
         return i.reply({ content: '❌ Bạn không phải là người tùy chỉnh đội hình này!', ephemeral: true });
       }
+
+      await i.deferUpdate().catch(() => {});
 
       const teamNow = db.getUserTeam(userId);
       const chosenChar = i.values[0];
@@ -126,12 +155,20 @@ async function executeTeam(interaction) {
 
       db.updateTeam(userId, teamNow.slot1, teamNow.slot2, teamNow.slot3, teamNow.slot4);
 
+      const newSlot1Char = charactersData.find(c => c.id === teamNow.slot1);
+      const newAvatarInfo = getCharAvatarAttachment(newSlot1Char);
+
       const updatedEmbed = new EmbedBuilder()
         .setTitle('✅ CẬP NHẬT ĐỘI HÌNH THÀNH CÔNG!')
         .setColor('#10b981')
-        .setDescription(`Đội hình mới của bạn:\n- Slot 1: **${teamNow.slot1}**\n- Slot 2: **${teamNow.slot2}**\n- Slot 3: **${teamNow.slot3}**\n- Slot 4: **${teamNow.slot4}**`);
+        .setDescription(`Đội hình mới của bạn:\n- Slot 1: **${teamNow.slot1.toUpperCase()}**\n- Slot 2: **${teamNow.slot2.toUpperCase()}**\n- Slot 3: **${teamNow.slot3.toUpperCase()}**\n- Slot 4: **${teamNow.slot4.toUpperCase()}**`);
 
-      await i.update({ embeds: [updatedEmbed], components: [row1, row2, row3, row4] });
+      if (newAvatarInfo.url) updatedEmbed.setThumbnail(newAvatarInfo.url);
+
+      const updatePayload = { embeds: [updatedEmbed], components: [row1, row2, row3, row4] };
+      if (newAvatarInfo.attachment) updatePayload.files = [newAvatarInfo.attachment];
+
+      await i.editReply(updatePayload).catch(err => console.error('❌ Lỗi update team select:', err));
     });
   }
 }

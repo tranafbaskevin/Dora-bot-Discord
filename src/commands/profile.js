@@ -1,4 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } = require('discord.js');
+const path = require('path');
+const fs = require('fs');
 const db = require('../database/db');
 const charactersData = require('../data/characters.json');
 
@@ -9,13 +11,16 @@ const profileCommand = new SlashCommandBuilder()
 async function executeProfile(interaction) {
   const user = db.getUser(interaction.user.id);
   const inventory = db.getUserInventory(interaction.user.id);
+  const teamData = db.getUserTeam(interaction.user.id);
+
+  const primaryCharId = teamData.slot1 || (inventory[0] ? inventory[0].char_id : 'seele');
+  const primaryChar = charactersData.find(c => c.id === primaryCharId);
 
   const reqExp = (user.player_level || 1) * 500;
 
   const embed = new EmbedBuilder()
     .setTitle(`📊 HỒ SƠ NGƯỜI CHƠI - ${interaction.user.username}`)
     .setColor('#00ffff')
-    .setThumbnail(interaction.user.displayAvatarURL())
     .addFields(
       { name: '🌐 Cấp Thám Hiểm (Trailblaze Lv)', value: `**Lv.${user.player_level || 1}** (${user.player_exp || 0}/${reqExp} EXP)`, inline: false },
       { name: '💎 Nguyên Thạch (Stellar Jade)', value: `**${user.jades.toLocaleString()}**`, inline: true },
@@ -27,6 +32,22 @@ async function executeProfile(interaction) {
         inline: false
       }
     );
+
+  let avatarAttachment = null;
+  if (primaryChar && primaryChar.icon) {
+    if (primaryChar.icon.startsWith('http')) {
+      embed.setThumbnail(primaryChar.icon);
+    } else {
+      const localPath = path.join(__dirname, '../../', primaryChar.icon);
+      if (fs.existsSync(localPath)) {
+        const ext = path.extname(localPath).replace('.', '') || 'jpg';
+        avatarAttachment = new AttachmentBuilder(localPath, { name: `avatar.${ext}` });
+        embed.setThumbnail(`attachment://avatar.${ext}`);
+      }
+    }
+  } else {
+    embed.setThumbnail(interaction.user.displayAvatarURL());
+  }
 
   const charLines = inventory.map(item => {
     const char = charactersData.find(c => c.id === item.char_id);
@@ -42,7 +63,10 @@ async function executeProfile(interaction) {
 
   embed.setFooter({ text: 'Dùng /upgrade để nâng cấp Level Nhân vật, Vũ khí, Kỹ năng & Di vật!' });
 
-  await interaction.reply({ embeds: [embed] });
+  const payload = { embeds: [embed] };
+  if (avatarAttachment) payload.files = [avatarAttachment];
+
+  await interaction.reply(payload);
 }
 
 module.exports = {

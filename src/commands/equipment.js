@@ -1,10 +1,26 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, ComponentType } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, AttachmentBuilder } = require('discord.js');
+const path = require('path');
+const fs = require('fs');
 const db = require('../database/db');
 const charactersData = require('../data/characters.json');
 
 const equipmentCommand = new SlashCommandBuilder()
   .setName('equipment')
   .setDescription('Quản lý trang bị: Chọn nhân vật -> Đổi Vũ Khí hoặc Thánh Di Vật');
+
+function getAvatarAttachment(char) {
+  if (!char || !char.icon) return { url: null, attachment: null };
+  if (char.icon.startsWith('http')) return { url: char.icon, attachment: null };
+
+  const localPath = path.join(__dirname, '../../', char.icon);
+  if (fs.existsSync(localPath)) {
+    const ext = path.extname(localPath).replace('.', '') || 'jpg';
+    const filename = `avatar_${char.id}.${ext}`;
+    const attachment = new AttachmentBuilder(localPath, { name: filename });
+    return { url: `attachment://${filename}`, attachment };
+  }
+  return { url: null, attachment: null };
+}
 
 async function executeEquipment(interaction) {
   const userId = interaction.user.id;
@@ -39,13 +55,12 @@ async function executeEquipment(interaction) {
 
   const row1 = new ActionRowBuilder().addComponents(charMenu);
 
-  const response = await interaction.reply({
+  await interaction.reply({
     embeds: [step1Embed],
-    components: [row1],
-    fetchReply: true
+    components: [row1]
   });
 
-  const collector = response.createMessageComponentCollector({
+  const collector = interaction.channel.createMessageComponentCollector({
     time: 300000
   });
 
@@ -54,12 +69,12 @@ async function executeEquipment(interaction) {
       return i.reply({ content: '❌ Bạn không có quyền thao tác trên túi đồ này!', ephemeral: true });
     }
 
-    await i.deferUpdate().catch(() => {});
-
     const customId = i.customId;
 
-    // Step 1 -> Step 2: Character selected
+    // Step 1 -> Step 2: Character selected from dropdown
     if (customId === 'equip_step1_char_menu') {
+      await i.deferUpdate().catch(() => {});
+
       const charId = i.values[0].replace('char_equip_', '');
       const char = charactersData.find(c => c.id === charId) || charactersData[0];
       const invRec = userInv.find(rec => rec.char_id === charId) || { level: 1, weapon_level: 1, light_cone: 'Nón Ánh Sáng Tiêu Chuẩn', artifact_set: 'Bộ Duyên Kiếp' };
@@ -68,15 +83,16 @@ async function executeEquipment(interaction) {
       const equippedWpn = userWpns.find(w => w.char_id === charId || w.name.includes(invRec.light_cone)) || { name: invRec.light_cone, superimpose: 1, level: invRec.weapon_level || 1 };
       const wpnLvl = Math.max(invRec.weapon_level || 1, equippedWpn.level || 1);
 
+      const avatarInfo = getAvatarAttachment(char);
+
       const step2Embed = new EmbedBuilder()
         .setTitle(`🛡️ TRANG BỊ HIỆN TẠI: ${char.name.toUpperCase()} (Lv.${invRec.level || 1})`)
         .setColor(char.color || '#3b82f6')
-        .setThumbnail(char.icon || interaction.user.displayAvatarURL())
         .setDescription(`Nhân vật: **${char.name}** | Nguyên tố: **${char.element}** | Vận mệnh: **${char.path}**`)
         .addFields(
           {
             name: '⚔️ Vũ Khí / Nón Ánh Sáng Đang Đeo',
-            value: `• **${equippedWpn.name}**\n  Cấp độ: **Lv.${wpnLvl} / 80** | Cung mệnh Tích chồng: **S${equippedWpn.superimpose || 1}**`,
+            value: `• **${equippedWpn.name}**\n  Cấp độ: **Lv.${wpnLvl} / 80** | Tích chồng: **S${equippedWpn.superimpose || 1}**`,
             inline: false
           },
           {
@@ -87,19 +103,26 @@ async function executeEquipment(interaction) {
         )
         .setFooter({ text: 'Chọn 1 trong 2 nút bên dưới để Đổi Vũ Khí hoặc Đổi Thánh Di Vật!' });
 
+      if (avatarInfo.url) step2Embed.setThumbnail(avatarInfo.url);
+
       const actionButtons = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId(`btn_swap_wpn_${charId}`).setLabel(`⚔️ Đổi Vũ Khí Cho ${char.name}`).setStyle(ButtonStyle.Success),
         new ButtonBuilder().setCustomId(`btn_swap_art_${charId}`).setLabel(`🔮 Đổi Di Vật Cho ${char.name}`).setStyle(ButtonStyle.Primary)
       );
 
-      await i.editReply({
+      const updatePayload = {
         embeds: [step2Embed],
         components: [row1, actionButtons]
-      });
+      };
+      if (avatarInfo.attachment) updatePayload.files = [avatarInfo.attachment];
+
+      await i.editReply(updatePayload).catch(err => console.error('❌ Lỗi step2 editReply:', err));
     }
 
     // Step 2 -> Step 3 (Weapon Selection)
     else if (customId.startsWith('btn_swap_wpn_')) {
+      await i.deferUpdate().catch(() => {});
+
       const targetCharId = customId.replace('btn_swap_wpn_', '');
       const targetChar = charactersData.find(c => c.id === targetCharId) || charactersData[0];
       const userWpns = db.getUserWeapons(userId);
@@ -118,38 +141,43 @@ async function executeEquipment(interaction) {
 
       const wpnRow = new ActionRowBuilder().addComponents(wpnMenu);
 
+      const avatarInfo = getAvatarAttachment(targetChar);
+
       const wpnEmbed = new EmbedBuilder()
         .setTitle(`⚔️ BẢNG CHỌN VŨ KHÍ CHO: ${targetChar.name.toUpperCase()}`)
         .setColor('#eab308')
         .setDescription(`Chọn 1 trong **${userWpns.length}** Nón Ánh Sáng khả dụng trong kho bên dưới để trang bị cho **${targetChar.name}**:`);
 
-      await i.editReply({
+      if (avatarInfo.url) wpnEmbed.setThumbnail(avatarInfo.url);
+
+      const updatePayload = {
         embeds: [wpnEmbed],
         components: [wpnRow]
-      });
+      };
+      if (avatarInfo.attachment) updatePayload.files = [avatarInfo.attachment];
+
+      await i.editReply(updatePayload).catch(err => console.error('❌ Lỗi wpn editReply:', err));
     }
 
     // Execute Weapon Swap
     else if (customId.startsWith('menu_do_equip_wpn_')) {
+      await i.deferUpdate().catch(() => {});
+
       const val = i.values[0].replace('do_equip_wpn_', '');
       const parts = val.split('_wpn_');
       const targetCharId = parts[0];
       const wpnId = `wpn_${parts[1]}`;
 
-      const rawDb = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../../database.json'), 'utf8'));
+      const rawDb = JSON.parse(fs.readFileSync(path.join(__dirname, '../../database.json'), 'utf8'));
 
       if (rawDb.weapons && rawDb.weapons[userId]) {
-        // Unequip old weapon owner
         rawDb.weapons[userId].forEach(w => {
           if (w.char_id === targetCharId) w.char_id = null;
         });
 
-        // Equip target weapon
         const targetWpn = rawDb.weapons[userId].find(w => w.id === wpnId || w.id.endsWith(parts[1]));
         if (targetWpn) {
           targetWpn.char_id = targetCharId;
-
-          // Sync inventory table
           if (rawDb.inventory[userId]) {
             const invChar = rawDb.inventory[userId].find(c => c.char_id === targetCharId);
             if (invChar) {
@@ -158,24 +186,29 @@ async function executeEquipment(interaction) {
             }
           }
         }
-        require('fs').writeFileSync(require('path').join(__dirname, '../../database.json'), JSON.stringify(rawDb, null, 2));
+        fs.writeFileSync(path.join(__dirname, '../../database.json'), JSON.stringify(rawDb, null, 2));
       }
 
       const targetChar = charactersData.find(c => c.id === targetCharId) || charactersData[0];
+      const avatarInfo = getAvatarAttachment(targetChar);
 
       const successEmbed = new EmbedBuilder()
         .setTitle(`🎉 TRANG BỊ VŨ KHÍ THÀNH CÔNG CHO ${targetChar.name.toUpperCase()}!`)
         .setColor('#10b981')
         .setDescription(`✨ **${targetChar.name}** đã được trang bị Nón Ánh Sáng mới thành công!\nChỉ số và hiệu ứng đã được tự động áp dụng.`);
 
-      await i.editReply({
-        embeds: [successEmbed],
-        components: [row1]
-      });
+      if (avatarInfo.url) successEmbed.setThumbnail(avatarInfo.url);
+
+      const updatePayload = { embeds: [successEmbed], components: [row1] };
+      if (avatarInfo.attachment) updatePayload.files = [avatarInfo.attachment];
+
+      await i.editReply(updatePayload).catch(err => console.error('❌ Lỗi swap wpn finish:', err));
     }
 
     // Step 2 -> Step 3 (Artifact Selection)
     else if (customId.startsWith('btn_swap_art_')) {
+      await i.deferUpdate().catch(() => {});
+
       const targetCharId = customId.replace('btn_swap_art_', '');
       const targetChar = charactersData.find(c => c.id === targetCharId) || charactersData[0];
 
@@ -194,20 +227,25 @@ async function executeEquipment(interaction) {
         .addOptions(relicSets);
 
       const artRow = new ActionRowBuilder().addComponents(artMenu);
+      const avatarInfo = getAvatarAttachment(targetChar);
 
       const artEmbed = new EmbedBuilder()
         .setTitle(`🔮 BẢNG CHỌN THÁNH DI VẬT CHO: ${targetChar.name.toUpperCase()}`)
         .setColor('#8b5cf6')
         .setDescription(`Chọn 1 trong các Bộ Thánh Di Vật 5★ khả dụng bên dưới để trang bị cho **${targetChar.name}**:`);
 
-      await i.editReply({
-        embeds: [artEmbed],
-        components: [artRow]
-      });
+      if (avatarInfo.url) artEmbed.setThumbnail(avatarInfo.url);
+
+      const updatePayload = { embeds: [artEmbed], components: [artRow] };
+      if (avatarInfo.attachment) updatePayload.files = [avatarInfo.attachment];
+
+      await i.editReply(updatePayload).catch(err => console.error('❌ Lỗi art editReply:', err));
     }
 
     // Execute Artifact Swap
     else if (customId.startsWith('menu_do_equip_art_')) {
+      await i.deferUpdate().catch(() => {});
+
       const val = i.values[0].replace('do_equip_art_', '');
       const parts = val.split('_');
       const targetCharId = parts[0];
@@ -224,27 +262,30 @@ async function executeEquipment(interaction) {
 
       const finalSetName = setDisplayNames[selectedSetName] || 'Bộ Thiện Xạ Trường Hoang (5★)';
 
-      const rawDb = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../../database.json'), 'utf8'));
+      const rawDb = JSON.parse(fs.readFileSync(path.join(__dirname, '../../database.json'), 'utf8'));
 
       if (rawDb.inventory[userId]) {
         const invChar = rawDb.inventory[userId].find(c => c.char_id === targetCharId);
         if (invChar) {
           invChar.artifact_set = finalSetName;
         }
-        require('fs').writeFileSync(require('path').join(__dirname, '../../database.json'), JSON.stringify(rawDb, null, 2));
+        fs.writeFileSync(path.join(__dirname, '../../database.json'), JSON.stringify(rawDb, null, 2));
       }
 
       const targetChar = charactersData.find(c => c.id === targetCharId) || charactersData[0];
+      const avatarInfo = getAvatarAttachment(targetChar);
 
       const successEmbed = new EmbedBuilder()
         .setTitle(`🎉 TRANG BỊ DI VẬT THÀNH CÔNG CHO ${targetChar.name.toUpperCase()}!`)
         .setColor('#10b981')
         .setDescription(`✨ **${targetChar.name}** đã được trang bị **${finalSetName}** thành công!\nHiệu ứng kích hoạt bộ di vật 2 món & 4 món đã sẵn sàng.`);
 
-      await i.editReply({
-        embeds: [successEmbed],
-        components: [row1]
-      });
+      if (avatarInfo.url) successEmbed.setThumbnail(avatarInfo.url);
+
+      const updatePayload = { embeds: [successEmbed], components: [row1] };
+      if (avatarInfo.attachment) updatePayload.files = [avatarInfo.attachment];
+
+      await i.editReply(updatePayload).catch(err => console.error('❌ Lỗi swap art finish:', err));
     }
   });
 }
