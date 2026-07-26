@@ -1,5 +1,6 @@
 const { createCanvas, loadImage } = require('@napi-rs/canvas');
 const path = require('path');
+const fs = require('fs');
 
 async function drawBattleCanvas(battleState) {
   const width = 1920;
@@ -18,16 +19,32 @@ async function drawBattleCanvas(battleState) {
     }
   }
 
-  // 1. Dark Widescreen Futuristic Sci-Fi Background
-  const bgGrad = ctx.createLinearGradient(0, 0, width, height);
-  bgGrad.addColorStop(0, '#060913');
-  bgGrad.addColorStop(0.5, '#0b1329');
-  bgGrad.addColorStop(1, '#03050c');
-  ctx.fillStyle = bgGrad;
+  // 1. Draw HSR Wanted Posters Background Image (assets/battle_bg.jpg)
+  const bgPath = path.join(__dirname, '../../assets/battle_bg.jpg');
+  let bgLoaded = false;
+  if (fs.existsSync(bgPath)) {
+    try {
+      const bgImg = await loadImage(bgPath);
+      ctx.drawImage(bgImg, 0, 0, width, height);
+      bgLoaded = true;
+    } catch (err) {}
+  }
+
+  if (!bgLoaded) {
+    const bgGrad = ctx.createLinearGradient(0, 0, width, height);
+    bgGrad.addColorStop(0, '#060913');
+    bgGrad.addColorStop(0.5, '#0b1329');
+    bgGrad.addColorStop(1, '#03050c');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, width, height);
+  }
+
+  // Dark Sci-Fi Glassmorphism Overlay Tint
+  ctx.fillStyle = 'rgba(10, 15, 30, 0.72)';
   ctx.fillRect(0, 0, width, height);
 
   // Background Sci-Fi Grid Overlay
-  ctx.strokeStyle = 'rgba(59, 130, 246, 0.06)';
+  ctx.strokeStyle = 'rgba(59, 130, 246, 0.08)';
   ctx.lineWidth = 1.5;
   for (let x = 0; x < width; x += 60) {
     ctx.beginPath();
@@ -45,7 +62,7 @@ async function drawBattleCanvas(battleState) {
   const { team, enemy, currentActor, turn, maxTurns, sp, maxSp, logs } = battleState;
 
   // ----------------------------------------------------
-  // 2. TOP CENTER BOSS HUD (1920x1080 FULL HD)
+  // 2. TOP CENTER BOSS HUD (WITH BOSS AVATAR PORTRAIT)
   // ----------------------------------------------------
   ctx.save();
   const bossHudX = 380;
@@ -54,16 +71,36 @@ async function drawBattleCanvas(battleState) {
 
   // Boss Container Background
   drawRoundedRect(bossHudX, bossHudY, bossHudW, 160, 16);
-  ctx.fillStyle = 'rgba(15, 23, 42, 0.90)';
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
   ctx.fill();
-  ctx.strokeStyle = 'rgba(239, 68, 68, 0.6)';
-  ctx.lineWidth = 2.5;
+  ctx.strokeStyle = 'rgba(239, 68, 68, 0.75)';
+  ctx.lineWidth = 3;
   ctx.stroke();
 
+  // Boss Avatar Portrait (Radius 50px, Size 100x100px)
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(bossHudX + 75, bossHudY + 80, 50, 0, Math.PI * 2);
+  ctx.closePath();
+  ctx.clip();
+
+  ctx.fillStyle = '#ef4444';
+  ctx.fillRect(bossHudX + 25, bossHudY + 30, 100, 100);
+
+  if (enemy.icon) {
+    try {
+      const bossIconPath = enemy.icon.startsWith('http') ? enemy.icon : path.join(__dirname, '../../', enemy.icon);
+      const bossImg = await loadImage(bossIconPath);
+      ctx.drawImage(bossImg, bossHudX + 25, bossHudY + 30, 100, 100);
+    } catch (err) {}
+  }
+  ctx.restore();
+
   // Boss Name & Level
+  const nameStartX = bossHudX + 145;
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 30px sans-serif';
-  ctx.fillText(`👹 ${enemy.name.toUpperCase()} (Lv.${enemy.level})`, bossHudX + 30, bossHudY + 48);
+  ctx.fillText(`👹 ${enemy.name.toUpperCase()} (Lv.${enemy.level})`, nameStartX, bossHudY + 48);
 
   // Elemental Weaknesses
   const weaknesses = enemy.weaknesses || enemy.weakness || ['Fire', 'Quantum'];
@@ -75,24 +112,24 @@ async function drawBattleCanvas(battleState) {
 
   // Boss Toughness Bar (Break Bar)
   const toughnessPct = Math.max(0, Math.min(1, (enemy.toughness || 100) / (enemy.maxToughness || 100)));
-  drawRoundedRect(bossHudX + 30, bossHudY + 65, bossHudW - 60, 14, 7);
+  drawRoundedRect(nameStartX, bossHudY + 65, bossHudW - 175, 14, 7);
   ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
   ctx.fill();
   if (toughnessPct > 0) {
-    drawRoundedRect(bossHudX + 30, bossHudY + 65, (bossHudW - 60) * toughnessPct, 14, 7);
+    drawRoundedRect(nameStartX, bossHudY + 65, (bossHudW - 175) * toughnessPct, 14, 7);
     ctx.fillStyle = '#cbd5e1';
     ctx.fill();
   }
 
   // Boss HP Bar
   const hpPct = Math.max(0, Math.min(1, enemy.currentHp / enemy.maxHp));
-  drawRoundedRect(bossHudX + 30, bossHudY + 90, bossHudW - 60, 42, 10);
+  drawRoundedRect(nameStartX, bossHudY + 90, bossHudW - 175, 42, 10);
   ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
   ctx.fill();
 
   if (hpPct > 0) {
-    drawRoundedRect(bossHudX + 30, bossHudY + 90, (bossHudW - 60) * hpPct, 42, 10);
-    const hpGrad = ctx.createLinearGradient(bossHudX, 0, bossHudX + bossHudW, 0);
+    drawRoundedRect(nameStartX, bossHudY + 90, (bossHudW - 175) * hpPct, 42, 10);
+    const hpGrad = ctx.createLinearGradient(nameStartX, 0, bossHudX + bossHudW, 0);
     hpGrad.addColorStop(0, '#dc2626');
     hpGrad.addColorStop(1, '#f87171');
     ctx.fillStyle = hpGrad;
@@ -103,12 +140,12 @@ async function drawBattleCanvas(battleState) {
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 24px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(`❤️ HP BOSS: ${enemy.currentHp.toLocaleString()} / ${enemy.maxHp.toLocaleString()} (${Math.ceil(hpPct * 100)}%)`, bossHudX + bossHudW / 2, bossHudY + 120);
+  ctx.fillText(`❤️ HP BOSS: ${enemy.currentHp.toLocaleString()} / ${enemy.maxHp.toLocaleString()} (${Math.ceil(hpPct * 100)}%)`, nameStartX + (bossHudW - 175) / 2, bossHudY + 120);
   ctx.textAlign = 'left';
   ctx.restore();
 
   // ----------------------------------------------------
-  // 3. LEFT VERTICAL ACTION VALUE TURN ORDER BAR (LARGE AVATARS)
+  // 3. LEFT VERTICAL ACTION VALUE TURN ORDER BAR
   // ----------------------------------------------------
   ctx.save();
   const avX = 30;
@@ -156,7 +193,7 @@ async function drawBattleCanvas(battleState) {
       ctx.stroke();
     }
 
-    // EXTRA LARGE AVATAR CIRCLE (Radius 45px, Size 90x90px)
+    // AVATAR CIRCLE (Radius 45px, Size 90x90px)
     ctx.beginPath();
     ctx.arc(avX + 65, actorY + 52, 45, 0, Math.PI * 2);
     ctx.closePath();
@@ -249,7 +286,7 @@ async function drawBattleCanvas(battleState) {
   ctx.restore();
 
   // ----------------------------------------------------
-  // 5. BOTTOM 4 TEAM CHARACTER STATUS CARDS (SUPER LARGE AVATARS)
+  // 5. BOTTOM 4 TEAM CHARACTER STATUS CARDS
   // ----------------------------------------------------
   ctx.save();
   const cardW = 360;
@@ -278,7 +315,7 @@ async function drawBattleCanvas(battleState) {
       ctx.fillText('⚡ ĐANG HÀNH ĐỘNG', x + 140, cardY + 26);
     }
 
-    // SUPER LARGE AVATAR CIRCLE (Radius 52px, Size 104x104px - Gấp Đôi Kích Thước Cũ!)
+    // AVATAR CIRCLE (Radius 52px, Size 104x104px)
     ctx.save();
     ctx.beginPath();
     ctx.arc(x + 68, cardY + 70, 52, 0, Math.PI * 2);
