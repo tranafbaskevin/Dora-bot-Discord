@@ -128,20 +128,19 @@ async function executeTeam(interaction) {
 
     if (avatarInfo.url) embed.setThumbnail(avatarInfo.url);
 
-    const payload = { embeds: [embed], components: [row1, row2, row3, row4] };
+    const payload = { embeds: [embed], components: [row1, row2, row3, row4], fetchReply: true };
     if (avatarInfo.attachment) payload.files = [avatarInfo.attachment];
 
-    await interaction.reply(payload);
+    const response = await interaction.reply(payload);
 
-    const collector = interaction.channel.createMessageComponentCollector({
-      componentType: ComponentType.StringSelect,
+    // FILTER ISOLATION: ONLY LISTEN TO STRICT team_select_slot CUSTOM IDS!
+    const collector = response.createMessageComponentCollector({
+      filter: i => i.user.id === userId && i.customId.startsWith('team_select_slot'),
       time: 120000
     });
 
     collector.on('collect', async i => {
-      if (i.user.id !== interaction.user.id) {
-        return i.reply({ content: '❌ Bạn không phải là người tùy chỉnh đội hình này!', ephemeral: true });
-      }
+      if (!i.customId.startsWith('team_select_slot')) return;
 
       await i.deferUpdate().catch(() => {});
 
@@ -152,6 +151,7 @@ async function executeTeam(interaction) {
       else if (i.customId === 'team_select_slot2') teamNow.slot2 = chosenChar;
       else if (i.customId === 'team_select_slot3') teamNow.slot3 = chosenChar;
       else if (i.customId === 'team_select_slot4') teamNow.slot4 = chosenChar;
+      else return;
 
       db.updateTeam(userId, teamNow.slot1, teamNow.slot2, teamNow.slot3, teamNow.slot4);
 

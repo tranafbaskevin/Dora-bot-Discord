@@ -40,19 +40,19 @@ async function executeInfo(interaction) {
     new ButtonBuilder().setCustomId('info_cat_weapon').setLabel('⚔️ Thư Viện Vũ Khí Nón Ánh Sáng').setStyle(ButtonStyle.Secondary)
   );
 
-  await interaction.reply({
+  const response = await interaction.reply({
     embeds: [mainEmbed],
-    components: [rowButtons]
+    components: [rowButtons],
+    fetchReply: true
   });
 
-  const collector = interaction.channel.createMessageComponentCollector({
+  const collector = response.createMessageComponentCollector({
+    filter: i => i.user.id === userId && i.customId.startsWith('info_'),
     time: 300000
   });
 
   collector.on('collect', async i => {
-    if (i.user.id !== interaction.user.id) {
-      return i.reply({ content: '❌ Bạn không phải là người tra cứu!', ephemeral: true });
-    }
+    if (!i.customId.startsWith('info_')) return;
 
     const customId = i.customId;
 
