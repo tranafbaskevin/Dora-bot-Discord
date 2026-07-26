@@ -65,7 +65,6 @@ async function startBattleMatch(interaction, enemyId, difficultyOpt = 'auto') {
 
     const battleComponents = createBattleComponents(session);
 
-    // DIRECT FULL-BLEED FILE ATTACHMENT FOR MAXIMUM CHAT WIDTH DISPLAY!
     await interaction.editReply({
       content: headerText,
       files: [attachment],
@@ -95,6 +94,30 @@ async function startBattleMatch(interaction, enemyId, difficultyOpt = 'auto') {
       if (session.isFinished && session.winner === 'player') {
         const user = db.getUser(userId);
         db.updateUserJades(userId, user.jades + 800);
+
+        // SEND DEDICATED VICTORY REWARDS CHAT EMBED WITH ALL 4 SUBSTAT BUFF LINES!
+        const vData = session.victoryData || {};
+        const relic = vData.artifact || {};
+        const subLines = (relic.subStats || []).map((s, idx) => `   ${idx + 1}. **${s.name}**: \`+${s.value}${s.name.includes('%') ? '%' : ''}\``).join('\n');
+
+        const victoryEmbed = new EmbedBuilder()
+          .setTitle(`🎉 PHẦN THƯỞNG CHIẾN THẮNG BOSS ${session.enemy.name.toUpperCase()}!`)
+          .setColor('#f59e0b')
+          .setDescription(`Chúc mừng **<@${userId}>** đã xuất sắc tiêu diệt Boss **${session.enemy.name}** (Lv.${session.enemy.level})!`)
+          .addFields(
+            { name: '💎 Ngọc Ánh Sao', value: '`+800 Jades`', inline: true },
+            { name: '🌟 EXP Thám Hiểm', value: `\`+450 EXP\` ${vData.leveledUp ? `🎉 **LÊN CẤP ${vData.newLevel}!** (+300 Jades)` : ''}`, inline: true },
+            { name: '📦 Nguyên Liệu Nâng Cấp', value: '• `+6` Sách EXP Nhân Vật\n• `+6` Tinh Thể Vũ Khí\n• `+12` Bụi Di Vật', inline: false },
+            {
+              name: `🛡️ DI VẬT 5★ MỚI NHẬN: ${relic.setName || 'Di Vật 5★'} [${relic.slot || 'Head'}]`,
+              value: `🔹 **Chỉ Số Chính**: \`${relic.mainStat || 'ATK%'} +${relic.mainValue || '8.5'}\`\n` +
+                     `🔸 **4 Dòng Buff Chỉ Số Phụ**:\n${subLines || '   1. ATK%: +3.2%\n   2. CRIT Rate%: +2.8%\n   3. SPD: +3.0\n   4. DEF%: +4.1%'}`,
+              inline: false
+            }
+          )
+          .setFooter({ text: 'Di vật 5★ đã được tự động bảo quản trong Inventory! Dùng /equipment để trang bị.' });
+
+        await ai.channel.send({ embeds: [victoryEmbed] }).catch(err => console.error('❌ Lỗi send victoryEmbed:', err));
       }
 
       if (usedUltChar) {
@@ -121,7 +144,6 @@ async function startBattleMatch(interaction, enemyId, difficultyOpt = 'auto') {
 
       const newComponents = session.isFinished ? [] : createBattleComponents(session);
 
-      // IN-PLACE UPDATE ON THE EXACT SAME MESSAGE! NO MESSAGE SPAM!
       await interaction.editReply({
         content: updatedText,
         files: [newAttachment],

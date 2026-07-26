@@ -18,6 +18,7 @@ class CombatEngine {
     this.isFinished = false;
     this.winner = null;
     this.logs = [];
+    this.victoryData = null;
 
     this.initBattle();
   }
@@ -218,9 +219,10 @@ class CombatEngine {
     const chosenMainStat = mainStats[Math.floor(Math.random() * mainStats.length)];
     const mainVal = chosenMainStat.includes('%') ? (5.0 + Math.random() * 3.0) : (10 + Math.floor(Math.random() * 5));
 
+    // GENERATE 4 FULL SUBSTATS (4 DÒNG BUFF)
     const subPool = ['ATK%', 'DEF%', 'HP%', 'CRIT Rate%', 'CRIT DMG%', 'SPD'];
     const subStats = [];
-    while (subStats.length < 3) {
+    while (subStats.length < 4) {
       const pick = subPool[Math.floor(Math.random() * subPool.length)];
       if (!subStats.some(s => s.name === pick) && pick !== chosenMainStat) {
         const val = pick.includes('%') ? (2.5 + Math.random() * 2.0) : (2 + Math.floor(Math.random() * 3));
@@ -230,11 +232,22 @@ class CombatEngine {
 
     const droppedArtifact = db.addArtifact(this.userId, {
       setName: `${relicSet.name} (5★)`,
-      slot: 'Head',
+      slot: relicSet.slot || 'Head',
       mainStat: chosenMainStat,
       mainValue: parseFloat(mainVal.toFixed(1)),
       subStats: subStats
     });
+
+    this.victoryData = {
+      jades: 800,
+      exp: 450,
+      leveledUp: expResult.leveledUp,
+      newLevel: expResult.newLevel,
+      charExpBooks: 6,
+      weaponExpCrystals: 6,
+      artifactDust: 12,
+      artifact: droppedArtifact
+    };
 
     this.logs.push(`🎁 **PHẦN THƯỞNG CHIẾN THẮNG**:`);
     this.logs.push(`- +450 EXP Thám Hiểm ${expResult.leveledUp ? `🎉 **LÊN CẤP ${expResult.newLevel}!** (+300 Jades)` : ''}`);
