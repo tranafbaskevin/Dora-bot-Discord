@@ -1,10 +1,52 @@
 # 🎮 DoraBot Discord - Game RPG Honkai: Star Rail Bot
 
-**DoraBot** là một Discord Bot Game RPG hoàn chỉnh được xây dựng dựa trên thế giới và cơ chế chiến đấu của **Honkai: Star Rail**. Bot sở hữu hệ thống Gacha 50/50 chuẩn tỉ lệ, Quản lý túi đồ & Trang bị (Vũ khí & Di vật 4★/5★), Nâng cấp nhân vật / Vết kích / Cung mệnh S1-S5, và đặc biệt là **Hệ thống Trận Đấu Canvas UX/UI Widescreen 1920x1080** sống động!
+**DoraBot** là một Discord Bot Game RPG hoàn chỉnh được xây dựng dựa trên thế giới và cơ chế chiến đấu của **Honkai: Star Rail**. Bot sở hữu hệ thống Gacha 50/50 chuẩn tỉ lệ, Quản lý túi đồ & Trang bị (Vũ khí & Di vật 4★/5★), Nâng cấp nhân vật / Vết kích / Cung mệnh S1-S5, Lưu trữ Đám mây vĩnh viễn, và đặc biệt là **Hệ thống Trận Đấu Canvas UX/UI Widescreen 1920x1080** sống động!
 
 ---
 
-## 👹 1. DANH SÁCH BOSS & PHẦN THƯỞNG CHIẾN THẮNG CHUYÊN BIỆT
+## 🌐 1. HẠ TẦNG VẬN HÀNH 24/7 & LƯU TRỮ ĐÁM MÂY (ĐÃ HOÀN THÀNH)
+
+- ☁️ **Chạy 24/7/365 Độc Lập**: Triển khai trên **Render Web Service** kết hợp với **UptimeRobot Keep-Alive** (ping 5 phút/lần). Bạn có thể tắt laptop, gập máy hay đi ngủ mà bot vẫn luôn online phản hồi mượt mà!
+- 🗄️ **MongoDB Atlas Cloud Persistent Database**: Đã tích hợp hệ thống cơ sở dữ liệu đám mây **MongoDB Atlas**. Toàn bộ tài khoản người chơi, Jades, Cấp thám hiểm, Đội hình, Vũ khí và Di vật được **lưu trữ vĩnh viễn trên Cloud**, không bao giờ bị xóa hay reset khi re-deploy code nữa!
+- 👥 **Cô Lập Bộ Nghe Tương Tác (Multi-User Concurrency)**: Bộ nghe sự kiện nút bấm được cô lập 100% theo từng tin nhắn (`i.message.id === response.id`). Hàng chục người chơi có thể gacha, thay đồ và đánh boss song song trong cùng 1 kênh Discord mà không bao giờ bị xung đột hay chặn nhầm.
+- 🎬 **Hiệu Ứng Ultimate GIF Động Ngắt Lượt**: Tự động hiển thị và cập nhật ảnh GIF Tuyệt kỹ hoành tráng cho từng nhân vật (Seele, Bronya, Jing Yuan...) trực tiếp trên 1 khung duy nhất để chống rác tin nhắn.
+
+---
+
+## ⚔️ 2. HỆ THỐNG NGUYÊN TỐ, KHẮC CHẾ ĐIỂM YẾU & DÒNG BUFF THUỘC TÍNH
+
+Trận đấu mô phỏng chính xác hệ thống 7 thuộc tính nguyên tố và cơ chế **Phá Vỡ Điểm Yếu (Weakness Break)** của Honkai: Star Rail:
+
+### 🌈 7 Thuộc Tính Nguyên Tố & Hiệu Ứng Phá Vỡ Điểm Yếu:
+1. ⚔️ **Vật Lý (Physical)**: Khi Phá Vỡ Điểm Yếu, gây Sát thương Vật lý và gắn hiệu ứng **Chảy Máu (Bleed)** gây sát thương DoT theo % HP tối đa của địch.
+2. 🔥 **Hỏa (Fire)**: Khi Phá Vỡ Điểm Yếu, gây Sát thương Hỏa và gắn hiệu ứng **Thiêu Đốt (Burn)** thiêu rụi sinh lực kẻ địch ở đầu mỗi lượt.
+3. ❄️ **Băng (Ice)**: Khi Phá Vỡ Điểm Yếu, gây Sát thương Băng và gắn hiệu ứng **Đóng Băng (Freeze)** khiến kẻ địch bỏ lỡ 1 lượt hành động.
+4. ⚡ **Lôi (Lightning)**: Khi Phá Vỡ Điểm Yếu, gây Sát thương Lôi và gắn hiệu ứng **Sốc Điện (Shock)** gây sát thương Lôi liên tục.
+5. 🌪️ **Phong (Wind)**: Khi Phá Vỡ Điểm Yếu, gây Sát thương Phong và gắn hiệu ứng **Bào Mòn (Wind Shear)** cộng dồn tối đa 5 tầng sát thương DoT.
+6. 🌌 **Lượng Tử (Quantum)**: Khi Phá Vỡ Điểm Yếu, gây Sát thương Lượng Tử và gắn hiệu ứng **Trói Buộc (Entanglement)** hoãn lượt hành động và nổ sát thương lớn khi kết thúc lượt.
+7. 🌟 **Số Ảo (Imaginary)**: Khi Phá Vỡ Điểm Yếu, gây Sát thương Số Ảo và gắn hiệu ứng **Giam Cầm (Imprisonment)** giảm Tốc độ và đẩy lùi lượt đi của địch.
+
+### 🎲 Dòng Buff Tăng Sát Thương Thuộc Tính (Elemental DMG% Boost):
+Mỗi nhân vật và trang bị có thể sở hữu các dòng Buff gia tăng % Sát thương thuộc tính chuyên biệt:
+- `Physical DMG%` | `Fire DMG%` | `Ice DMG%` | `Lightning DMG%` | `Wind DMG%` | `Quantum DMG%` | `Imaginary DMG%`.
+
+---
+
+## 👤 3. THÔNG TIN CÁC NHÂN VẬT ĐÃ RA MẮT TRONG BOT
+
+### 🌟 Nhân Vật 5★:
+1. 💜 **Seele** *(Quantum - Hunt)*: Sát thủ Lượng Tử đơn mục tiêu tốc độ cao. Tuyệt kỹ **"Butterfly Flurry"** đi kèm hiệu ứng GIF đòn chém bóng đêm hoành tráng.
+2. ⚡ **Jing Yuan** *(Lightning - Erudition)*: Tướng Quân Lôi diện rộng. Tuyệt kỹ **"Lightbringer"** triệu hồi Thần Quân giáng sấm sét càn quét toàn sân.
+3. 🌀 **Bronya** *(Wind - Harmony)*: Thủ Lĩnh Đội Băng Tuyết. Kỹ năng kéo lượt 100% cho đồng đội và Tuyệt kỹ **"The Belobog March"** tăng mạnh ATK & CRIT DMG toàn đội.
+
+### ⭐ Nhân Vật 4★:
+4. 🌪️ **Dan Heng** *(Wind - Hunt)*: Tiên phong Săn Bắn thuộc tính Phong, gây thêm sát thương khi kẻ địch bị làm chậm.
+5. ❄️ **March 7th** *(Ice - Preservation)*: Thiếu nữ Băng Tuyết tạo Khiên phòng thủ kiên cố và Tuyệt kỹ gây Đóng Băng diện rộng.
+6. 🩺 **Natasha** *(Physical - Abundance)*: Bác sĩ Trù Phú hồi máu đơn thể và trị liệu sinh lực cho toàn bộ đồng đội.
+
+---
+
+## 👹 4. DANH SÁCH BOSS & PHẦN THƯỞNG CHIẾN THẮNG CHUYÊN BIỆT
 
 Mỗi khi hạ gục Boss ở lệnh `/battle`, người chơi sẽ nhận được **chuẩn 2 món Di Vật (4★ / 5★ theo Cấp Thám Hiểm)** cùng các phần thưởng tài nguyên chuyên biệt:
 
@@ -22,7 +64,7 @@ Mỗi khi hạ gục Boss ở lệnh `/battle`, người chơi sẽ nhận đư�
 
 ---
 
-## ⚔️ 2. BỂ VŨ KHÍ NÓN ÁNH SÁNG VĨNH CỬU (36+ VŨ KHÍ) & DÒNG NỘI TẠI
+## ⚔️ 5. BỂ VŨ KHÍ NÓN ÁNH SÁNG VĨNH CỬU (36+ VŨ KHÍ) & DÒNG NỘI TẠI
 
 Banner Vũ Khí Vĩnh Cửu (`/gacha` -> Banner Vũ Khí) bao gồm 36+ Nón Ánh Sáng độc đáo cho 7 Vận Mệnh. Mọi Vũ Khí nhận được đều có **Dòng Nội Tại Đặc Biệt** cố định kèm **4 Dòng Buff Chỉ Số % Ngẫu Nhiên 100%**!
 
@@ -37,47 +79,6 @@ Banner Vũ Khí Vĩnh Cửu (`/gacha` -> Banner Vũ Khí) bao gồm 36+ Nón Án
 8. **Something Irreplaceable (Vật Phẩm Không Thể Thay Thế)** [Hủy Diệt]: Tăng +24% ATK. Khi tiêu diệt kẻ địch hoặc bị đánh, hồi 8% HP & tăng +24% Sát thương.
 9. **On the Fall of an Aeon (Sự Sụp Đổ Của Aeon)** [Hủy Diệt]: Mỗi đòn đánh tăng +8% ATK (tối đa 4 cộng dồn). Phá Vỡ Điểm Yếu tăng +12% Sát thương trong 2 lượt.
 10. **Patience Is All You Need (Chỉ Cần Kiên Nhẫn)** [Hư Vô]: Tăng +24% Sát thương gây ra. Tăng +4.8% SPD mỗi đòn đánh & thiêu đốt/sốc điện kẻ địch.
-
-### ⭐ Nón Ánh Sáng 4★ (16 Vũ Khí Tiêu Chuẩn):
-- **Only Silence Remains (Chỉ Còn Lại Chốn Lặng Yên)** [Săn Bắn]: Tăng +24% ATK & +12% CRIT Rate khi có ≤ 2 kẻ địch.
-- **Swordplay (Luận Kiếm)** [Săn Bắn]: Đánh liên tục cùng 1 mục tiêu tăng +8% Sát thương/đòn (tối đa 5 lần).
-- **River Flows in Spring (Suối Mùa Xuân)** [Săn Bắn]: Tăng +8% SPD & +12% Sát thương (mất khi chịu sát thương).
-- **The Birth of the Self (Sự Ra Đời Của Bản Thể)** [Tri Thức]: Tăng +24% Sát thương đòn Tăng Cường (+24% nếu HP địch < 50%).
-- **Geniuses' Repose (Sự Nghỉ Ngơi Của Thiên Tài)** [Tri Thức]: Tăng +16% ATK & +24% CRIT DMG khi hạ gục kẻ địch.
-- **Make the World Clamor (Hãy Làm Thế Giới Ồ Ạt)** [Tri Thức]: Vào trận tự hồi +20 EP & tăng +32% Sát thương Tuyệt Kỹ.
-- **Day One of My New Life (Ngày Đầu Tiên Cuộc Sống Mới)** [Bảo Hộ]: Tăng +16% DEF & giảm 8% Sát thương gánh chịu toàn đội.
-- **Landau's Choice (Sự Lựa Chọn Của Landau)** [Bảo Hộ]: Tăng khả năng bị đánh & giảm 16% Sát thương gánh chịu.
-- **Trend of the Universal Market (Xu Hướng Thị Trường)** [Bảo Hộ]: Tăng +16% DEF & thiêu đốt kẻ địch khi bị tấn công.
-- **Shared Feeling (Cùng Dốc Lòng)** [Trù Phú]: Tăng +10% Lượng Hồi Máu & hồi +2 EP cho toàn đội khi dùng Skill.
-- **Post-Op Conversation (Trò Chuyện Sau Phẫu Thuật)** [Trù Phú]: Tăng +8% Hồi EP & +12% Lượng Hồi Máu khi dùng Ult.
-- **Perfect Timing (Thời Điểm Thích Hợp)** [Trù Phú]: Tăng +16% Kháng Hiệu Ứng & tăng Hồi Máu dựa trên Kháng Hiệu Ứng.
-- **Past and Future (Quá Khứ và Tương Lai)** [Hòa Hợp]: Sau khi dùng Skill, tăng +16% Sát thương cho đồng đội hành động kế tiếp.
-- **Planetary Rendezvous (Điểm Hẹn Hành Tinh)** [Hòa Hợp]: Tăng +12% Sát thương cho đồng đội cùng thuộc tính.
-- **Eyes of the Prey (Ánh Mắt Con Mồi)** [Hư Vô]: Tăng +20% Chính Xác Hiệu Ứng & +24% Sát Thương DoT.
-- **A Secret Vow (Lời Thề Thầm Kín)** [Hủy Diệt]: Tăng +20% Sát thương (+20% nếu HP% địch cao hơn bản thân).
-
-### ⚪ Nón Ánh Sáng 3★ (10 Vũ Khí Tân Thủ):
-- *Arrows, Darting Arrow, Adversary, Cornucopia, Fine Fruit, Passkey, Meshing Cogs, Amber, Defense, Collapsing Sky*.
-
----
-
-## 🎲 3. HỆ THỐNG DÒNG BUFF CHỈ SỐ (SUBSTATS) NGẪU NHIÊN 100%
-
-Mọi Vũ Khí & Di Vật khi nhận được đều được hệ thống **sinh ngẫu nhiên 100% 4 dòng buff bổ trợ** cả về loại chỉ số lẫn giá trị con số % bên trong:
-
-### 📊 Danh Sách 12 Dòng Buff Chỉ Số Phụ (Substats):
-1. ⚔️ **ATK%** *(Tỷ lệ Tấn Công)*: Tăng % lực đánh cho nhân vật sát thương.
-2. 🗡️ **ATK cố định**: Chỉ số Tấn công cộng thẳng.
-3. 🎯 **CRIT Rate%** *(Tỷ lệ Bạo Kích)*: Tăng cơ hội gây đòn đánh bạo kích.
-4. 💥 **CRIT DMG%** *(Sát Thương Bạo Kích)*: Tăng nhân lực sát thương khi nổ bạo kích.
-5. ⚡ **SPD** *(Tốc Độ)*: Giúp nhân vật đi trước và tăng số lượt hành động.
-6. ❤️ **HP%** *(Tỷ lệ Máu)*: Tăng % sinh lực tối đa.
-7. 🩺 **HP cố định**: Chỉ số Máu cộng thẳng.
-8. 🛡️ **DEF%** *(Tỷ lệ Phòng Thủ)*: Tăng % giáp và độ dày của Khiên tạo ra.
-9. 🧱 **DEF cố định**: Chỉ số Phòng thủ cộng thẳng.
-10. 🔮 **Hồi EP%** *(Energy Recovery)*: Hồi năng lượng để tung Tuyệt Kỹ ngắt lượt.
-11. 🔨 **Tấn Công Phá Vỡ%** *(Break Effect)*: Tăng sát thương khi đánh bể thanh Điểm Yếu Boss.
-12. 💚 **Tăng Hồi Máu%** *(Outgoing Healing)*: Tăng lượng máu trị liệu cho nhân vật Trù Phú (Natasha).
 
 ---
 
