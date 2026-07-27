@@ -71,6 +71,17 @@ commandsList.forEach(cmd => {
 client.once('ready', async () => {
   console.log(`🔥 Bot Dora-Bot online thành công với tên: ${client.user.tag}`);
 
+  // Tự động cập nhật Avatar cho DoraBot
+  const avatarPath = require('path').join(__dirname, 'assets/dora_avatar.png');
+  if (require('fs').existsSync(avatarPath)) {
+    try {
+      await client.user.setAvatar(avatarPath);
+      console.log('🖼️ Đã tự động cập nhật Avatar mới cho DoraBot thành công!');
+    } catch (err) {
+      console.log('ℹ️ Avatar hiện tại đã được đồng bộ hoặc bị giới hạn thời gian cập nhật của Discord.');
+    }
+  }
+
   if (!botToken) {
     console.error('❌ KHÔNG TÌM THẤY BOT TOKEN TRONG BIẾN MÔI TRƯỜNG (TOKEN hoặc DISCORD_TOKEN)!');
     return;
