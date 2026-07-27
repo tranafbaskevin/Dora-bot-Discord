@@ -12,9 +12,9 @@
 | :---: | :---: |
 | ![Acheron Ultimate](assets/gifs/acheron.gif) | ![Kafka Ultimate](assets/gifs/kafka.gif) |
 
-| 🌟 **Seele** - *Butterfly Flurry* | ⚡ **Jing Yuan** - *Lightbringer* |
+| ⚔️ **Blade** - *Death Sentence* | 👾 **Silver Wolf** - *User Banned* |
 | :---: | :---: |
-| ![Seele Ultimate](assets/gifs/seele.gif) | ![Jing Yuan Ultimate](assets/gifs/jing_yuan.gif) |
+| ![Blade Ultimate](assets/gifs/blade.gif) | ![Silver Wolf Ultimate](assets/gifs/silver_wolf.gif) |
 
 ---
 
