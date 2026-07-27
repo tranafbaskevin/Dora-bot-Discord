@@ -10,11 +10,11 @@
 
 | 💜 **Acheron** - *Slashed Dream Cries in Red* | 🍇 **Kafka** - *Twilight Trill* |
 | :---: | :---: |
-| ![Acheron Ultimate](https://i.makeagif.com/media/6-14-2024/956I-Z.gif) | ![Kafka Ultimate](https://media.tenor.com/YifZLG831mAAAAAM/kafka-honkai-star-rail.gif) |
+| ![Acheron Ultimate](assets/gifs/acheron.gif) | ![Kafka Ultimate](assets/gifs/kafka.gif) |
 
-| 👾 **Silver Wolf** - *User Banned* | 🌟 **Seele** - *Butterfly Flurry* |
+| 🌟 **Seele** - *Butterfly Flurry* | ⚡ **Jing Yuan** - *Lightbringer* |
 | :---: | :---: |
-| ![Silver Wolf Ultimate](https://i.makeagif.com/media/5-04-2023/hHsBCF.gif) | ![Seele Ultimate](https://media.giphy.com/media/L2X2a7N03XgYnJ0sCq/giphy.gif) |
+| ![Seele Ultimate](assets/gifs/seele.gif) | ![Jing Yuan Ultimate](assets/gifs/jing_yuan.gif) |
 
 ---
 
