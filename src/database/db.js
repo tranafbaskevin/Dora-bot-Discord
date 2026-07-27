@@ -631,6 +631,33 @@ function getUserWeapons(discordId) {
 
   const userInv = memoryDb.inventory[discordId] || [];
   let updated = false;
+
+  // Auto-sync weapons equipped on characters into memoryDb.weapons with unique Keycodes
+  userInv.forEach(inv => {
+    if (inv.light_cone) {
+      const normCone = normalizeWeaponName(inv.light_cone);
+      const existing = memoryDb.weapons[discordId].find(w => w.equipped_char_id === inv.char_id || w.char_id === inv.char_id || normalizeWeaponName(w.name) === normCone);
+      if (!existing) {
+        const newWpn = {
+          id: `wpn_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+          keycode: generateUniqueKeycode('wpn'),
+          name: inv.light_cone,
+          rarity: inv.light_cone.includes('5★') ? 5 : 4,
+          level: inv.weapon_level || 1,
+          exp: 0,
+          superimpose: 1,
+          path: 'Hunt',
+          passiveDescription: 'Tăng sát thương và các chỉ số bổ trợ cho nhân vật trang bị.',
+          subStats: generateRandomWeaponSubstats(inv.light_cone.includes('5★') ? 5 : 4),
+          char_id: inv.char_id,
+          equipped_char_id: inv.char_id
+        };
+        memoryDb.weapons[discordId].push(newWpn);
+        updated = true;
+      }
+    }
+  });
+
   memoryDb.weapons[discordId].forEach(w => {
     if (!w.keycode) {
       w.keycode = generateUniqueKeycode('wpn');

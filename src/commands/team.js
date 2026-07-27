@@ -9,7 +9,7 @@ const teamCommand = new SlashCommandBuilder()
   .setDescription('Quản lý và xem chi tiết đội hình 4 nhân vật')
   .addSubcommand(sub =>
     sub.setName('view')
-      .setDescription('Xem thông tin chi tiết chỉ số, vũ khí và di vật của đội hình hiện tại')
+      .setDescription('Xem thông tin chi tiết chỉ số, vũ khí và di vật (Hiển thị đủ 4 Slot & Mã Keycode)')
   )
   .addSubcommand(sub =>
     sub.setName('select')
@@ -37,6 +37,8 @@ async function executeTeam(interaction) {
   if (subcommand === 'view') {
     const team = db.getUserTeam(userId);
     const userInv = db.getUserInventory(userId);
+    const userWpns = db.getUserWeapons(userId);
+    const userArts = db.getUserArtifacts(userId);
 
     const slots = [
       { slotNum: 1, charId: team.slot1 },
@@ -51,7 +53,7 @@ async function executeTeam(interaction) {
     const embed = new EmbedBuilder()
       .setTitle(`🛡️ THÔNG TIN ĐỘI HÌNH VÀ CHỈ SỐ - ${interaction.user.username}`)
       .setColor('#3b82f6')
-      .setDescription('Chi tiết thông số, vũ khí và thánh di vật của 4 nhân vật ra trận:');
+      .setDescription('Chi tiết thông số, vũ khí và đầy đủ 4 Slot Thánh Di Vật của 4 nhân vật ra trận:');
 
     if (avatarInfo.url) embed.setThumbnail(avatarInfo.url);
 
@@ -71,14 +73,36 @@ async function executeTeam(interaction) {
       const def = char.baseStats.def + (charLvl - 1) * 12;
       const spd = char.baseStats.speed;
 
-      const userWpns = db.getUserWeapons(userId);
-      const equippedWpn = userWpns.find(w => w.char_id === s.charId || w.name.includes(invRecord.light_cone)) || { name: invRecord.light_cone, superimpose: 1 };
-      const wpnMsg = `⚔️ ${equippedWpn.name} (Lv.${wpnLvl} • S${equippedWpn.superimpose || 1})`;
-      const artMsg = `🔮 ${invRecord.artifact_set || 'Bộ Tiêu Chuẩn (5★)'}`;
+      // 1. Weapon Details with Keycode
+      const equippedWpn = userWpns.find(w => w.equipped_char_id === s.charId || w.char_id === s.charId);
+      const wpnMsg = equippedWpn
+        ? `⚔️ **Vũ Khí**: [🆔 \`${equippedWpn.keycode || '#W-NONE'}\`] ${equippedWpn.name} (\`Lv.${equippedWpn.level || 1}/80\` • S${equippedWpn.superimpose || 1})`
+        : `⚔️ **Vũ Khí**: *Chưa trang bị vũ khí*`;
+
+      // 2. Artifact Details - DISPLAY ALL 4 SLOTS EXPLICITLY!
+      const charArts = userArts.filter(a => a.equipped_char_id === s.charId || a.char_id === s.charId);
+
+      const headArt = charArts.find(a => (a.slot || 'Head') === 'Head');
+      const handsArt = charArts.find(a => (a.slot || 'Head') === 'Hands');
+      const bodyArt = charArts.find(a => (a.slot || 'Head') === 'Body');
+      const feetArt = charArts.find(a => (a.slot || 'Head') === 'Feet');
+
+      const formatArtSlot = (icon, name, artObj) => {
+        if (!artObj) return `   └ ${icon} **[${name}]**: *Chưa trang bị thánh di vật*`;
+        const star = artObj.rarity === 5 ? '🌟 5★' : '⭐ 4★';
+        return `   └ ${icon} **[${name}]**: [🆔 \`${artObj.keycode || '#A-NONE'}\`] ${star} ${artObj.setName} (\`+${artObj.level}/15\`) - Main: **${artObj.mainStat}** (+${artObj.mainValue.toFixed(1)})`;
+      };
+
+      const art4SlotsText = [
+        formatArtSlot('🎩', 'Head', headArt),
+        formatArtSlot('🥊', 'Hands', handsArt),
+        formatArtSlot('🥼', 'Body', bodyArt),
+        formatArtSlot('👟', 'Feet', feetArt)
+      ].join('\n');
 
       embed.addFields({
         name: `👤 Slot ${s.slotNum}: ${char.name.toUpperCase()} (Lv.${charLvl} • E${invRecord.eidolon || 0})`,
-        value: `**Vận Mệnh**: ${char.path} | **Thuộc Tính**: ${char.element}\n${wpnMsg}\n${artMsg}\n📊 **Chỉ số**: HP **${hp}** | ATK **${atk}** | DEF **${def}** | SPD **${spd}**`,
+        value: `**Vận Mệnh**: ${char.path} | **Thuộc Tính**: ${char.element}\n${wpnMsg}\n🔮 **Bộ 4 Slot Thánh Di Vật**:\n${art4SlotsText}\n📊 **Chỉ số**: HP **${hp}** | ATK **${atk}** | DEF **${def}** | SPD **${spd}**`,
         inline: false
       });
     });
@@ -101,7 +125,6 @@ async function executeTeam(interaction) {
       };
     }).filter(Boolean);
 
-    // Discord Limit Rule: Select Menu options MUST be between 1 and 25 items!
     if (selectOptions.length === 0) {
       selectOptions = [
         { label: 'Dan Heng (Wind - Hunt)', description: 'Nhân vật Khởi Đầu', value: 'dan_heng', emoji: '⭐' },
@@ -138,7 +161,6 @@ async function executeTeam(interaction) {
 
     const response = await interaction.reply(payload);
 
-    // STRICT MESSAGE-SPECIFIC COLLECTOR (PER-USER & PER-MESSAGE ISOLATION)
     const collector = response.createMessageComponentCollector({
       filter: i => i.message.id === response.id && i.user.id === userId,
       time: 120000
