@@ -12,9 +12,9 @@
 | :---: | :---: |
 | ![Acheron Ultimate](https://i.makeagif.com/media/6-14-2024/956I-Z.gif) | ![Kafka Ultimate](https://media.tenor.com/YifZLG831mAAAAAM/kafka-honkai-star-rail.gif) |
 
-| ⚔️ **Blade** - *Death Sentence* | 🌸 **Fu Xuan** - *Woes of Many Morphed to One* |
+| 👾 **Silver Wolf** - *User Banned* | 🌟 **Seele** - *Butterfly Flurry* |
 | :---: | :---: |
-| ![Blade Ultimate](https://upload-os-bbs.hoyolab.com/upload/2023/07/31/44959855/bcb22d4ab6ab8e4108a0a0d1ba1efac2_6576050986117020026.gif) | ![Fu Xuan Ultimate](https://upload-os-bbs.hoyolab.com/upload/2023/09/20/248396313/5752a91233ec86e37533a1ec8022a663_2652933987579829744.gif) |
+| ![Silver Wolf Ultimate](https://i.makeagif.com/media/5-04-2023/hHsBCF.gif) | ![Seele Ultimate](https://media.giphy.com/media/L2X2a7N03XgYnJ0sCq/giphy.gif) |
 
 ---
 
@@ -55,7 +55,7 @@ Mỗi nhân vật và trang bị có thể sở hữu các dòng Buff gia tăng 
 4. 👾 **Silver Wolf** *(Quantum - Nihility)*: Gắn Điểm Yếu thuộc tính & giảm 45% DEF kẻ địch. GIF Ult *"User Banned"*.
 5. 🌸 **Fu Xuan** *(Quantum - Preservation)*: Gánh chịu sát thương, tăng Max HP/Bạo Kích & Hồi máu toàn đội. GIF Ult *"Woes of Many Morphed to One"*.
 6. 💜 **Seele** *(Quantum - Hunt)*: Sát thủ Lượng Tử tốc độ cao. GIF Ult *"Butterfly Flurry"*.
-7. ⚡ **Jing Yuan** *(Lightning - Erudition)*: Tướng Quân Lôi diện rộng. GIF Ult *"Lightbringer"*.
+7. ⚡ **Jing Yuan** *(Lightning - Erudition)*: Tướng Quan Lôi diện rộng. GIF Ult *"Lightbringer"*.
 8. 🌀 **Bronya** *(Wind - Harmony)*: Nhân vật 5★ Thường. Kéo lượt 100% & buff ATK/CRIT DMG toàn đội. GIF Ult *"The Belobog March"*.
 
 ### ⭐ 20 Nhân Vật 4★ (Tỷ Lệ Xuất Hiện Phong Phú Khi Quay Gacha):
