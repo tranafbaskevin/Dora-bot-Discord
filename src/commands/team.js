@@ -37,8 +37,6 @@ async function executeTeam(interaction) {
   if (subcommand === 'view') {
     const team = db.getUserTeam(userId);
     const userInv = db.getUserInventory(userId);
-    const rawDb = JSON.parse(fs.readFileSync(path.join(__dirname, '../../database.json'), 'utf8'));
-    const userArts = (rawDb.artifacts && rawDb.artifacts[userId]) || [];
 
     const slots = [
       { slotNum: 1, charId: team.slot1 },
@@ -92,7 +90,7 @@ async function executeTeam(interaction) {
   } else if (subcommand === 'select') {
     const userInv = db.getUserInventory(userId);
 
-    const selectOptions = userInv.map(inv => {
+    let selectOptions = userInv.map(inv => {
       const char = charactersData.find(c => c.id === inv.char_id);
       if (!char) return null;
       return {
@@ -102,6 +100,17 @@ async function executeTeam(interaction) {
         emoji: char.rarity === 5 ? '🌟' : '⭐'
       };
     }).filter(Boolean);
+
+    // Discord Limit Rule: Select Menu options MUST be between 1 and 25 items!
+    if (selectOptions.length === 0) {
+      selectOptions = [
+        { label: 'Dan Heng (Wind - Hunt)', description: 'Nhân vật Khởi Đầu', value: 'dan_heng', emoji: '⭐' },
+        { label: 'March 7th (Ice - Preservation)', description: 'Nhân vật Khởi Đầu', value: 'march_7th', emoji: '⭐' },
+        { label: 'Natasha (Physical - Abundance)', description: 'Nhân vật Khởi Đầu', value: 'natasha', emoji: '⭐' }
+      ];
+    } else if (selectOptions.length > 25) {
+      selectOptions = selectOptions.slice(0, 25);
+    }
 
     const menuSlot1 = new StringSelectMenuBuilder().setCustomId('team_select_slot1').setPlaceholder('Chọn nhân vật cho Vị trí 1 (Slot 1)...').addOptions(selectOptions);
     const menuSlot2 = new StringSelectMenuBuilder().setCustomId('team_select_slot2').setPlaceholder('Chọn nhân vật cho Vị trí 2 (Slot 2)...').addOptions(selectOptions);
