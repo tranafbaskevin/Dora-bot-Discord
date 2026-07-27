@@ -4,11 +4,15 @@ const charactersData = require('../data/characters.json');
 
 const upgradeCommand = new SlashCommandBuilder()
   .setName('upgrade')
-  .setDescription('Cường hóa & Nâng cấp Level, Vũ khí, Kỹ năng, Di vật (Hiển thị 100% trang bị & Số sao 4★/5★)');
+  .setDescription('Cường hóa & Nâng cấp Trang bị (Phân Trang OwO Style & Chọn theo Mã Keycode)');
 
 async function executeUpgrade(interaction) {
   const userId = interaction.user.id;
-  const user = db.getUser(userId);
+  const itemsPerPage = 5;
+
+  let currentCategory = 'main'; // 'main', 'char', 'weapon', 'skill', 'artifact'
+  let artifactPage = 1;
+  let weaponPage = 1;
 
   function buildMainEmbed() {
     const refreshedUser = db.getUser(userId);
@@ -20,7 +24,7 @@ async function executeUpgrade(interaction) {
       .setFooter({ text: 'Chọn 1 trong 4 danh mục nâng cấp bên dưới!' });
   }
 
-  const rowButtons = new ActionRowBuilder().addComponents(
+  const categoryRow = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId('up_cat_char').setLabel('👤 Level Nhân Vật').setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId('up_cat_weapon').setLabel('⚔️ Level Vũ Khí').setStyle(ButtonStyle.Success),
     new ButtonBuilder().setCustomId('up_cat_skill').setLabel('📜 Kỹ Năng / Ult').setStyle(ButtonStyle.Danger),
@@ -29,7 +33,7 @@ async function executeUpgrade(interaction) {
 
   const response = await interaction.reply({
     embeds: [buildMainEmbed()],
-    components: [rowButtons],
+    components: [categoryRow],
     fetchReply: true
   });
 
@@ -48,6 +52,7 @@ async function executeUpgrade(interaction) {
 
     // 1. Character Level Upgrade Category
     if (i.customId === 'up_cat_char') {
+      currentCategory = 'char';
       const selectOptions = userInv.map(inv => {
         const char = charactersData.find(c => c.id === inv.char_id);
         if (!char) return null;
@@ -71,7 +76,7 @@ async function executeUpgrade(interaction) {
         .setColor('#3b82f6')
         .setDescription(`📘 Sách EXP khả dụng: **${refreshedUser.materials?.char_exp_book || 0}** cuốn.\nChọn nhân vật bên dưới để **TỰ ĐỘNG TĂNG CẤP TỐI ĐA**!`);
 
-      await i.editReply({ embeds: [embed], components: [menuRow, rowButtons] });
+      await i.editReply({ embeds: [embed], components: [menuRow, categoryRow] });
     }
 
     else if (i.customId === 'up_menu_char') {
@@ -86,41 +91,61 @@ async function executeUpgrade(interaction) {
         .setColor('#10b981')
         .setDescription(`- Đã dùng: **${result.booksUsed}** Sách EXP\n- Level mới: **Lv.${result.newLevel} / 80**!\n📘 Sách EXP còn lại: **${result.remainingBooks}** cuốn.`);
 
-      await i.editReply({ embeds: [updatedEmbed], components: [rowButtons] });
+      await i.editReply({ embeds: [updatedEmbed], components: [categoryRow] });
     }
 
-    // 2. Weapon Level Upgrade Category (SHOW ALL WEAPONS + STAR RARITY)
-    else if (i.customId === 'up_cat_weapon') {
+    // 2. Weapon Level Upgrade Category with OwO Pagination
+    else if (i.customId === 'up_cat_weapon' || i.customId === 'up_wpn_prev' || i.customId === 'up_wpn_next') {
+      currentCategory = 'weapon';
+      if (i.customId === 'up_wpn_prev') weaponPage = Math.max(1, weaponPage - 1);
+      else if (i.customId === 'up_wpn_next') weaponPage++;
+      else if (i.customId === 'up_cat_weapon') weaponPage = 1;
+
       const userWpns = db.getUserWeapons(userId);
 
       if (userWpns.length === 0) {
         return i.followUp({ content: '⚠️ Bạn không có Vũ khí nào trong kho!', ephemeral: true });
       }
 
-      const selectOptions = userWpns.map(w => {
+      const totalPages = Math.ceil(userWpns.length / itemsPerPage) || 1;
+      weaponPage = Math.min(Math.max(1, weaponPage), totalPages);
+
+      const start = (weaponPage - 1) * itemsPerPage;
+      const pageItems = userWpns.slice(start, start + itemsPerPage);
+
+      const wpnLines = pageItems.map((w, idx) => {
         const starTag = w.rarity === 5 ? '🌟 5★' : '⭐ 4★';
-        const equippedTag = (w.equipped_char_id || w.char_id) ? `👤 Đang đeo: ${(w.equipped_char_id || w.char_id).toUpperCase()}` : '⚪ Trống';
-        return {
-          label: `[🆔 ${w.keycode || '#W-NONE'}] ${starTag} ${w.name.slice(0, 25)} (Lv.${w.level || 1}/80)`,
-          description: equippedTag,
-          value: `up_wpn_select_kc_${w.keycode}`,
-          emoji: '⚔️'
-        };
-      });
-
-      const menu = new StringSelectMenuBuilder()
-        .setCustomId('up_menu_weapon')
-        .setPlaceholder('Chọn Vũ khí theo Mã Keycode để TĂNG LEVEL...')
-        .addOptions(selectOptions.slice(0, 25));
-
-      const menuRow = new ActionRowBuilder().addComponents(menu);
+        const equippedTag = (w.equipped_char_id || w.char_id) ? `👤 Đang đeo: **${(w.equipped_char_id || w.char_id).toUpperCase()}**` : '⚪ Trống';
+        return `**${start + idx + 1}. [🆔 \`${w.keycode || '#W-NONE'}\`] ${starTag} ${w.name}** (\`Lv.${w.level || 1}/80\` • S${w.superimpose || 1})\n   └ ${equippedTag}`;
+      }).join('\n\n');
 
       const embed = new EmbedBuilder()
-        .setTitle('⚔️ NÂNG CẤP LEVEL VŨ KHÍ / NÓN ÁNH SÁNG')
+        .setTitle(`⚔️ CƯỜNG HÓA VŨ KHÍ / NÓN ÁNH SÁNG (${userWpns.length} MÓN)`)
         .setColor('#10b981')
-        .setDescription(`⚔️ Tinh Thể Vũ Khí khả dụng: **${refreshedUser.materials?.weapon_exp_crystal || 0}**.\nDanh sách hiển thị **100% Vũ khí** (Cả đồ đang đeo lẫn đồ trong kho). Chọn bên dưới để tăng cấp!`);
+        .setDescription(`⚔️ Tinh Thể Vũ Khí khả dụng: **${refreshedUser.materials?.weapon_exp_crystal || 0}**\n\n${wpnLines}\n\n👉 *Xem chi tiết ở trang trên và Chọn Mã Keycode ở menu bên dưới để Cường Hóa!*`)
+        .setFooter({ text: `Trang ${weaponPage} / ${totalPages} | Dùng ◀ ▶ để lật trang` });
 
-      await i.editReply({ embeds: [embed], components: [menuRow, rowButtons] });
+      const selectOptions = pageItems.map(w => ({
+        label: `[🆔 ${w.keycode || '#W-NONE'}] (Lv.${w.level || 1}/80)`,
+        description: `${w.name.slice(0, 30)} | ${w.equipped_char_id ? w.equipped_char_id.toUpperCase() : 'Trống'}`,
+        value: `up_wpn_select_kc_${w.keycode}`,
+        emoji: '⚔️'
+      }));
+
+      const menuRow = new ActionRowBuilder().addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId('up_menu_weapon')
+          .setPlaceholder(`Chọn Mã Keycode (Trang ${weaponPage}/${totalPages}) để Cường Hóa...`)
+          .addOptions(selectOptions)
+      );
+
+      const navRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('up_wpn_prev').setLabel('◀ Trang Trước').setStyle(ButtonStyle.Primary).setDisabled(weaponPage <= 1),
+        new ButtonBuilder().setCustomId('up_wpn_indicator').setLabel(`📌 Trang ${weaponPage} / ${totalPages}`).setStyle(ButtonStyle.Secondary).setDisabled(true),
+        new ButtonBuilder().setCustomId('up_wpn_next').setLabel('Trang Sau ▶').setStyle(ButtonStyle.Primary).setDisabled(weaponPage >= totalPages)
+      );
+
+      await i.editReply({ embeds: [embed], components: [menuRow, navRow, categoryRow] });
     }
 
     else if (i.customId === 'up_menu_weapon') {
@@ -140,11 +165,12 @@ async function executeUpgrade(interaction) {
         .setColor('#10b981')
         .setDescription(`- Mã Keycode: \`${wpn.keycode}\`\n- Đã dùng: **${result.crystalsUsed}** Tinh Thể Vũ Khí\n- Cấp độ mới: **Lv.${result.newLevel} / 80**!\n⚔️ Tinh Thể còn lại: **${result.remainingCrystals}**.`);
 
-      await i.editReply({ embeds: [updatedEmbed], components: [rowButtons] });
+      await i.editReply({ embeds: [updatedEmbed], components: [categoryRow] });
     }
 
     // 3. Skill & Ultimate Level Upgrade Category
     else if (i.customId === 'up_cat_skill') {
+      currentCategory = 'skill';
       const skillOptions = [];
       userInv.forEach(inv => {
         const char = charactersData.find(c => c.id === inv.char_id);
@@ -184,7 +210,7 @@ async function executeUpgrade(interaction) {
         .setColor('#ef4444')
         .setDescription(`📜 Mầm Kỹ Năng hiện có: **${refreshedUser.materials?.trace_material || 0}**.\nChọn kỹ năng bên dưới để tăng +1 Level (Tốn 5 mầm)!`);
 
-      await i.editReply({ embeds: [embed], components: [menuRow, rowButtons] });
+      await i.editReply({ embeds: [embed], components: [menuRow, categoryRow] });
     }
 
     else if (i.customId === 'up_menu_skill') {
@@ -208,45 +234,71 @@ async function executeUpgrade(interaction) {
         .setColor('#10b981')
         .setDescription(`Level mới: **Lv.${result.newLevel} / ${maxLvl}**!\n📜 Mầm kỹ năng còn lại: **${result.remainingMaterials}**.`);
 
-      await i.editReply({ embeds: [updatedEmbed], components: [rowButtons] });
+      await i.editReply({ embeds: [updatedEmbed], components: [categoryRow] });
     }
 
-    // 4. Artifact Upgrade Category (SHOW ALL ARTIFACTS + STAR RARITY + EQUIPPED STATUS)
-    else if (i.customId === 'up_cat_artifact') {
+    // 4. Artifact Upgrade Category with OwO Pagination + Compact Keycode Select Menu
+    else if (i.customId === 'up_cat_artifact' || i.customId === 'up_art_prev' || i.customId === 'up_art_next') {
+      currentCategory = 'artifact';
+      if (i.customId === 'up_art_prev') artifactPage = Math.max(1, artifactPage - 1);
+      else if (i.customId === 'up_art_next') artifactPage++;
+      else if (i.customId === 'up_cat_artifact') artifactPage = 1;
+
       const userArts = db.getUserArtifacts(userId);
 
       if (userArts.length === 0) {
         return i.followUp({ content: '⚠️ Bạn chưa có Thánh Di Vật nào trong kho! Đánh Boss ở `/battle` hoặc farm ở `/hunt`!', ephemeral: true });
       }
 
-      const slotsMap = { Head: '🎩', Hands: '🥊', Body: '🥼', Feet: '👟' };
+      const totalPages = Math.ceil(userArts.length / itemsPerPage) || 1;
+      artifactPage = Math.min(Math.max(1, artifactPage), totalPages);
 
-      const selectOptions = userArts.map(art => {
+      const start = (artifactPage - 1) * itemsPerPage;
+      const pageItems = userArts.slice(start, start + itemsPerPage);
+      const slotsMap = { Head: '🎩 [Head]', Hands: '🥊 [Hands]', Body: '🥼 [Body]', Feet: '👟 [Feet]' };
+
+      const artLines = pageItems.map((art, idx) => {
+        const starTag = art.rarity === 5 ? '🌟 5★' : '⭐ 4★';
+        const slotLabel = slotsMap[art.slot] || `[${art.slot || 'Head'}]`;
+        const equippedChar = art.equipped_char_id || art.char_id;
+        const equippedTag = equippedChar ? `👤 Đang đeo: **${equippedChar.toUpperCase()}**` : '⚪ Trống';
+        const subStr = (art.subStats || []).map(s => `${s.name}: +${parseFloat(s.value).toFixed(1)}`).join(' | ');
+
+        return `**${start + idx + 1}. [🆔 \`${art.keycode || '#A-NONE'}\`] ${starTag} ${slotLabel} ${art.setName} (+${art.level}/15)**\n   • Main: **${art.mainStat}** (+${art.mainValue.toFixed(1)})\n   • Dòng phụ: \`${subStr || 'ATK% +3.5'}\`\n   • Trạng thái: ${equippedTag}`;
+      }).join('\n\n');
+
+      const embed = new EmbedBuilder()
+        .setTitle(`🔮 CƯỜNG HÓA DI VẬT (${userArts.length} MÓN)`)
+        .setColor('#8b5cf6')
+        .setDescription(`🔮 Bụi Di Vật khả dụng: **${refreshedUser.materials?.artifact_dust || 0}** túi\n\n${artLines}\n\n👉 *Xem chi tiết đầy đủ ở trang trên và Chọn Mã Keycode ở menu bên dưới để Cường Hóa!*`)
+        .setFooter({ text: `Trang ${artifactPage} / ${totalPages} | Dùng ◀ ▶ để lật trang OwO Style` });
+
+      // Compact Keycode Menu (Only Keycode + Slot + Level for zero truncation!)
+      const selectOptions = pageItems.map(art => {
         const starTag = art.rarity === 5 ? '🌟 5★' : '⭐ 4★';
         const equippedChar = art.equipped_char_id || art.char_id;
-        const equippedTag = equippedChar ? `👤 Đang đeo: ${equippedChar.toUpperCase()}` : '⚪ Trống';
-
         return {
-          label: `[🆔 ${art.keycode || '#A-NONE'}] ${starTag} ${slotsMap[art.slot] || '🛡️'} ${art.setName.slice(0, 18)} (+${art.level}/15)`,
-          description: `Main: ${art.mainStat} (+${art.mainValue.toFixed(1)}) | ${equippedTag}`,
+          label: `[🆔 ${art.keycode || '#A-NONE'}] (${starTag} ${art.slot} +${art.level})`,
+          description: equippedChar ? `👤 Đang đeo: ${equippedChar.toUpperCase()}` : '⚪ Trống',
           value: `up_art_select_kc_${art.keycode}`,
           emoji: '🔮'
         };
       });
 
-      const menu = new StringSelectMenuBuilder()
-        .setCustomId('up_menu_artifact_kc')
-        .setPlaceholder('Chọn Thánh Di Vật theo Mã Keycode để Cường Hóa...')
-        .addOptions(selectOptions.slice(0, 25));
+      const menuRow = new ActionRowBuilder().addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId('up_menu_artifact_kc')
+          .setPlaceholder(`Chọn Mã Keycode (Trang ${artifactPage}/${totalPages}) để Cường Hóa...`)
+          .addOptions(selectOptions)
+      );
 
-      const menuRow = new ActionRowBuilder().addComponents(menu);
+      const navRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId('up_art_prev').setLabel('◀ Trang Trước').setStyle(ButtonStyle.Primary).setDisabled(artifactPage <= 1),
+        new ButtonBuilder().setCustomId('up_art_indicator').setLabel(`📌 Trang ${artifactPage} / ${totalPages}`).setStyle(ButtonStyle.Secondary).setDisabled(true),
+        new ButtonBuilder().setCustomId('up_art_next').setLabel('Trang Sau ▶').setStyle(ButtonStyle.Primary).setDisabled(artifactPage >= totalPages)
+      );
 
-      const embed = new EmbedBuilder()
-        .setTitle('🔮 CƯỜNG HÓA DI VẬT & RNG ROLL DÒNG PHỤ (+15)')
-        .setColor('#8b5cf6')
-        .setDescription(`🔮 Bụi Di Vật hiện có: **${refreshedUser.materials?.artifact_dust || 0}**.\nDanh sách hiển thị **100% Di Vật** (Rõ **🌟 5★** / **⭐ 4★** & Đồ Đang Đeo). Chọn bên dưới để cường hóa!`);
-
-      await i.editReply({ embeds: [embed], components: [menuRow, rowButtons] });
+      await i.editReply({ embeds: [embed], components: [menuRow, navRow, categoryRow] });
     }
 
     else if (i.customId === 'up_menu_artifact_kc') {
@@ -270,7 +322,7 @@ async function executeUpgrade(interaction) {
         .setColor('#10b981')
         .setDescription(`- Mã Keycode: \`${art.keycode}\` [${art.slot}]\n- Cấp Phẩm: **${art.rarity || 5}★**\n- Đã dùng: **${result.dustUsed}** Bụi Di Vật\n- Chỉ số chính: **+${result.mainValue.toFixed(1)}**\n\n**Các Dòng Phụ Chi Tiết**:\n${subLines}${rngLog}\n\n🔮 Bụi Di Vật còn lại: **${result.remainingDust}**.`);
 
-      await i.editReply({ embeds: [updatedEmbed], components: [rowButtons] });
+      await i.editReply({ embeds: [updatedEmbed], components: [categoryRow] });
     }
   });
 }
