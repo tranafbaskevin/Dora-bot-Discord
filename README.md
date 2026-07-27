@@ -1,6 +1,6 @@
 # 🎮 DoraBot Discord - Game RPG Honkai: Star Rail Bot
 
-**DoraBot** là một Discord Bot Game RPG hoàn chỉnh được xây dựng dựa trên thế giới và cơ chế chiến đấu của **Honkai: Star Rail**. Bot sở hữu hệ thống Gacha 50/50 chuẩn tỉ lệ, Quản lý túi đồ & Trang bị (Vũ khí & Di vật 4★/5★), Nâng cấp nhân vật / Vết kích / Cung mệnh S1-S5, Lưu trữ Đám mây vĩnh viễn, và đặc biệt là **Hệ thống Trận Đấu Canvas UX/UI Widescreen 1920x1080** sống động!
+**DoraBot** là một Discord Bot Game RPG hoàn chỉnh được xây dựng dựa trên thế giới và cơ chế chiến đấu của **Honkai: Star Rail**. Bot sở hữu hệ thống Gacha 50/50 chuẩn tỉ lệ, Bể 28 Nhân Vật phong phú, Quản lý túi đồ & Trang bị (Vũ khí & Di vật 4★/5★), Nâng cấp nhân vật / Vết kích / Cung mệnh E1-E6 / S1-S5, Lưu trữ Đám mây vĩnh viễn, và đặc biệt là **Hệ thống Trận Đấu Canvas UX/UI Widescreen 1920x1080** sống động!
 
 ---
 
@@ -9,7 +9,7 @@
 - ☁️ **Chạy 24/7/365 Độc Lập**: Triển khai trên **Render Web Service** kết hợp với **UptimeRobot Keep-Alive** (ping 5 phút/lần). Bạn có thể tắt laptop, gập máy hay đi ngủ mà bot vẫn luôn online phản hồi mượt mà!
 - 🗄️ **MongoDB Atlas Cloud Persistent Database**: Đã tích hợp hệ thống cơ sở dữ liệu đám mây **MongoDB Atlas**. Toàn bộ tài khoản người chơi, Jades, Cấp thám hiểm, Đội hình, Vũ khí và Di vật được **lưu trữ vĩnh viễn trên Cloud**, không bao giờ bị xóa hay reset khi re-deploy code nữa!
 - 👥 **Cô Lập Bộ Nghe Tương Tác (Multi-User Concurrency)**: Bộ nghe sự kiện nút bấm được cô lập 100% theo từng tin nhắn (`i.message.id === response.id`). Hàng chục người chơi có thể gacha, thay đồ và đánh boss song song trong cùng 1 kênh Discord mà không bao giờ bị xung đột hay chặn nhầm.
-- 🎬 **Hiệu Ứng Ultimate GIF Động Ngắt Lượt**: Tự động hiển thị và cập nhật ảnh GIF Tuyệt kỹ hoành tráng cho từng nhân vật (Seele, Bronya, Jing Yuan...) trực tiếp trên 1 khung duy nhất để chống rác tin nhắn.
+- 🎬 **Hiệu Ứng Ultimate GIF Động Ngắt Lượt Chống Spam**: Tự động hiển thị và cập nhật ảnh GIF Tuyệt kỹ hoành tráng cho từng nhân vật (Acheron, Kafka, Seele, Jing Yuan, Blade, Silver Wolf, Fu Xuan, Bronya...) trực tiếp trên 1 khung duy nhất để chống rác tin nhắn kênh chat.
 
 ---
 
@@ -32,21 +32,52 @@ Mỗi nhân vật và trang bị có thể sở hữu các dòng Buff gia tăng 
 
 ---
 
-## 👤 3. THÔNG TIN CÁC NHÂN VẬT ĐÃ RA MẮT TRONG BOT
+## 👤 3. BỂ 28 NHÂN VẬT HOÀN CHỈNH TRONG BOT
 
-### 🌟 Nhân Vật 5★:
-1. 💜 **Seele** *(Quantum - Hunt)*: Sát thủ Lượng Tử đơn mục tiêu tốc độ cao. Tuyệt kỹ **"Butterfly Flurry"** đi kèm hiệu ứng GIF đòn chém bóng đêm hoành tráng.
-2. ⚡ **Jing Yuan** *(Lightning - Erudition)*: Tướng Quân Lôi diện rộng. Tuyệt kỹ **"Lightbringer"** triệu hồi Thần Quân giáng sấm sét càn quét toàn sân.
-3. 🌀 **Bronya** *(Wind - Harmony)*: Thủ Lĩnh Đội Băng Tuyết. Kỹ năng kéo lượt 100% cho đồng đội và Tuyệt kỹ **"The Belobog March"** tăng mạnh ATK & CRIT DMG toàn đội.
+### 🌟 8 Nhân Vật 5★ (Có GIF Ultimate Động & Banner Riêng biệt):
+1. 💜 **Acheron** *(Lightning - Nihility)*: Sát thủ Hư Vô gây Sát thương Lôi diện rộng cực đại. GIF Ult *"Slashed Dream Cries in Red"*.
+2. 🍇 **Kafka** *(Lightning - Nihility)*: Chuyên gia DoT Lôi. GIF Ult *"Twilight Trill"* gây Sốc Điện & kích nổ toàn bộ DoT lập tức.
+3. ⚔️ **Blade** *(Wind - Destruction)*: Tiêu hao HP để tung các đòn chém Phong càn quét. GIF Ult *"Death Sentence"*.
+4. 👾 **Silver Wolf** *(Quantum - Nihility)*: Gắn Điểm Yếu thuộc tính & giảm 45% DEF kẻ địch. GIF Ult *"User Banned"*.
+5. 🌸 **Fu Xuan** *(Quantum - Preservation)*: Gánh chịu sát thương, tăng Max HP/Bạo Kích & Hồi máu toàn đội. GIF Ult *"Woes of Many Morphed to One"*.
+6. 💜 **Seele** *(Quantum - Hunt)*: Sát thủ Lượng Tử tốc độ cao. GIF Ult *"Butterfly Flurry"*.
+7. ⚡ **Jing Yuan** *(Lightning - Erudition)*: Tướng Quân Lôi diện rộng. GIF Ult *"Lightbringer"*.
+8. 🌀 **Bronya** *(Wind - Harmony)*: Nhân vật 5★ Thường. Kéo lượt 100% & buff ATK/CRIT DMG toàn đội. GIF Ult *"The Belobog March"*.
 
-### ⭐ Nhân Vật 4★:
-4. 🌪️ **Dan Heng** *(Wind - Hunt)*: Tiên phong Săn Bắn thuộc tính Phong, gây thêm sát thương khi kẻ địch bị làm chậm.
-5. ❄️ **March 7th** *(Ice - Preservation)*: Thiếu nữ Băng Tuyết tạo Khiên phòng thủ kiên cố và Tuyệt kỹ gây Đóng Băng diện rộng.
-6. 🩺 **Natasha** *(Physical - Abundance)*: Bác sĩ Trù Phú hồi máu đơn thể và trị liệu sinh lực cho toàn bộ đồng đội.
+### ⭐ 20 Nhân Vật 4★ (Tỷ Lệ Xuất Hiện Phong Phú Khi Quay Gacha):
+9. 🦊 **Tingyun** *(Lightning - Harmony)*: Buff Tấn Công & Hồi 50 Năng Lượng cho đồng đội.
+10. 🏹 **Yukong** *(Imaginary - Harmony)*: Buff Tỷ lệ Bạo Kích & Sát thương Bạo Kích toàn đội.
+11. 📜 **Hanya** *(Physical - Harmony)*: Trạng thái Trọng Tải giúp hồi Điểm Chiến Kỹ (SP) và Tốc độ.
+12. 👓 **Pela** *(Ice - Nihility)*: Tuyệt Kỹ giảm 40% DEF toàn bộ kẻ địch.
+13. 🎭 **Sampo** *(Wind - Nihility)*: Gây hiệu ứng Bào Mòn (Wind Shear DoT) & tăng sát thương DoT nhận vào.
+14. 🥊 **Luka** *(Physical - Nihility)*: Đấm bốc gây hiệu ứng Chảy Máu (Bleed DoT).
+15. 🎆 **Guinaifen** *(Fire - Nihility)*: Thiêu Đốt & tăng sát thương kẻ địch gánh chịu.
+16. 🎸 **Serval** *(Lightning - Erudition)*: Sát thương Lôi diện rộng & duy trì Sốc Điện.
+17. 🀄 **Qingque** *(Quantum - Erudition)*: Rút quẻ Mạt Chược nổ Sát thương Lượng Tử.
+18. 🔨 **Herta** *(Ice - Erudition)*: *"Kuru Kuru~"* Xoay búa Băng diện rộng.
+19. 🐔 **Sushang** *(Physical - Hunt)*: Gọi Gà Trống khổng lồ giáng đòn Vật Lý dồn dập.
+20. 🧸 **Hook** *(Fire - Destruction)*: Thủ lĩnh Băng Mót nổ Sát thương Hỏa & Thiêu Đốt.
+21. ⚡ **Arlan** *(Lightning - Destruction)*: Đổi HP bản thân lấy Sát thương Lôi.
+22. 🗡️ **Xueyi** *(Quantum - Destruction)*: Bào thanh Điểm Yếu & đòn đánh tăng cường Lượng Tử.
+23. 🧹 **Misha** *(Ice - Destruction)*: Đóng băng kẻ địch dồn dập.
+24. 🐱 **Lynx** *(Quantum - Abundance)*: Hồi máu toàn đội & giải toàn bộ hiệu ứng xấu.
+25. 🍷 **Gallagher** *(Fire - Abundance)*: Hồi máu theo đòn đánh của đồng đội.
+26. 🌪️ **Dan Heng** *(Wind - Hunt)*: Tiên phong Phong gây thêm sát thương khi địch bị làm chậm.
+27. ❄️ **March 7th** *(Ice - Preservation)*: Tạo Khiên kiên cố & Đóng Băng diện rộng.
+28. 🩺 **Natasha** *(Physical - Abundance)*: Bác sĩ Trù Phú hồi máu toàn bộ đồng đội.
 
 ---
 
-## 👹 4. DANH SÁCH BOSS & PHẦN THƯỞNG CHIẾN THẮNG CHUYÊN BIỆT
+## 🎲 4. HỆ THỐNG GACHA 50/50 CHUẨN VÀ BANNER DỰ ÁN
+
+Lệnh `/gacha` hỗ trợ quay đơn (Roll 1), quay max 10 (Roll 10) và Đổi Banner trực tiếp:
+- 🌟 **50% Win Rate-Up**: Ra đúng nhân vật 5★ của Banner đó (Acheron / Kafka / Blade / Silver Wolf / Fu Xuan / Seele / Jing Yuan).
+- 🔴 **50% Lệch Rate (Thua 50/50)**: **CHỈ LỆCH RA NHÂN VẬT 5★ THƯỜNG (Bronya)**. Không bao giờ lệch sang nhân vật 5★ giới hạn của Banner khác!
+- 🛡️ **Bảo Hiểm 100%**: Nếu thua 50/50 ở lần 5★ đầu tiên, lần 5★ tiếp theo chắc chắn 100% ra đúng nhân vật Banner!
+
+---
+
+## 👹 5. DANH SÁCH BOSS & PHẦN THƯỞNG CHIẾN THẮNG CHUYÊN BIỆT
 
 Mỗi khi hạ gục Boss ở lệnh `/battle`, người chơi sẽ nhận được **chuẩn 2 món Di Vật (4★ / 5★ theo Cấp Thám Hiểm)** cùng các phần thưởng tài nguyên chuyên biệt:
 
@@ -64,29 +95,11 @@ Mỗi khi hạ gục Boss ở lệnh `/battle`, người chơi sẽ nhận đư�
 
 ---
 
-## ⚔️ 5. BỂ VŨ KHÍ NÓN ÁNH SÁNG VĨNH CỬU (36+ VŨ KHÍ) & DÒNG NỘI TẠI
-
-Banner Vũ Khí Vĩnh Cửu (`/gacha` -> Banner Vũ Khí) bao gồm 36+ Nón Ánh Sáng độc đáo cho 7 Vận Mệnh. Mọi Vũ Khí nhận được đều có **Dòng Nội Tại Đặc Biệt** cố định kèm **4 Dòng Buff Chỉ Số % Ngẫu Nhiên 100%**!
-
-### 🌟 Nón Ánh Sáng 5★ (Thập Đại Thần Binh):
-1. **In the Night (Trong Đêm Tối)** [Săn Bắn]: Tăng +18% CRIT Rate. Mỗi 10 SPD > 100 tăng +6% Sát thương Đánh Thường/Chiến Kỹ & +12% CRIT DMG Tuyệt Kỹ.
-2. **Before Dawn (Trước Bình Minh)** [Tri Thức]: Tăng +36% CRIT DMG & +18% Sát thương Chiến Kỹ/Tuyệt Kỹ. Trạng thái 'Mộng Thân' tăng +48% Đòn Tăng Cường.
-3. **But the Battle Isn't Over (Cuộc Chiến Chưa Nguôi)** [Hòa Hợp]: Tăng +10% Hồi EP. Hồi +1 SP khi dùng Ult lên đồng đội. Tăng +30% ATK cho đồng đội tiếp theo.
-4. **Moment of Victory (Thời Khắc Chiến Thắng)** [Bảo Hộ]: Tăng +24% DEF và +24% Kháng Khống Chế. Thu hút kẻ địch tấn công & tăng thêm +24% DEF khi bị đánh.
-5. **Time Waits for No One (Thời Gian Không Chờ Ai)** [Trù Phú]: Tăng +18% HP tối đa & +12% Lượng Hồi Máu. Gây thêm Sát thương thuộc tính theo lượng trị liệu.
-6. **Sleep Like the Dead (Giấc Ngủ Tựa Chết)** [Săn Bắn]: Tăng +30% CRIT DMG. Khi đòn đánh không bạo kích, tăng +36% CRIT Rate trong 1 lượt.
-7. **Night on the Milky Way (Đêm Trên Dải Ngân Hà)** [Tri Thức]: Tăng +9% ATK với mỗi kẻ địch trên sân. Tăng +30% Sát thương khi có kẻ địch bị Phá Vỡ Điểm Yếu.
-8. **Something Irreplaceable (Vật Phẩm Không Thể Thay Thế)** [Hủy Diệt]: Tăng +24% ATK. Khi tiêu diệt kẻ địch hoặc bị đánh, hồi 8% HP & tăng +24% Sát thương.
-9. **On the Fall of an Aeon (Sự Sụp Đổ Của Aeon)** [Hủy Diệt]: Mỗi đòn đánh tăng +8% ATK (tối đa 4 cộng dồn). Phá Vỡ Điểm Yếu tăng +12% Sát thương trong 2 lượt.
-10. **Patience Is All You Need (Chỉ Cần Kiên Nhẫn)** [Hư Vô]: Tăng +24% Sát thương gây ra. Tăng +4.8% SPD mỗi đòn đánh & thiêu đốt/sốc điện kẻ địch.
-
----
-
 ## 📜 Danh Sách 10 Lệnh Slash Commands (`/`)
 
 | Lệnh Slash | Mô Tả Chức Năng |
 | :--- | :--- |
-| **`/gacha`** | Quay Banner Nón Ánh Sáng Vĩnh Cửu 36+ & Banner Nhân Vật (Roll 1, Roll Max 10, Đổi Banner) |
+| **`/gacha`** | Quay Banner Acheron, Kafka, Blade, Silver Wolf, Fu Xuan, Seele, Jing Yuan & Nón Ánh Sáng 36+ |
 | **`/equipment`** | Quản lý & Thay đổi 1 Ô Vũ Khí + 4 Ô Thánh Di Vật cho từng Nhân vật |
 | **`/battle`** | Khiêu chiến 9 Boss (Herta, Belobog, Xianzhou) nhận 2 Di vật 4★/5★ & Thưởng chuyên biệt |
 | **`/inventory`** | Xem Kho Nhân Vật, Kho Nón Ánh Sáng (S1-S5), và Phân tách rác 3★ |
