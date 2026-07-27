@@ -4,7 +4,7 @@ const charactersData = require('../data/characters.json');
 
 const upgradeCommand = new SlashCommandBuilder()
   .setName('upgrade')
-  .setDescription('Cường hóa & Nâng cấp Level, Vũ khí, Kỹ năng, Di vật (Hỗ trợ Phôi Trang Bị EXP Genshin Style)');
+  .setDescription('Cường hóa & Nâng cấp Level, Vũ khí, Kỹ năng, Di vật (Hiển thị 100% trang bị & Số sao 4★/5★)');
 
 async function executeUpgrade(interaction) {
   const userId = interaction.user.id;
@@ -89,7 +89,7 @@ async function executeUpgrade(interaction) {
       await i.editReply({ embeds: [updatedEmbed], components: [rowButtons] });
     }
 
-    // 2. Weapon Level Upgrade Category
+    // 2. Weapon Level Upgrade Category (SHOW ALL WEAPONS + STAR RARITY)
     else if (i.customId === 'up_cat_weapon') {
       const userWpns = db.getUserWeapons(userId);
 
@@ -97,12 +97,16 @@ async function executeUpgrade(interaction) {
         return i.followUp({ content: '⚠️ Bạn không có Vũ khí nào trong kho!', ephemeral: true });
       }
 
-      const selectOptions = userWpns.map(w => ({
-        label: `[${w.keycode || '#W-NONE'}] ${w.name} (Lv.${w.level || 1}/80)`,
-        description: w.equipped_char_id ? `👤 Đang đeo cho ${w.equipped_char_id.toUpperCase()}` : '⚪ Chưa ai trang bị',
-        value: `up_wpn_select_kc_${w.keycode}`,
-        emoji: '⚔️'
-      }));
+      const selectOptions = userWpns.map(w => {
+        const starTag = w.rarity === 5 ? '🌟 5★' : '⭐ 4★';
+        const equippedTag = (w.equipped_char_id || w.char_id) ? `👤 Đang đeo: ${(w.equipped_char_id || w.char_id).toUpperCase()}` : '⚪ Trống';
+        return {
+          label: `[🆔 ${w.keycode || '#W-NONE'}] ${starTag} ${w.name.slice(0, 25)} (Lv.${w.level || 1}/80)`,
+          description: equippedTag,
+          value: `up_wpn_select_kc_${w.keycode}`,
+          emoji: '⚔️'
+        };
+      });
 
       const menu = new StringSelectMenuBuilder()
         .setCustomId('up_menu_weapon')
@@ -114,7 +118,7 @@ async function executeUpgrade(interaction) {
       const embed = new EmbedBuilder()
         .setTitle('⚔️ NÂNG CẤP LEVEL VŨ KHÍ / NÓN ÁNH SÁNG')
         .setColor('#10b981')
-        .setDescription(`⚔️ Tinh Thể Vũ Khí khả dụng: **${refreshedUser.materials?.weapon_exp_crystal || 0}**.\nChọn vũ khí bên dưới để tự động tăng cấp!`);
+        .setDescription(`⚔️ Tinh Thể Vũ Khí khả dụng: **${refreshedUser.materials?.weapon_exp_crystal || 0}**.\nDanh sách hiển thị **100% Vũ khí** (Cả đồ đang đeo lẫn đồ trong kho). Chọn bên dưới để tăng cấp!`);
 
       await i.editReply({ embeds: [embed], components: [menuRow, rowButtons] });
     }
@@ -126,7 +130,7 @@ async function executeUpgrade(interaction) {
 
       if (!wpn) return i.followUp({ content: '❌ Không tìm thấy vũ khí!', ephemeral: true });
 
-      const charId = wpn.equipped_char_id || 'seele';
+      const charId = wpn.equipped_char_id || wpn.char_id || 'seele';
       const result = db.upgradeWeaponLevel(userId, charId, true);
 
       if (!result.success) return i.followUp({ content: result.message, ephemeral: true });
@@ -207,7 +211,7 @@ async function executeUpgrade(interaction) {
       await i.editReply({ embeds: [updatedEmbed], components: [rowButtons] });
     }
 
-    // 4. Artifact Upgrade Category
+    // 4. Artifact Upgrade Category (SHOW ALL ARTIFACTS + STAR RARITY + EQUIPPED STATUS)
     else if (i.customId === 'up_cat_artifact') {
       const userArts = db.getUserArtifacts(userId);
 
@@ -217,12 +221,18 @@ async function executeUpgrade(interaction) {
 
       const slotsMap = { Head: '🎩', Hands: '🥊', Body: '🥼', Feet: '👟' };
 
-      const selectOptions = userArts.map(art => ({
-        label: `[${art.keycode || '#A-NONE'}] ${slotsMap[art.slot] || '🛡️'} ${art.setName} (+${art.level}/15)`,
-        description: `Main: ${art.mainStat} (+${art.mainValue.toFixed(1)}) | ${art.equipped_char_id ? `👤 ${art.equipped_char_id.toUpperCase()}` : '⚪ Trống'}`,
-        value: `up_art_select_kc_${art.keycode}`,
-        emoji: '🔮'
-      }));
+      const selectOptions = userArts.map(art => {
+        const starTag = art.rarity === 5 ? '🌟 5★' : '⭐ 4★';
+        const equippedChar = art.equipped_char_id || art.char_id;
+        const equippedTag = equippedChar ? `👤 Đang đeo: ${equippedChar.toUpperCase()}` : '⚪ Trống';
+
+        return {
+          label: `[🆔 ${art.keycode || '#A-NONE'}] ${starTag} ${slotsMap[art.slot] || '🛡️'} ${art.setName.slice(0, 18)} (+${art.level}/15)`,
+          description: `Main: ${art.mainStat} (+${art.mainValue.toFixed(1)}) | ${equippedTag}`,
+          value: `up_art_select_kc_${art.keycode}`,
+          emoji: '🔮'
+        };
+      });
 
       const menu = new StringSelectMenuBuilder()
         .setCustomId('up_menu_artifact_kc')
@@ -234,7 +244,7 @@ async function executeUpgrade(interaction) {
       const embed = new EmbedBuilder()
         .setTitle('🔮 CƯỜNG HÓA DI VẬT & RNG ROLL DÒNG PHỤ (+15)')
         .setColor('#8b5cf6')
-        .setDescription(`🔮 Bụi Di Vật hiện có: **${refreshedUser.materials?.artifact_dust || 0}**.\nChọn Di vật bên dưới để cường hóa! (Mỗi **+3 Cấp** sẽ nhảy **RNG 100%** vào 1 Dòng Phụ ngẫu nhiên!)`);
+        .setDescription(`🔮 Bụi Di Vật hiện có: **${refreshedUser.materials?.artifact_dust || 0}**.\nDanh sách hiển thị **100% Di Vật** (Rõ **🌟 5★** / **⭐ 4★** & Đồ Đang Đeo). Chọn bên dưới để cường hóa!`);
 
       await i.editReply({ embeds: [embed], components: [menuRow, rowButtons] });
     }
@@ -258,7 +268,7 @@ async function executeUpgrade(interaction) {
       const updatedEmbed = new EmbedBuilder()
         .setTitle(`🎉 CƯỜNG HÓA DI VẬT THÀNH CÔNG! (+${result.newLevel}/15)`)
         .setColor('#10b981')
-        .setDescription(`- Mã Keycode: \`${art.keycode}\` [${art.slot}]\n- Đã dùng: **${result.dustUsed}** Bụi Di Vật\n- Chỉ số chính: **+${result.mainValue.toFixed(1)}**\n\n**Các Dòng Phụ Chi Tiết**:\n${subLines}${rngLog}\n\n🔮 Bụi Di Vật còn lại: **${result.remainingDust}**.`);
+        .setDescription(`- Mã Keycode: \`${art.keycode}\` [${art.slot}]\n- Cấp Phẩm: **${art.rarity || 5}★**\n- Đã dùng: **${result.dustUsed}** Bụi Di Vật\n- Chỉ số chính: **+${result.mainValue.toFixed(1)}**\n\n**Các Dòng Phụ Chi Tiết**:\n${subLines}${rngLog}\n\n🔮 Bụi Di Vật còn lại: **${result.remainingDust}**.`);
 
       await i.editReply({ embeds: [updatedEmbed], components: [rowButtons] });
     }

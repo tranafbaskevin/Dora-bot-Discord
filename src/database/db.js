@@ -845,6 +845,10 @@ function getUserArtifacts(discordId) {
       a.slot = slots[idx % slots.length];
       updated = true;
     }
+    if (!a.equipped_char_id && a.char_id) {
+      a.equipped_char_id = a.char_id;
+      updated = true;
+    }
   });
 
   if (updated) {
