@@ -2,6 +2,8 @@ const { Client, GatewayIntentBits, REST, Routes, Collection } = require('discord
 const http = require('http');
 require('dotenv').config();
 
+const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
+
 // Simple HTTP Keep-Alive Server for Render Free Web Service & Cloud Hosting
 const PORT = process.env.PORT || 3000;
 http.createServer((req, res) => {
@@ -58,7 +60,12 @@ commandsList.forEach(cmd => {
 client.once('ready', async () => {
   console.log(`🔥 Bot Dora-Bot online thành công với tên: ${client.user.tag}`);
 
-  const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
+  if (!botToken) {
+    console.error('❌ KHÔNG TÌM THẤY BOT TOKEN TRONG BIẾN MÔI TRƯỜNG (TOKEN hoặc DISCORD_TOKEN)!');
+    return;
+  }
+
+  const rest = new REST({ version: '10' }).setToken(botToken);
 
   try {
     console.log('⏳ Đang đăng ký Slash Commands với Discord API...');
@@ -108,4 +115,8 @@ client.on('interactionCreate', async interaction => {
   }
 });
 
-client.login(process.env.TOKEN);
+if (botToken) {
+  client.login(botToken);
+} else {
+  console.error('❌ Không thể đăng nhập Discord vì thiếu TOKEN!');
+}
