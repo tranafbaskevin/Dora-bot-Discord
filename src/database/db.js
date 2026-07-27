@@ -833,6 +833,25 @@ function updateTeam(discordId, slot1, slot2, slot3, slot4) {
 function getUserArtifacts(discordId) {
   if (!memoryDb.artifacts) memoryDb.artifacts = {};
   if (!memoryDb.artifacts[discordId]) memoryDb.artifacts[discordId] = [];
+
+  let updated = false;
+  const slots = ['Head', 'Hands', 'Body', 'Feet'];
+  memoryDb.artifacts[discordId].forEach((a, idx) => {
+    if (!a.keycode || a.keycode === '#A-NONE') {
+      a.keycode = generateUniqueKeycode('art');
+      updated = true;
+    }
+    if (!a.slot) {
+      a.slot = slots[idx % slots.length];
+      updated = true;
+    }
+  });
+
+  if (updated) {
+    saveLocalDb();
+    syncUserToMongo(discordId);
+  }
+
   return memoryDb.artifacts[discordId];
 }
 
