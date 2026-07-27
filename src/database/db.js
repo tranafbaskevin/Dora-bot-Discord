@@ -1,10 +1,97 @@
 const fs = require('fs');
 const path = require('path');
+const mongoose = require('mongoose');
 
 const dbFilePath = path.join(__dirname, '../../database.json');
+let isMongoConnected = false;
 
-// Helper to read database
-function readDb() {
+// Define Mongoose Schemas
+const userSchema = new mongoose.Schema({
+  discord_id: { type: String, required: true, unique: true },
+  jades: { type: Number, default: 16000 },
+  pity_5star: { type: Number, default: 0 },
+  pity_4star: { type: Number, default: 0 },
+  is_guaranteed: { type: Boolean, default: false },
+  trash_items: { type: Number, default: 0 },
+  player_level: { type: Number, default: 1 },
+  player_exp: { type: Number, default: 0 },
+  materials: {
+    char_exp_book: { type: Number, default: 50 },
+    weapon_exp_crystal: { type: Number, default: 50 },
+    artifact_dust: { type: Number, default: 50 },
+    trace_material: { type: Number, default: 30 }
+  },
+  created_at: { type: String, default: () => new Date().toISOString() }
+});
+
+const characterSchema = new mongoose.Schema({
+  discord_id: { type: String, required: true },
+  char_id: { type: String, required: true },
+  level: { type: Number, default: 1 },
+  exp: { type: Number, default: 0 },
+  weapon_level: { type: Number, default: 1 },
+  weapon_exp: { type: Number, default: 0 },
+  basic_lvl: { type: Number, default: 1 },
+  skill_lvl: { type: Number, default: 1 },
+  ult_lvl: { type: Number, default: 1 },
+  eidolon: { type: Number, default: 0 },
+  light_cone: { type: String, default: 'Nón Ánh Sáng Tiêu Chuẩn (4★)' },
+  artifact_set: { type: String, default: 'Bộ Duyên Kiếp Băng Tiêu' }
+});
+
+const weaponSchema = new mongoose.Schema({
+  discord_id: { type: String, required: true },
+  id: { type: String, required: true },
+  name: { type: String, required: true },
+  rarity: { type: Number, default: 4 },
+  level: { type: Number, default: 1 },
+  exp: { type: Number, default: 0 },
+  superimpose: { type: Number, default: 1 },
+  path: { type: String, default: 'Hunt' },
+  passiveDescription: { type: String, default: '' },
+  subStats: { type: Array, default: [] },
+  char_id: { type: String, default: null }
+});
+
+const artifactSchema = new mongoose.Schema({
+  discord_id: { type: String, required: true },
+  id: { type: String, required: true },
+  char_id: { type: String, default: null },
+  setName: { type: String, default: 'Bộ Thiện Xạ Trường Hoang' },
+  rarity: { type: Number, default: 5 },
+  slot: { type: String, default: 'Head' },
+  mainStat: { type: String, default: 'CRIT Rate%' },
+  mainValue: { type: Number, default: 5.0 },
+  level: { type: Number, default: 0 },
+  exp: { type: Number, default: 0 },
+  subStats: { type: Array, default: [] }
+});
+
+const teamSchema = new mongoose.Schema({
+  discord_id: { type: String, required: true, unique: true },
+  slot1: { type: String, default: 'seele' },
+  slot2: { type: String, default: 'dan_heng' },
+  slot3: { type: String, default: 'march_7th' },
+  slot4: { type: String, default: 'natasha' }
+});
+
+const UserModel = mongoose.model('User', userSchema);
+const CharacterModel = mongoose.model('Character', characterSchema);
+const WeaponModel = mongoose.model('Weapon', weaponSchema);
+const ArtifactModel = mongoose.model('Artifact', artifactSchema);
+const TeamModel = mongoose.model('Team', teamSchema);
+
+// In-Memory Database Cache for Ultra-Fast Synchronous Execution
+let memoryDb = {
+  users: {},
+  inventory: {},
+  weapons: {},
+  artifacts: {},
+  teams: {}
+};
+
+// Read local JSON file
+function readLocalDb() {
   if (!fs.existsSync(dbFilePath)) {
     const initialData = { users: {}, inventory: {}, teams: {}, artifacts: {}, weapons: {} };
     fs.writeFileSync(dbFilePath, JSON.stringify(initialData, null, 2));
@@ -23,12 +110,99 @@ function readDb() {
   }
 }
 
-// Helper to write database
-function saveDb(data) {
-  fs.writeFileSync(dbFilePath, JSON.stringify(data, null, 2));
+// Save local JSON file
+function saveLocalDb() {
+  fs.writeFileSync(dbFilePath, JSON.stringify(memoryDb, null, 2));
 }
 
-// Normalize Weapon Name for exact matching
+// Persist single user data to MongoDB Cloud
+async function syncUserToMongo(discordId) {
+  if (!isMongoConnected) return;
+  try {
+    const u = memoryDb.users[discordId];
+    if (u) {
+      await UserModel.findOneAndUpdate({ discord_id: discordId }, u, { upsert: true, new: true });
+    }
+
+    const inv = memoryDb.inventory[discordId] || [];
+    await CharacterModel.deleteMany({ discord_id: discordId });
+    if (inv.length > 0) {
+      await CharacterModel.insertMany(inv.map(c => ({ ...c, discord_id: discordId })));
+    }
+
+    const wpns = memoryDb.weapons[discordId] || [];
+    await WeaponModel.deleteMany({ discord_id: discordId });
+    if (wpns.length > 0) {
+      await WeaponModel.insertMany(wpns.map(w => ({ ...w, discord_id: discordId })));
+    }
+
+    const arts = memoryDb.artifacts[discordId] || [];
+    await ArtifactModel.deleteMany({ discord_id: discordId });
+    if (arts.length > 0) {
+      await ArtifactModel.insertMany(arts.map(a => ({ ...a, discord_id: discordId })));
+    }
+
+    const t = memoryDb.teams[discordId];
+    if (t) {
+      await TeamModel.findOneAndUpdate({ discord_id: discordId }, t, { upsert: true, new: true });
+    }
+  } catch (err) {
+    console.error('❌ Lỗi syncUserToMongo:', err);
+  }
+}
+
+// Initialize Database Connection & Auto-Migration
+async function initDatabase() {
+  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
+  memoryDb = readLocalDb();
+
+  if (!mongoUri) {
+    console.log('📦 Không tìm thấy MONGODB_URI. Bot đang chạy chế độ Local JSON file.');
+    return;
+  }
+
+  try {
+    console.log('⏳ Đang kết nối tới MongoDB Atlas Cloud Database...');
+    await mongoose.connect(mongoUri, {
+      connectTimeoutMS: 10000
+    });
+    isMongoConnected = true;
+    console.log('✅ Đã kết nối thành công tới MongoDB Atlas Cloud Database!');
+
+    // Load All Cloud Data into Memory
+    const cloudUsers = await UserModel.find({});
+    for (const u of cloudUsers) {
+      const uObj = u.toObject();
+      memoryDb.users[u.discord_id] = uObj;
+
+      const chars = await CharacterModel.find({ discord_id: u.discord_id });
+      memoryDb.inventory[u.discord_id] = chars.map(c => c.toObject());
+
+      const wpns = await WeaponModel.find({ discord_id: u.discord_id });
+      memoryDb.weapons[u.discord_id] = wpns.map(w => w.toObject());
+
+      const arts = await ArtifactModel.find({ discord_id: u.discord_id });
+      memoryDb.artifacts[u.discord_id] = arts.map(a => a.toObject());
+
+      const t = await TeamModel.findOne({ discord_id: u.discord_id });
+      if (t) memoryDb.teams[u.discord_id] = t.toObject();
+    }
+
+    // Auto-Migrate Local Users if not in MongoDB Cloud
+    for (const localId of Object.keys(memoryDb.users)) {
+      const existsInCloud = cloudUsers.some(u => u.discord_id === localId);
+      if (!existsInCloud) {
+        console.log(`🚚 Tự động đồng bộ tài khoản local [${localId}] lên MongoDB Cloud...`);
+        await syncUserToMongo(localId);
+      }
+    }
+    console.log('🎉 Đồng bộ toàn bộ dữ liệu người chơi trên Cloud thành công!');
+  } catch (err) {
+    console.error('❌ Lỗi kết nối MongoDB Atlas:', err);
+    console.log('🔄 Tự động chuyển về dùng Local database.json');
+  }
+}
+
 function normalizeWeaponName(name) {
   if (!name) return '';
   return name.toLowerCase()
@@ -38,7 +212,6 @@ function normalizeWeaponName(name) {
     .trim();
 }
 
-// 100% RANDOM SUBSTAT GENERATOR FOR WEAPONS
 function generateRandomWeaponSubstats(rarity = 4) {
   const subPool = [
     { name: 'ATK%', min: 3.0, max: 8.0, isPercent: true },
@@ -70,9 +243,8 @@ function generateRandomWeaponSubstats(rarity = 4) {
 
 // Get or Create User
 function getUser(discordId) {
-  const data = readDb();
-  if (!data.users[discordId]) {
-    data.users[discordId] = {
+  if (!memoryDb.users[discordId]) {
+    memoryDb.users[discordId] = {
       discord_id: discordId,
       jades: 16000,
       pity_5star: 0,
@@ -90,8 +262,8 @@ function getUser(discordId) {
       created_at: new Date().toISOString()
     };
 
-    if (!data.inventory[discordId]) {
-      data.inventory[discordId] = [
+    if (!memoryDb.inventory[discordId]) {
+      memoryDb.inventory[discordId] = [
         { char_id: 'seele', level: 1, exp: 0, weapon_level: 1, weapon_exp: 0, basic_lvl: 1, skill_lvl: 1, ult_lvl: 1, eidolon: 0, light_cone: 'In the Night (5★)', artifact_set: 'Bộ Thợ Lặn Ranh Ma' },
         { char_id: 'dan_heng', level: 1, exp: 0, weapon_level: 1, weapon_exp: 0, basic_lvl: 1, skill_lvl: 1, ult_lvl: 1, eidolon: 0, light_cone: 'Only Silence Remains (4★)', artifact_set: 'Bộ Chim Ưng Ranh Ma' },
         { char_id: 'march_7th', level: 1, exp: 0, weapon_level: 1, weapon_exp: 0, basic_lvl: 1, skill_lvl: 1, ult_lvl: 1, eidolon: 0, light_cone: 'Day One of My New Life (4★)', artifact_set: 'Bộ Vệ Binh Băng Tuyết' },
@@ -99,8 +271,8 @@ function getUser(discordId) {
       ];
     }
 
-    if (!data.teams[discordId]) {
-      data.teams[discordId] = {
+    if (!memoryDb.teams[discordId]) {
+      memoryDb.teams[discordId] = {
         discord_id: discordId,
         slot1: 'seele',
         slot2: 'dan_heng',
@@ -109,25 +281,25 @@ function getUser(discordId) {
       };
     }
 
-    saveDb(data);
+    saveLocalDb();
+    syncUserToMongo(discordId);
   }
 
-  const u = data.users[discordId];
+  const u = memoryDb.users[discordId];
   if (u.player_level === undefined) u.player_level = 1;
   if (u.player_exp === undefined) u.player_exp = 0;
   if (u.is_guaranteed === undefined) u.is_guaranteed = false;
   if (!u.materials) {
     u.materials = { char_exp_book: 50, weapon_exp_crystal: 50, artifact_dust: 50, trace_material: 30 };
-    saveDb(data);
+    saveLocalDb();
+    syncUserToMongo(discordId);
   }
 
   return u;
 }
 
-// Add Admin Cheat Resources
 function addAdminResources(discordId) {
-  const data = readDb();
-  const user = data.users[discordId] || getUser(discordId);
+  const user = memoryDb.users[discordId] || getUser(discordId);
 
   user.jades += 100000;
   if (!user.materials) {
@@ -139,14 +311,13 @@ function addAdminResources(discordId) {
   user.materials.artifact_dust = (user.materials.artifact_dust || 0) + 500;
   user.materials.trace_material = (user.materials.trace_material || 0) + 500;
 
-  saveDb(data);
+  saveLocalDb();
+  syncUserToMongo(discordId);
   return user;
 }
 
-// Add Player Trailblaze EXP
 function addPlayerExp(discordId, expGained) {
-  const data = readDb();
-  const user = data.users[discordId] || getUser(discordId);
+  const user = memoryDb.users[discordId] || getUser(discordId);
   user.player_exp += expGained;
 
   let reqExp = user.player_level * 500;
@@ -160,15 +331,14 @@ function addPlayerExp(discordId, expGained) {
     leveledUp = true;
   }
 
-  saveDb(data);
+  saveLocalDb();
+  syncUserToMongo(discordId);
   return { leveledUp, newLevel: user.player_level, totalJades: user.jades };
 }
 
-// Upgrade Character Level
 function upgradeCharacterLevel(discordId, charId, useMax = true) {
-  const data = readDb();
-  const user = data.users[discordId] || getUser(discordId);
-  const inv = data.inventory[discordId] || [];
+  const user = memoryDb.users[discordId] || getUser(discordId);
+  const inv = memoryDb.inventory[discordId] || [];
   const char = inv.find(c => c.char_id === charId);
 
   let booksAvailable = user.materials?.char_exp_book || 0;
@@ -195,7 +365,8 @@ function upgradeCharacterLevel(discordId, charId, useMax = true) {
   }
 
   user.materials.char_exp_book = booksAvailable;
-  saveDb(data);
+  saveLocalDb();
+  syncUserToMongo(discordId);
 
   return {
     success: true,
@@ -205,11 +376,9 @@ function upgradeCharacterLevel(discordId, charId, useMax = true) {
   };
 }
 
-// Upgrade Weapon Level
 function upgradeWeaponLevel(discordId, charId, useMax = true) {
-  const data = readDb();
-  const user = data.users[discordId] || getUser(discordId);
-  const inv = data.inventory[discordId] || [];
+  const user = memoryDb.users[discordId] || getUser(discordId);
+  const inv = memoryDb.inventory[discordId] || [];
   const char = inv.find(c => c.char_id === charId);
 
   let crystalsAvailable = user.materials?.weapon_exp_crystal || 0;
@@ -235,10 +404,9 @@ function upgradeWeaponLevel(discordId, charId, useMax = true) {
     }
   }
 
-  // SYNC WITH WEAPONS TABLE
-  if (data.weapons && data.weapons[discordId]) {
+  if (memoryDb.weapons && memoryDb.weapons[discordId]) {
     const normTarget = normalizeWeaponName(char.light_cone);
-    const wpn = data.weapons[discordId].find(w => w.char_id === charId || normalizeWeaponName(w.name) === normTarget);
+    const wpn = memoryDb.weapons[discordId].find(w => w.char_id === charId || normalizeWeaponName(w.name) === normTarget);
     if (wpn) {
       wpn.level = char.weapon_level;
       wpn.char_id = charId;
@@ -246,7 +414,8 @@ function upgradeWeaponLevel(discordId, charId, useMax = true) {
   }
 
   user.materials.weapon_exp_crystal = crystalsAvailable;
-  saveDb(data);
+  saveLocalDb();
+  syncUserToMongo(discordId);
 
   return {
     success: true,
@@ -256,11 +425,9 @@ function upgradeWeaponLevel(discordId, charId, useMax = true) {
   };
 }
 
-// Upgrade Skill Level
 function upgradeSkillLevel(discordId, charId, skillType) {
-  const data = readDb();
-  const user = data.users[discordId] || getUser(discordId);
-  const inv = data.inventory[discordId] || [];
+  const user = memoryDb.users[discordId] || getUser(discordId);
+  const inv = memoryDb.inventory[discordId] || [];
   const char = inv.find(c => c.char_id === charId);
 
   const cost = 5;
@@ -278,14 +445,13 @@ function upgradeSkillLevel(discordId, charId, skillType) {
   user.materials.trace_material -= cost;
   char[key] = (char[key] || 1) + 1;
 
-  saveDb(data);
+  saveLocalDb();
+  syncUserToMongo(discordId);
   return { success: true, skillType, newLevel: char[key], remainingMaterials: user.materials.trace_material };
 }
 
-// Add Artifact
 function addArtifact(discordId, artifact) {
-  const data = readDb();
-  if (!data.artifacts[discordId]) data.artifacts[discordId] = [];
+  if (!memoryDb.artifacts[discordId]) memoryDb.artifacts[discordId] = [];
 
   const rarity = artifact.rarity || 5;
   const newArt = {
@@ -305,17 +471,16 @@ function addArtifact(discordId, artifact) {
     ]
   };
 
-  data.artifacts[discordId].push(newArt);
-  saveDb(data);
+  memoryDb.artifacts[discordId].push(newArt);
+  saveLocalDb();
+  syncUserToMongo(discordId);
   return newArt;
 }
 
-// Add Weapon & Superimpose S1-S5
 function addWeapon(discordId, weapon) {
-  const data = readDb();
-  if (!data.weapons) data.weapons = {};
-  if (!data.weapons[discordId]) {
-    data.weapons[discordId] = [
+  if (!memoryDb.weapons) memoryDb.weapons = {};
+  if (!memoryDb.weapons[discordId]) {
+    memoryDb.weapons[discordId] = [
       { id: 'wpn_seele', name: 'In the Night (5★)', rarity: 5, level: 1, superimpose: 1, path: 'Hunt', passiveDescription: 'Tăng +18% Tỷ lệ Bạo Kích. Với mỗi 10 SPD vượt quá 100, tăng +6% Sát thương Đánh Thường & Chiến Kỹ.', subStats: generateRandomWeaponSubstats(5), char_id: 'seele' },
       { id: 'wpn_danheng', name: 'Only Silence Remains (4★)', rarity: 4, level: 1, superimpose: 1, path: 'Hunt', passiveDescription: 'Tăng +24% ATK. Khi có ít hơn 2 kẻ địch trên sân đấu, tăng +12% Tỷ lệ Bạo Kích.', subStats: generateRandomWeaponSubstats(4), char_id: 'dan_heng' },
       { id: 'wpn_march', name: 'Day One of My New Life (4★)', rarity: 4, level: 1, superimpose: 1, path: 'Preservation', passiveDescription: 'Tăng +16% DEF. Giảm 8% Sát thương gánh chịu cho toàn bộ đồng đội.', subStats: generateRandomWeaponSubstats(4), char_id: 'march_7th' },
@@ -325,14 +490,15 @@ function addWeapon(discordId, weapon) {
 
   const normTarget = normalizeWeaponName(weapon.name);
 
-  const existing = data.weapons[discordId].find(w => {
+  const existing = memoryDb.weapons[discordId].find(w => {
     const normExist = normalizeWeaponName(w.name);
     return normExist === normTarget || normExist.includes(normTarget) || normTarget.includes(normExist);
   });
 
   if (existing) {
     existing.superimpose = Math.min(5, (existing.superimpose || 1) + 1);
-    saveDb(data);
+    saveLocalDb();
+    syncUserToMongo(discordId);
     return { isNew: false, superimpose: existing.superimpose, weapon: existing };
   } else {
     const newWpn = {
@@ -347,29 +513,29 @@ function addWeapon(discordId, weapon) {
       subStats: generateRandomWeaponSubstats(weapon.rarity || 4),
       char_id: null
     };
-    data.weapons[discordId].push(newWpn);
-    saveDb(data);
+    memoryDb.weapons[discordId].push(newWpn);
+    saveLocalDb();
+    syncUserToMongo(discordId);
     return { isNew: true, superimpose: 1, weapon: newWpn };
   }
 }
 
 function getUserWeapons(discordId) {
-  const data = readDb();
-  if (!data.weapons) data.weapons = {};
-  if (!data.weapons[discordId]) {
-    data.weapons[discordId] = [
+  if (!memoryDb.weapons) memoryDb.weapons = {};
+  if (!memoryDb.weapons[discordId]) {
+    memoryDb.weapons[discordId] = [
       { id: 'wpn_seele', name: 'In the Night (5★)', rarity: 5, level: 1, superimpose: 1, path: 'Hunt', passiveDescription: 'Tăng +18% Tỷ lệ Bạo Kích. Với mỗi 10 SPD vượt quá 100, tăng +6% Sát thương Đánh Thường & Chiến Kỹ.', subStats: generateRandomWeaponSubstats(5), char_id: 'seele' },
       { id: 'wpn_danheng', name: 'Only Silence Remains (4★)', rarity: 4, level: 1, superimpose: 1, path: 'Hunt', passiveDescription: 'Tăng +24% ATK. Khi có ít hơn 2 kẻ địch trên sân đấu, tăng +12% Tỷ lệ Bạo Kích.', subStats: generateRandomWeaponSubstats(4), char_id: 'dan_heng' },
       { id: 'wpn_march', name: 'Day One of My New Life (4★)', rarity: 4, level: 1, superimpose: 1, path: 'Preservation', passiveDescription: 'Tăng +16% DEF. Giảm 8% Sát thương gánh chịu cho toàn bộ đồng đội.', subStats: generateRandomWeaponSubstats(4), char_id: 'march_7th' },
       { id: 'wpn_natasha', name: 'Shared Feeling (4★)', rarity: 4, level: 1, superimpose: 1, path: 'Abundance', passiveDescription: 'Tăng +10% Lượng Hồi Máu. Khi thi triển Chiến Kỹ, hồi +2 EP cho đồng đội.', subStats: generateRandomWeaponSubstats(4), char_id: 'natasha' }
     ];
-    saveDb(data);
+    saveLocalDb();
+    syncUserToMongo(discordId);
   }
 
-  // AUTO SYNC WEAPON LEVELS FROM INVENTORY FOR EQUIPPED WEAPONS!
-  const userInv = data.inventory[discordId] || [];
+  const userInv = memoryDb.inventory[discordId] || [];
   let updated = false;
-  data.weapons[discordId].forEach(w => {
+  memoryDb.weapons[discordId].forEach(w => {
     const invChar = userInv.find(c => c.char_id === w.char_id || normalizeWeaponName(c.light_cone) === normalizeWeaponName(w.name));
     if (invChar && invChar.weapon_level && invChar.weapon_level > (w.level || 1)) {
       w.level = invChar.weapon_level;
@@ -378,16 +544,17 @@ function getUserWeapons(discordId) {
     }
   });
 
-  if (updated) saveDb(data);
+  if (updated) {
+    saveLocalDb();
+    syncUserToMongo(discordId);
+  }
 
-  return data.weapons[discordId];
+  return memoryDb.weapons[discordId];
 }
 
-// RNG Artifact Upgrade System (Lv 1 - 15)
 function upgradeArtifact(discordId, artifactId, dustToUse = 5) {
-  const data = readDb();
-  const user = data.users[discordId] || getUser(discordId);
-  const userArts = data.artifacts[discordId] || [];
+  const user = memoryDb.users[discordId] || getUser(discordId);
+  const userArts = memoryDb.artifacts[discordId] || [];
   const art = userArts.find(a => a.id === artifactId);
 
   let dustAvailable = user.materials?.artifact_dust || 0;
@@ -431,7 +598,8 @@ function upgradeArtifact(discordId, artifactId, dustToUse = 5) {
   }
 
   user.materials.artifact_dust = dustAvailable;
-  saveDb(data);
+  saveLocalDb();
+  syncUserToMongo(discordId);
 
   return {
     success: true,
@@ -444,50 +612,46 @@ function upgradeArtifact(discordId, artifactId, dustToUse = 5) {
   };
 }
 
-// 50/50 Gacha Guaranteed Pity State Helper
 function setGuaranteedState(discordId, state) {
-  const data = readDb();
-  if (data.users[discordId]) {
-    data.users[discordId].is_guaranteed = state;
-    saveDb(data);
+  if (memoryDb.users[discordId]) {
+    memoryDb.users[discordId].is_guaranteed = state;
+    saveLocalDb();
+    syncUserToMongo(discordId);
   }
 }
 
-// Update Currency
 function updateUserJades(discordId, newJades) {
-  const data = readDb();
-  if (data.users[discordId]) {
-    data.users[discordId].jades = newJades;
-    saveDb(data);
+  if (memoryDb.users[discordId]) {
+    memoryDb.users[discordId].jades = newJades;
+    saveLocalDb();
+    syncUserToMongo(discordId);
   }
 }
 
-// Update Pity
 function updatePity(discordId, pity5, pity4) {
-  const data = readDb();
-  if (data.users[discordId]) {
-    data.users[discordId].pity_5star = pity5;
-    data.users[discordId].pity_4star = pity4;
-    saveDb(data);
+  if (memoryDb.users[discordId]) {
+    memoryDb.users[discordId].pity_5star = pity5;
+    memoryDb.users[discordId].pity_4star = pity4;
+    saveLocalDb();
+    syncUserToMongo(discordId);
   }
 }
 
 function addTrashItems(discordId, count) {
-  const data = readDb();
   const user = getUser(discordId);
-  data.users[discordId].trash_items = (data.users[discordId].trash_items || 0) + count;
-  saveDb(data);
+  memoryDb.users[discordId].trash_items = (memoryDb.users[discordId].trash_items || 0) + count;
+  saveLocalDb();
+  syncUserToMongo(discordId);
 }
 
 function recycleTrashItems(discordId) {
-  const data = readDb();
   const user = getUser(discordId);
-  let trashCount = data.users[discordId].trash_items || 0;
+  let trashCount = memoryDb.users[discordId].trash_items || 0;
 
-  if (data.weapons && data.weapons[discordId]) {
-    const trash3Wpns = data.weapons[discordId].filter(w => w.rarity === 3);
+  if (memoryDb.weapons && memoryDb.weapons[discordId]) {
+    const trash3Wpns = memoryDb.weapons[discordId].filter(w => w.rarity === 3);
     trashCount += trash3Wpns.length;
-    data.weapons[discordId] = data.weapons[discordId].filter(w => w.rarity !== 3);
+    memoryDb.weapons[discordId] = memoryDb.weapons[discordId].filter(w => w.rarity !== 3);
   }
 
   if (trashCount <= 0) {
@@ -497,26 +661,27 @@ function recycleTrashItems(discordId) {
   const jadesGained = trashCount * 20;
   const newJades = user.jades + jadesGained;
 
-  data.users[discordId].trash_items = 0;
-  data.users[discordId].jades = newJades;
-  saveDb(data);
+  memoryDb.users[discordId].trash_items = 0;
+  memoryDb.users[discordId].jades = newJades;
+  saveLocalDb();
+  syncUserToMongo(discordId);
 
   return { success: true, count: trashCount, jadesGained, totalJades: newJades };
 }
 
 function addCharacter(discordId, charId) {
-  const data = readDb();
-  if (!data.inventory[discordId]) {
-    data.inventory[discordId] = [];
+  if (!memoryDb.inventory[discordId]) {
+    memoryDb.inventory[discordId] = [];
   }
 
-  const existing = data.inventory[discordId].find(item => item.char_id === charId);
+  const existing = memoryDb.inventory[discordId].find(item => item.char_id === charId);
   if (existing) {
     existing.eidolon = Math.min(6, existing.eidolon + 1);
-    saveDb(data);
+    saveLocalDb();
+    syncUserToMongo(discordId);
     return { isNew: false, eidolon: existing.eidolon };
   } else {
-    data.inventory[discordId].push({
+    memoryDb.inventory[discordId].push({
       char_id: charId,
       level: 1,
       exp: 0,
@@ -529,42 +694,42 @@ function addCharacter(discordId, charId) {
       light_cone: 'Nón Ánh Sáng Tiêu Chuẩn (4★)',
       artifact_set: 'Bộ Duyên Kiếp Băng Tiêu'
     });
-    saveDb(data);
+    saveLocalDb();
+    syncUserToMongo(discordId);
     return { isNew: true, eidolon: 0 };
   }
 }
 
 function getUserInventory(discordId) {
-  const data = readDb();
-  if (!data.inventory[discordId]) {
+  if (!memoryDb.inventory[discordId]) {
     getUser(discordId);
-    return readDb().inventory[discordId] || [];
+    return memoryDb.inventory[discordId] || [];
   }
-  return data.inventory[discordId];
+  return memoryDb.inventory[discordId];
 }
 
 function getUserTeam(discordId) {
-  const data = readDb();
-  if (!data.teams[discordId]) {
+  if (!memoryDb.teams[discordId]) {
     getUser(discordId);
-    return readDb().teams[discordId];
+    return memoryDb.teams[discordId];
   }
-  return data.teams[discordId];
+  return memoryDb.teams[discordId];
 }
 
 function updateTeam(discordId, slot1, slot2, slot3, slot4) {
-  const data = readDb();
-  data.teams[discordId] = {
+  memoryDb.teams[discordId] = {
     discord_id: discordId,
     slot1,
     slot2,
     slot3,
     slot4
   };
-  saveDb(data);
+  saveLocalDb();
+  syncUserToMongo(discordId);
 }
 
 module.exports = {
+  initDatabase,
   getUser,
   addAdminResources,
   addPlayerExp,

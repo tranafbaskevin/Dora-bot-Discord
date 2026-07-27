@@ -2,6 +2,7 @@ const { Client, GatewayIntentBits, REST, Routes, Collection } = require('discord
 const http = require('http');
 require('dotenv').config();
 
+const db = require('./src/database/db');
 const botToken = process.env.TOKEN || process.env.DISCORD_TOKEN;
 
 // Simple HTTP Keep-Alive Server for Render Free Web Service & Cloud Hosting
@@ -115,8 +116,14 @@ client.on('interactionCreate', async interaction => {
   }
 });
 
-if (botToken) {
-  client.login(botToken);
-} else {
-  console.error('❌ Không thể đăng nhập Discord vì thiếu TOKEN!');
+// Start Database & Login
+async function startBot() {
+  await db.initDatabase();
+  if (botToken) {
+    client.login(botToken);
+  } else {
+    console.error('❌ Không thể đăng nhập Discord vì thiếu TOKEN!');
+  }
 }
+
+startBot();
