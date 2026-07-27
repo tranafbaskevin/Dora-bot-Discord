@@ -10,12 +10,15 @@ async function executeUpgrade(interaction) {
   const userId = interaction.user.id;
   const user = db.getUser(userId);
 
-  const mainEmbed = new EmbedBuilder()
-    .setTitle('✨ TRUNG TÂM NÂNG CẤP & CƯỜNG HÓA TRANG BỊ')
-    .setColor('#9333ea')
-    .setThumbnail(interaction.user.displayAvatarURL())
-    .setDescription(`🌐 **Cấp Thám Hiểm**: Lv.${user.player_level} (${user.player_exp}/${user.player_level * 500} EXP)\n\n📦 **Kho Vật Liệu Hiện Có**:\n- 📘 Sách EXP Nhân Vật: **${user.materials?.char_exp_book || 0}** cuốn\n- ⚔️ Tinh Thể Vũ Khí: **${user.materials?.weapon_exp_crystal || 0}** tinh thể\n- 🔮 Bụi Di Vật: **${user.materials?.artifact_dust || 0}** túi\n- 📜 Mầm Kỹ Năng: **${user.materials?.trace_material || 0}** mầm`)
-    .setFooter({ text: 'Chọn 1 trong 4 danh mục nâng cấp bên dưới!' });
+  function buildMainEmbed() {
+    const refreshedUser = db.getUser(userId);
+    return new EmbedBuilder()
+      .setTitle('✨ TRUNG TÂM NÂNG CẤP & CƯỜNG HÓA TRANG BỊ')
+      .setColor('#9333ea')
+      .setThumbnail(interaction.user.displayAvatarURL())
+      .setDescription(`🌐 **Cấp Thám Hiểm**: Lv.${refreshedUser.player_level} (${refreshedUser.player_exp}/${refreshedUser.player_level * 500} EXP)\n\n📦 **Kho Vật Liệu Hiện Có**:\n- 📘 Sách EXP Nhân Vật: **${refreshedUser.materials?.char_exp_book || 0}** cuốn\n- ⚔️ Tinh Thể Vũ Khí: **${refreshedUser.materials?.weapon_exp_crystal || 0}** tinh thể\n- 🔮 Bụi Di Vật: **${refreshedUser.materials?.artifact_dust || 0}** túi\n- 📜 Mầm Kỹ Năng: **${refreshedUser.materials?.trace_material || 0}** mầm`)
+      .setFooter({ text: 'Chọn 1 trong 4 danh mục nâng cấp bên dưới!' });
+  }
 
   const rowButtons = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId('up_cat_char').setLabel('👤 Level Nhân Vật').setStyle(ButtonStyle.Primary),
@@ -25,19 +28,20 @@ async function executeUpgrade(interaction) {
   );
 
   const response = await interaction.reply({
-    embeds: [mainEmbed],
+    embeds: [buildMainEmbed()],
     components: [rowButtons],
     fetchReply: true
   });
 
   const collector = response.createMessageComponentCollector({
+    filter: i => i.message.id === response.id && i.user.id === userId,
     time: 300000
   });
 
   collector.on('collect', async i => {
-    if (i.user.id !== interaction.user.id) {
-      return i.reply({ content: '❌ Bạn không phải là người sở hữu lệnh này!', ephemeral: true });
-    }
+    if (i.message.id !== response.id || i.user.id !== userId) return;
+
+    await i.deferUpdate().catch(() => {});
 
     const userInv = db.getUserInventory(userId);
     const refreshedUser = db.getUser(userId);
@@ -67,14 +71,14 @@ async function executeUpgrade(interaction) {
         .setColor('#3b82f6')
         .setDescription(`📘 Sách EXP khả dụng: **${refreshedUser.materials?.char_exp_book || 0}** cuốn.\nChọn nhân vật bên dưới để **TỰ ĐỘNG TĂNG CẤP TỐI ĐA**!`);
 
-      await i.update({ embeds: [embed], components: [menuRow, rowButtons] });
+      await i.editReply({ embeds: [embed], components: [menuRow, rowButtons] });
     }
 
     else if (i.customId === 'up_menu_char') {
       const charId = i.values[0].replace('up_char_select_', '');
       const result = db.upgradeCharacterLevel(userId, charId, true);
 
-      if (!result.success) return i.reply({ content: result.message, ephemeral: true });
+      if (!result.success) return i.followUp({ content: result.message, ephemeral: true });
 
       const char = charactersData.find(c => c.id === charId);
       const updatedEmbed = new EmbedBuilder()
@@ -82,7 +86,7 @@ async function executeUpgrade(interaction) {
         .setColor('#10b981')
         .setDescription(`- Đã dùng: **${result.booksUsed}** Sách EXP\n- Level mới: **Lv.${result.newLevel} / 80**!\n📘 Sách EXP còn lại: **${result.remainingBooks}** cuốn.`);
 
-      await i.update({ embeds: [updatedEmbed], components: [rowButtons] });
+      await i.editReply({ embeds: [updatedEmbed], components: [rowButtons] });
     }
 
     // 2. Weapon Level Upgrade Category
@@ -90,7 +94,7 @@ async function executeUpgrade(interaction) {
       const userWpns = db.getUserWeapons(userId);
 
       if (userWpns.length === 0) {
-        return i.reply({ content: '⚠️ Bạn không có Vũ khí nào trong kho!', ephemeral: true });
+        return i.followUp({ content: '⚠️ Bạn không có Vũ khí nào trong kho!', ephemeral: true });
       }
 
       const selectOptions = userWpns.map(w => ({
@@ -112,7 +116,7 @@ async function executeUpgrade(interaction) {
         .setColor('#10b981')
         .setDescription(`⚔️ Tinh Thể Vũ Khí khả dụng: **${refreshedUser.materials?.weapon_exp_crystal || 0}**.\nChọn vũ khí bên dưới để tự động tăng cấp!`);
 
-      await i.update({ embeds: [embed], components: [menuRow, rowButtons] });
+      await i.editReply({ embeds: [embed], components: [menuRow, rowButtons] });
     }
 
     else if (i.customId === 'up_menu_weapon') {
@@ -120,19 +124,19 @@ async function executeUpgrade(interaction) {
       const userWpns = db.getUserWeapons(userId);
       const wpn = userWpns.find(w => w.keycode && w.keycode.toUpperCase() === keycode.toUpperCase());
 
-      if (!wpn) return i.reply({ content: '❌ Không tìm thấy vũ khí!', ephemeral: true });
+      if (!wpn) return i.followUp({ content: '❌ Không tìm thấy vũ khí!', ephemeral: true });
 
       const charId = wpn.equipped_char_id || 'seele';
       const result = db.upgradeWeaponLevel(userId, charId, true);
 
-      if (!result.success) return i.reply({ content: result.message, ephemeral: true });
+      if (!result.success) return i.followUp({ content: result.message, ephemeral: true });
 
       const updatedEmbed = new EmbedBuilder()
         .setTitle(`🎉 NÂNG CẤP VŨ KHÍ THÀNH CÔNG: ${wpn.name.toUpperCase()}`)
         .setColor('#10b981')
         .setDescription(`- Mã Keycode: \`${wpn.keycode}\`\n- Đã dùng: **${result.crystalsUsed}** Tinh Thể Vũ Khí\n- Cấp độ mới: **Lv.${result.newLevel} / 80**!\n⚔️ Tinh Thể còn lại: **${result.remainingCrystals}**.`);
 
-      await i.update({ embeds: [updatedEmbed], components: [rowButtons] });
+      await i.editReply({ embeds: [updatedEmbed], components: [rowButtons] });
     }
 
     // 3. Skill & Ultimate Level Upgrade Category
@@ -176,7 +180,7 @@ async function executeUpgrade(interaction) {
         .setColor('#ef4444')
         .setDescription(`📜 Mầm Kỹ Năng hiện có: **${refreshedUser.materials?.trace_material || 0}**.\nChọn kỹ năng bên dưới để tăng +1 Level (Tốn 5 mầm)!`);
 
-      await i.update({ embeds: [embed], components: [menuRow, rowButtons] });
+      await i.editReply({ embeds: [embed], components: [menuRow, rowButtons] });
     }
 
     else if (i.customId === 'up_menu_skill') {
@@ -186,7 +190,7 @@ async function executeUpgrade(interaction) {
 
       const result = db.upgradeSkillLevel(userId, charId, skillType);
 
-      if (!result.success) return i.reply({ content: result.message, ephemeral: true });
+      if (!result.success) return i.followUp({ content: result.message, ephemeral: true });
 
       const char = charactersData.find(c => c.id === charId);
       let skillName = `Chiến Kỹ (${char.skills.skill.name})`;
@@ -200,15 +204,15 @@ async function executeUpgrade(interaction) {
         .setColor('#10b981')
         .setDescription(`Level mới: **Lv.${result.newLevel} / ${maxLvl}**!\n📜 Mầm kỹ năng còn lại: **${result.remainingMaterials}**.`);
 
-      await i.update({ embeds: [updatedEmbed], components: [rowButtons] });
+      await i.editReply({ embeds: [updatedEmbed], components: [rowButtons] });
     }
 
-    // 4. Artifact Upgrade Category (With Genshin Style Fodder Button)
+    // 4. Artifact Upgrade Category
     else if (i.customId === 'up_cat_artifact') {
       const userArts = db.getUserArtifacts(userId);
 
       if (userArts.length === 0) {
-        return i.reply({ content: '⚠️ Bạn chưa có Thánh Di Vật nào trong kho! Đánh Boss ở `/battle` hoặc farm ở `/hunt`!', ephemeral: true });
+        return i.followUp({ content: '⚠️ Bạn chưa có Thánh Di Vật nào trong kho! Đánh Boss ở `/battle` hoặc farm ở `/hunt`!', ephemeral: true });
       }
 
       const slotsMap = { Head: '🎩', Hands: '🥊', Body: '🥼', Feet: '👟' };
@@ -232,7 +236,7 @@ async function executeUpgrade(interaction) {
         .setColor('#8b5cf6')
         .setDescription(`🔮 Bụi Di Vật hiện có: **${refreshedUser.materials?.artifact_dust || 0}**.\nChọn Di vật bên dưới để cường hóa! (Mỗi **+3 Cấp** sẽ nhảy **RNG 100%** vào 1 Dòng Phụ ngẫu nhiên!)`);
 
-      await i.update({ embeds: [embed], components: [menuRow, rowButtons] });
+      await i.editReply({ embeds: [embed], components: [menuRow, rowButtons] });
     }
 
     else if (i.customId === 'up_menu_artifact_kc') {
@@ -240,13 +244,13 @@ async function executeUpgrade(interaction) {
       const userArts = db.getUserArtifacts(userId);
       const art = userArts.find(a => a.keycode && a.keycode.toUpperCase() === keycode.toUpperCase());
 
-      if (!art) return i.reply({ content: '❌ Không tìm thấy Di vật!', ephemeral: true });
+      if (!art) return i.followUp({ content: '❌ Không tìm thấy Di vật!', ephemeral: true });
 
-      const result = db.upgradeArtifact(userId, art.id, 5);
+      const result = db.upgradeArtifact(userId, art.keycode, 5);
 
-      if (!result.success) return i.reply({ content: result.message, ephemeral: true });
+      if (!result.success) return i.followUp({ content: result.message, ephemeral: true });
 
-      const subLines = result.subStats.map(s => `• **${s.name}**: +${s.value.toFixed(1)}`).join('\n');
+      const subLines = (result.subStats || []).map(s => `• **${s.name}**: +${parseFloat(s.value).toFixed(1)}`).join('\n');
       const rngLog = result.upgradedSubNames.length > 0
         ? `\n\n🎲 **Nhảy Dòng RNG**: \n${result.upgradedSubNames.map(l => `✨ ${l}`).join('\n')}`
         : '';
@@ -256,7 +260,7 @@ async function executeUpgrade(interaction) {
         .setColor('#10b981')
         .setDescription(`- Mã Keycode: \`${art.keycode}\` [${art.slot}]\n- Đã dùng: **${result.dustUsed}** Bụi Di Vật\n- Chỉ số chính: **+${result.mainValue.toFixed(1)}**\n\n**Các Dòng Phụ Chi Tiết**:\n${subLines}${rngLog}\n\n🔮 Bụi Di Vật còn lại: **${result.remainingDust}**.`);
 
-      await i.update({ embeds: [updatedEmbed], components: [rowButtons] });
+      await i.editReply({ embeds: [updatedEmbed], components: [rowButtons] });
     }
   });
 }
