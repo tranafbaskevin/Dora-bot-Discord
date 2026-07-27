@@ -106,6 +106,9 @@ async function startBattleMatch(interaction, enemyId, difficultyOpt = 'auto') {
       return;
     }
 
+    // Single persistent reference for Ultimate GIF embed to prevent channel message spam
+    let ultMessageRef = null;
+
     // STRICT MESSAGE-SPECIFIC COLLECTOR (PER-USER & PER-MESSAGE ISOLATION)
     const actionCollector = responseMsg.createMessageComponentCollector({
       filter: ai => ai.message.id === responseMsg.id && ai.user.id === userId,
@@ -131,6 +134,7 @@ async function startBattleMatch(interaction, enemyId, difficultyOpt = 'auto') {
         sendVictoryEmbed(interaction, userId, session);
       }
 
+      // Dynamic Ultimate GIF update with ZERO message spam (Edits existing GIF embed)
       if (usedUltChar) {
         const charInfo = charactersData.find(c => c.id === usedUltChar.id) || usedUltChar;
         const ultName = charInfo.skills?.ultimate?.name || 'Tuyệt Kỹ';
@@ -142,7 +146,15 @@ async function startBattleMatch(interaction, enemyId, difficultyOpt = 'auto') {
           .setImage(ultGifUrl)
           .setDescription(`✨ **${charInfo.name}** giáng đòn Tuyệt kỹ ngắt lượt hoành tráng!`);
 
-        await interaction.followUp({ embeds: [ultEmbed] }).catch(() => {});
+        try {
+          if (!ultMessageRef) {
+            ultMessageRef = await interaction.followUp({ embeds: [ultEmbed] });
+          } else {
+            await ultMessageRef.edit({ embeds: [ultEmbed] });
+          }
+        } catch (err) {
+          ultMessageRef = await interaction.followUp({ embeds: [ultEmbed] }).catch(() => null);
+        }
       }
 
       const newBuffer = await drawBattleCanvas(session);
