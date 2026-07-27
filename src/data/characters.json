@@ -7,7 +7,7 @@
     "path": "Hunt",
     "color": "#8a2be2",
     "icon": "assets/characters/seele.jpg",
-    "ultGif": "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdWkzaTl0ZjIybXNxbDFmbGtkOHFudHBkOHdkaDFscXQ0ZWxwaDNpdCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/L2X2a7N03XgYnJ0sCq/giphy.gif",
+    "ultGif": "https://i.pinimg.com/originals/c0/bb/75/c0bb75e2dd8aa72174381a8db0eee2a0.gif",
     "baseStats": {
       "hp": 930,
       "atk": 640,
@@ -46,7 +46,7 @@
     "path": "Erudition",
     "color": "#ffd700",
     "icon": "assets/characters/jing_yuan.jpg",
-    "ultGif": "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOHFlZjV1NDg2eTlnaDFjZ2hyejFlMHgxaWdzZnBmbmdsNWcxeWZqOCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/1dJWqy5P22s9S5M2gK/giphy.gif",
+    "ultGif": "https://i.pinimg.com/originals/fb/28/79/fb2879ea8f1b408d37ddcbad152171a3.gif",
     "baseStats": {
       "hp": 1160,
       "atk": 698,
@@ -87,7 +87,7 @@
     "path": "Harmony",
     "color": "#00bfff",
     "icon": "assets/characters/bronya.jpg",
-    "ultGif": "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExcHR2cWNocTZuNmN2MzhpNGZ2dWtrNHBzcHgxcGx3OHJ0M2d4OTRnaSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKSjRrfIPjeiVyM/giphy.gif",
+    "ultGif": "https://i.pinimg.com/originals/52/28/49/52284913986f4336a6e8e575dc472d7a.gif",
     "baseStats": {
       "hp": 1240,
       "atk": 580,
