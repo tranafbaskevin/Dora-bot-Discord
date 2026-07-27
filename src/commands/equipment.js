@@ -6,7 +6,7 @@ const charactersData = require('../data/characters.json');
 
 const equipmentCommand = new SlashCommandBuilder()
   .setName('equipment')
-  .setDescription('Quản lý trang bị: Chọn nhân vật -> Đổi Vũ Khí hoặc Thánh Di Vật');
+  .setDescription('Quản lý trang bị: Chọn nhân vật -> Đổi Vũ Khí hoặc Thánh Di Vật theo Mã Keycode');
 
 function getAvatarAttachment(char) {
   if (!char || !char.icon) return { url: null, attachment: null };
@@ -30,12 +30,12 @@ async function executeEquipment(interaction) {
     return interaction.reply({ content: '⚠️ Bạn chưa có nhân vật nào trong túi đồ!', ephemeral: true });
   }
 
-  // Step 1 Embed: Select Character
+  // Step 1: Select Character
   const step1Embed = new EmbedBuilder()
     .setTitle('🛡️ TRUNG TÂM QUẢN LÝ TRANG BỊ - BƯỚC 1: CHỌN NHÂN VẬT')
     .setColor('#3b82f6')
     .setThumbnail(interaction.user.displayAvatarURL())
-    .setDescription('Hãy chọn 1 nhân vật bên dưới để xem và thay đổi **Vũ Khí (Nón Ánh Sáng)** hoặc **Thánh Di Vật**:');
+    .setDescription('Hãy chọn 1 nhân vật bên dưới để xem và thay đổi **Vũ Khí (Nón Ánh Sáng)** hoặc **Thánh Di Vật (Theo Mã Keycode)**:');
 
   const charOptions = userInv.map(inv => {
     const char = charactersData.find(c => c.id === inv.char_id);
@@ -51,7 +51,7 @@ async function executeEquipment(interaction) {
   const charMenu = new StringSelectMenuBuilder()
     .setCustomId('equip_step1_char_menu')
     .setPlaceholder('1. Chọn Nhân Vật Muốn Thay Đổi Trang Bị...')
-    .addOptions(charOptions);
+    .addOptions(charOptions.slice(0, 25));
 
   const row1 = new ActionRowBuilder().addComponents(charMenu);
 
@@ -61,7 +61,6 @@ async function executeEquipment(interaction) {
     fetchReply: true
   });
 
-  // STRICT MESSAGE-SPECIFIC COLLECTOR (PER-USER & PER-MESSAGE ISOLATION)
   const collector = response.createMessageComponentCollector({
     filter: i => i.message.id === response.id && i.user.id === userId,
     time: 300000
@@ -72,43 +71,49 @@ async function executeEquipment(interaction) {
 
     const customId = i.customId;
 
-    // Step 1 -> Step 2: Character selected from dropdown
+    // Step 1 -> Step 2: Character selected
     if (customId === 'equip_step1_char_menu') {
       await i.deferUpdate().catch(() => {});
 
       const charId = i.values[0].replace('char_equip_', '');
       const char = charactersData.find(c => c.id === charId) || charactersData[0];
-      const invRec = userInv.find(rec => rec.char_id === charId) || { level: 1, weapon_level: 1, light_cone: 'Nón Ánh Sáng Tiêu Chuẩn', artifact_set: 'Bộ Duyên Kiếp' };
+      const invRec = userInv.find(rec => rec.char_id === charId) || { level: 1, weapon_level: 1, light_cone: 'Nón Ánh Sáng Tiêu Chuẩn' };
 
       const userWpns = db.getUserWeapons(userId);
-      const equippedWpn = userWpns.find(w => w.char_id === charId || w.name.includes(invRec.light_cone)) || { name: invRec.light_cone, superimpose: 1, level: invRec.weapon_level || 1 };
-      const wpnLvl = Math.max(invRec.weapon_level || 1, equippedWpn.level || 1);
+      const userArts = db.getUserArtifacts(userId);
+
+      const equippedWpn = userWpns.find(w => w.equipped_char_id === charId || w.char_id === charId) || { name: invRec.light_cone, keycode: '#W-NONE', level: invRec.weapon_level || 1 };
+      const equippedArts = userArts.filter(a => a.equipped_char_id === charId || a.char_id === charId);
+
+      const artListText = equippedArts.length > 0
+        ? equippedArts.map(a => `• **[${a.slot || 'Head'}]** ${a.setName} (\`+${a.level}/15\`) [\`${a.keycode}\`]\n  └ Main: **${a.mainStat}** (+${a.mainValue.toFixed(1)})`).join('\n')
+        : '• Chưa trang bị mảnh Di vật nào (Dùng nút bên dưới để đeo theo Mã Keycode)';
 
       const avatarInfo = getAvatarAttachment(char);
 
       const step2Embed = new EmbedBuilder()
-        .setTitle(`🛡️ TRANG BỊ HIỆN TẠI: ${char.name.toUpperCase()} (Lv.${invRec.level || 1})`)
+        .setTitle(`🛡️ QUẢN LÝ TRANG BỊ: ${char.name.toUpperCase()} (Lv.${invRec.level || 1})`)
         .setColor(char.color || '#3b82f6')
         .setDescription(`Nhân vật: **${char.name}** | Nguyên tố: **${char.element}** | Vận mệnh: **${char.path}**`)
         .addFields(
           {
             name: '⚔️ Vũ Khí / Nón Ánh Sáng Đang Đeo',
-            value: `• **${equippedWpn.name}**\n  Cấp độ: **Lv.${wpnLvl} / 80** | Tích chồng: **S${equippedWpn.superimpose || 1}**`,
+            value: `• **${equippedWpn.name}** (\`Lv.${equippedWpn.level || 1}/80\`) [\`${equippedWpn.keycode || '#W-NONE'}\`]`,
             inline: false
           },
           {
-            name: '🔮 Bộ Thánh Di Vật Đang Đeo',
-            value: `• **${invRec.artifact_set || 'Bộ Tiêu Chuẩn (5★)'}**\n  Hiệu ứng: Tăng +15% Sát Thương Thuộc Tính & +10% CRIT Rate`,
+            name: '🔮 Bộ Thánh Di Vật Đang Đeo (Max 4 Slot)',
+            value: artListText,
             inline: false
           }
         )
-        .setFooter({ text: 'Chọn 1 trong 2 nút bên dưới để Đổi Vũ Khí hoặc Đổi Thánh Di Vật!' });
+        .setFooter({ text: 'Bấm nút bên dưới để Trang bị Vũ Khí hoặc Trang Bị Di Vật Theo Slot & Keycode!' });
 
       if (avatarInfo.url) step2Embed.setThumbnail(avatarInfo.url);
 
       const actionButtons = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId(`btn_swap_wpn_${charId}`).setLabel(`⚔️ Đổi Vũ Khí Cho ${char.name}`).setStyle(ButtonStyle.Success),
-        new ButtonBuilder().setCustomId(`btn_swap_art_${charId}`).setLabel(`🔮 Đổi Di Vật Cho ${char.name}`).setStyle(ButtonStyle.Primary)
+        new ButtonBuilder().setCustomId(`btn_swap_wpn_${charId}`).setLabel(`⚔️ Đổi Vũ Khí`).setStyle(ButtonStyle.Success),
+        new ButtonBuilder().setCustomId(`btn_swap_art_${charId}`).setLabel(`🔮 Đổi Thánh Di Vật`).setStyle(ButtonStyle.Primary)
       );
 
       const updatePayload = { embeds: [step2Embed], components: [actionButtons] };
@@ -117,7 +122,7 @@ async function executeEquipment(interaction) {
       await i.editReply(updatePayload).catch(err => console.error('❌ Lỗi editReply Step 2 Equipment:', err));
     }
 
-    // Step 2 -> Step 3A: Click "Swap Weapon" Button
+    // Step 2 -> Step 3A: Click "Swap Weapon"
     else if (customId.startsWith('btn_swap_wpn_')) {
       await i.deferUpdate().catch(() => {});
 
@@ -125,150 +130,133 @@ async function executeEquipment(interaction) {
       const char = charactersData.find(c => c.id === charId) || charactersData[0];
       const userWpns = db.getUserWeapons(userId);
 
-      if (userWeapons.length === 0) {
+      if (userWpns.length === 0) {
         return i.followUp({ content: '⚠️ Bạn không có Nón Ánh Sáng nào trong kho! Hãy quay Gacha ở `/gacha`!', ephemeral: true });
       }
 
       const wpnOptions = userWpns.map(w => ({
-        label: `${w.name} (S${w.superimpose || 1} - Lv.${w.level || 1})`,
-        description: w.char_id ? `Đang dùng cho ${w.char_id.toUpperCase()}` : 'Chưa ai sử dụng',
-        value: `select_wpn_${charId}_${w.id}`,
+        label: `${w.name} [${w.keycode}] (Lv.${w.level || 1})`,
+        description: w.equipped_char_id ? `👤 Đang đeo cho ${w.equipped_char_id.toUpperCase()}` : '⚪ Chưa ai sử dụng',
+        value: `select_wpn_kc_${charId}_${w.keycode}`,
         emoji: '⚔️'
       }));
 
       const wpnSelectMenu = new StringSelectMenuBuilder()
-        .setCustomId('menu_do_equip_wpn')
-        .setPlaceholder(`Chọn Vũ Khí muốn trang bị cho ${char.name}...`)
-        .addOptions(wpnOptions);
+        .setCustomId('menu_do_equip_wpn_kc')
+        .setPlaceholder(`Chọn Vũ Khí theo Mã Keycode cho ${char.name}...`)
+        .addOptions(wpnOptions.slice(0, 25));
 
       const wpnRow = new ActionRowBuilder().addComponents(wpnSelectMenu);
 
       const step3WpnEmbed = new EmbedBuilder()
         .setTitle(`⚔️ THAY ĐỔI VŨ KHÍ CHO ${char.name.toUpperCase()}`)
         .setColor('#eab308')
-        .setDescription(`Chọn Nón Ánh Sáng từ danh sách kho trang bị bên dưới để trang bị cho **${char.name}**:`);
+        .setDescription(`Chọn Nón Ánh Sáng theo Mã Keycode bên dưới để trang bị cho **${char.name}**:\n*(Mỗi vũ khí chỉ đeo cho 1 nhân vật)*`);
 
       await i.editReply({ embeds: [step3WpnEmbed], components: [wpnRow] });
     }
 
-    // Step 2 -> Step 3B: Click "Swap Artifact" Button
+    // Step 2 -> Step 3B: Click "Swap Artifact" -> Slot Selection
     else if (customId.startsWith('btn_swap_art_')) {
       await i.deferUpdate().catch(() => {});
 
       const charId = customId.replace('btn_swap_art_', '');
       const char = charactersData.find(c => c.id === charId) || charactersData[0];
 
-      const rawDb = JSON.parse(fs.readFileSync(path.join(__dirname, '../../database.json'), 'utf8'));
-      const userArts = (rawDb.artifacts && rawDb.artifacts[userId]) || [];
+      const slotButtons = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId(`btn_slot_Head_${charId}`).setLabel('🎩 Đầu (Head)').setStyle(ButtonStyle.Primary),
+        new ButtonBuilder().setCustomId(`btn_slot_Hands_${charId}`).setLabel('🥊 Tay (Hands)').setStyle(ButtonStyle.Success),
+        new ButtonBuilder().setCustomId(`btn_slot_Body_${charId}`).setLabel('🥼 Thân (Body)').setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId(`btn_slot_Feet_${charId}`).setLabel('👟 Chân (Feet)').setStyle(ButtonStyle.Danger)
+      );
 
-      const availableSets = [
-        { name: 'Bộ Thiện Xạ Trường Hoang (5★)', desc: 'Tăng +12% ATK & +6% SPD & +10% Đánh thường' },
-        { name: 'Bộ Thiên Tài Kim Loại (5★)', desc: 'Tăng +10% Quantum DMG & Bỏ qua 10% DEF kẻ địch' },
-        { name: 'Bộ Thợ Săn Băng Tuyết (5★)', desc: 'Tăng +10% Ice DMG & +25% CRIT DMG khi dùng Ult' },
-        { name: 'Bộ Hiệp Sĩ Cung Điện (5★)', desc: 'Tăng +15% DEF & +20% Độ dày của Khiên' },
-        { name: 'Bộ Lãng Khách Âm Thầm (5★)', desc: 'Tăng +10% Hồi máu & Hồi +1 SP đầu trận' },
-        { name: 'Bộ Chim Ưng Ranh Ma (5★)', desc: 'Tăng +10% Wind DMG & Ưu tiên kéo lượt 25%' }
-      ];
+      const slotEmbed = new EmbedBuilder()
+        .setTitle(`🔮 CHỌN VỊ TRÍ SLOT DI VẬT CHO ${char.name.toUpperCase()}`)
+        .setColor('#8b5cf6')
+        .setDescription('Hãy chọn vị trí Trang Bị Di Vật muốn thay đổi bên dưới:');
 
-      const artOptions = availableSets.map((art, idx) => ({
-        label: art.name,
-        description: art.desc,
-        value: `select_art_${charId}_${idx}`,
+      await i.editReply({ embeds: [slotEmbed], components: [slotButtons] });
+    }
+
+    // Step 3B -> Step 4: Slot selected -> List artifacts for that slot with Keycode UIDs
+    else if (customId.startsWith('btn_slot_')) {
+      await i.deferUpdate().catch(() => {});
+
+      const parts = customId.replace('btn_slot_', '').split('_');
+      const slotName = parts[0];
+      const charId = parts[1];
+
+      const char = charactersData.find(c => c.id === charId) || charactersData[0];
+      const userArts = db.getUserArtifacts(userId);
+
+      const slotArts = userArts.filter(a => (a.slot || 'Head') === slotName);
+
+      if (slotArts.length === 0) {
+        return i.followUp({ content: `⚠️ Bạn chưa farm được mảnh Di vật nào thuộc vị trí **[${slotName}]**! Hãy đánh Boss ở \`/battle\` hoặc farm quái ở \`/hunt\`!`, ephemeral: true });
+      }
+
+      const artOptions = slotArts.map(art => ({
+        label: `[${art.keycode}] ${art.setName} (+${art.level}/15)`,
+        description: `Main: ${art.mainStat} (+${art.mainValue.toFixed(1)}) | ${art.equipped_char_id ? `👤 Đang đeo cho ${art.equipped_char_id.toUpperCase()}` : '⚪ Trống'}`,
+        value: `select_art_kc_${charId}_${art.keycode}`,
         emoji: '🔮'
       }));
 
       const artSelectMenu = new StringSelectMenuBuilder()
-        .setCustomId('menu_do_equip_art')
-        .setPlaceholder(`Chọn Bộ Thánh Di Vật cho ${char.name}...`)
-        .addOptions(artOptions);
+        .setCustomId('menu_do_equip_art_kc')
+        .setPlaceholder(`Chọn Mảnh Di Vật vị trí [${slotName}]...`)
+        .addOptions(artOptions.slice(0, 25));
 
       const artRow = new ActionRowBuilder().addComponents(artSelectMenu);
 
-      const step3ArtEmbed = new EmbedBuilder()
-        .setTitle(`🔮 THAY ĐỔI THÁNH DI VẬT CHO ${char.name.toUpperCase()}`)
+      const step4ArtEmbed = new EmbedBuilder()
+        .setTitle(`🔮 TRANG BỊ DI VẬT [SLOT: ${slotName.toUpperCase()}] CHO ${char.name.toUpperCase()}`)
         .setColor('#8b5cf6')
-        .setDescription(`Chọn Bộ Di Vật từ danh sách bên dưới để trang bị cho **${char.name}**:`);
+        .setDescription(`Chọn mảnh Di vật đã farm được theo **Mã Keycode UID** bên dưới:\n*(Đồ đã đeo cho nhân vật khác sẽ tự động tháo để chuyển sang ${char.name})*`);
 
-      await i.editReply({ embeds: [step3ArtEmbed], components: [artRow] });
+      await i.editReply({ embeds: [step4ArtEmbed], components: [artRow] });
     }
 
-    // Step 3A Finalization: Weapon Selected
-    else if (customId === 'menu_do_equip_wpn') {
+    // Finalization: Weapon Selected by Keycode
+    else if (customId === 'menu_do_equip_wpn_kc') {
       await i.deferUpdate().catch(() => {});
 
-      const selectedVal = i.values[0].replace('select_wpn_', '');
-      const parts = selectedVal.split('_');
-      const charId = parts[0];
-      const wpnId = parts.slice(1).join('_');
+      const val = i.values[0].replace('select_wpn_kc_', '');
+      const firstUnderscore = val.indexOf('_');
+      const charId = val.substring(0, firstUnderscore);
+      const keycode = val.substring(firstUnderscore + 1);
 
-      const userWpns = db.getUserWeapons(userId);
-      const chosenWpn = userWpns.find(w => w.id === wpnId);
+      const result = db.equipWeaponByKeycode(userId, keycode, charId);
       const char = charactersData.find(c => c.id === charId) || charactersData[0];
 
-      if (chosenWpn) {
-        chosenWpn.char_id = charId;
-        const invRecord = userInv.find(rec => rec.char_id === charId);
-        if (invRecord) {
-          invRecord.light_cone = chosenWpn.name;
-        }
-
-        const rawDb = JSON.parse(fs.readFileSync(path.join(__dirname, '../../database.json'), 'utf8'));
-        if (rawDb.weapons && rawDb.weapons[userId]) {
-          const targetInDb = rawDb.weapons[userId].find(w => w.id === wpnId);
-          if (targetInDb) targetInDb.char_id = charId;
-        }
-        if (rawDb.inventory && rawDb.inventory[userId]) {
-          const invInDb = rawDb.inventory[userId].find(c => c.char_id === charId);
-          if (invInDb) invInDb.light_cone = chosenWpn.name;
-        }
-        fs.writeFileSync(path.join(__dirname, '../../database.json'), JSON.stringify(rawDb, null, 2));
-      }
+      if (!result.success) return i.followUp({ content: result.message, ephemeral: true });
 
       const successEmbed = new EmbedBuilder()
         .setTitle('✅ THAY ĐỔI VŨ KHÍ THÀNH CÔNG!')
         .setColor('#10b981')
-        .setDescription(`Đã trang bị **${chosenWpn ? chosenWpn.name : 'Nón Ánh Sáng Mới'}** cho nhân vật **${char.name}**!`);
+        .setDescription(`Đã trang bị thành công **${result.weapon.name}** [\`${result.weapon.keycode}\`] cho nhân vật **${char.name}**!`);
 
       await i.editReply({ embeds: [successEmbed], components: [] });
     }
 
-    // Step 3B Finalization: Artifact Selected
-    else if (customId === 'menu_do_equip_art') {
+    // Finalization: Artifact Selected by Keycode
+    else if (customId === 'menu_do_equip_art_kc') {
       await i.deferUpdate().catch(() => {});
 
-      const selectedVal = i.values[0].replace('select_art_', '');
-      const parts = selectedVal.split('_');
-      const charId = parts[0];
-      const artIdx = parseInt(parts[1], 10);
+      const val = i.values[0].replace('select_art_kc_', '');
+      const firstUnderscore = val.indexOf('_');
+      const charId = val.substring(0, firstUnderscore);
+      const keycode = val.substring(firstUnderscore + 1);
 
-      const availableSets = [
-        'Bộ Thiện Xạ Trường Hoang (5★)',
-        'Bộ Thiên Tài Kim Loại (5★)',
-        'Bộ Thợ Săn Băng Tuyết (5★)',
-        'Bộ Hiệp Sĩ Cung Điện (5★)',
-        'Bộ Lãng Khách Âm Thầm (5★)',
-        'Bộ Chim Ưng Ranh Ma (5★)'
-      ];
-
-      const chosenSetName = availableSets[artIdx] || availableSets[0];
+      const result = db.equipArtifactByKeycode(userId, keycode, charId);
       const char = charactersData.find(c => c.id === charId) || charactersData[0];
 
-      const invRecord = userInv.find(rec => rec.char_id === charId);
-      if (invRecord) {
-        invRecord.artifact_set = chosenSetName;
-      }
-
-      const rawDb = JSON.parse(fs.readFileSync(path.join(__dirname, '../../database.json'), 'utf8'));
-      if (rawDb.inventory && rawDb.inventory[userId]) {
-        const invInDb = rawDb.inventory[userId].find(c => c.char_id === charId);
-        if (invInDb) invInDb.artifact_set = chosenSetName;
-      }
-      fs.writeFileSync(path.join(__dirname, '../../database.json'), JSON.stringify(rawDb, null, 2));
+      if (!result.success) return i.followUp({ content: result.message, ephemeral: true });
 
       const successEmbed = new EmbedBuilder()
-        .setTitle('✅ THAY ĐỔI THÁNH DI VẬT THÀNH CÔNG!')
+        .setTitle('✅ TRANG BỊ THÁNH DI VẬT THÀNH CÔNG!')
         .setColor('#10b981')
-        .setDescription(`Đã trang bị **${chosenSetName}** cho nhân vật **${char.name}**!`);
+        .setDescription(`Đã trang bị mảnh Di vật vị trí **[${result.slot}]**:\n• **${result.artifact.setName}** [\`${result.artifact.keycode}\`]\n• Chỉ số chính: **${result.artifact.mainStat}** (+${result.artifact.mainValue.toFixed(1)})\n\n👉 Trang bị độc quyền cho nhân vật **${char.name}**!`);
 
       await i.editReply({ embeds: [successEmbed], components: [] });
     }

@@ -102,9 +102,72 @@ function readLocalDb() {
     const data = JSON.parse(raw);
     if (!data.artifacts) data.artifacts = {};
     if (!data.weapons) data.weapons = {};
+    if (!data.debts) data.debts = {};
+
+    // Auto-Migrate: Assign unique Keycode UIDs & Slots to any existing items without losing data
+    let migrationNeeded = false;
+    let artSeq = 1000;
+    let wpnSeq = 1000;
+
+    // Collect existing keycodes to prevent collisions
+    const existingKeycodes = new Set();
+    Object.values(data.artifacts).forEach(arts => {
+      arts.forEach(a => { if (a.keycode) existingKeycodes.add(a.keycode.toUpperCase()); });
+    });
+    Object.values(data.weapons).forEach(wpns => {
+      wpns.forEach(w => { if (w.keycode) existingKeycodes.add(w.keycode.toUpperCase()); });
+    });
+
+    const slots = ['Head', 'Hands', 'Body', 'Feet'];
+
+    Object.keys(data.artifacts).forEach(uid => {
+      data.artifacts[uid].forEach((a, idx) => {
+        if (!a.keycode) {
+          let code;
+          do {
+            code = `#A-${artSeq++}`;
+          } while (existingKeycodes.has(code));
+          a.keycode = code;
+          existingKeycodes.add(code);
+          migrationNeeded = true;
+        }
+        if (!a.slot) {
+          a.slot = slots[idx % slots.length];
+          migrationNeeded = true;
+        }
+        if (!a.equipped_char_id && a.char_id) {
+          a.equipped_char_id = a.char_id;
+          migrationNeeded = true;
+        }
+      });
+    });
+
+    Object.keys(data.weapons).forEach(uid => {
+      data.weapons[uid].forEach(w => {
+        if (!w.keycode) {
+          let code;
+          do {
+            code = `#W-${wpnSeq++}`;
+          } while (existingKeycodes.has(code));
+          w.keycode = code;
+          existingKeycodes.add(code);
+          migrationNeeded = true;
+        }
+        if (!w.equipped_char_id && w.char_id) {
+          w.equipped_char_id = w.char_id;
+          migrationNeeded = true;
+        }
+      });
+    });
+
+    if (migrationNeeded) {
+      fs.writeFileSync(dbFilePath, JSON.stringify(data, null, 2));
+      console.log('✅ Đã Auto-Migrate thành công Mã Keycode UIDs độc nhất toàn Server cho dữ liệu cũ!');
+    }
+
     return data;
   } catch (err) {
-    const initialData = { users: {}, inventory: {}, teams: {}, artifacts: {}, weapons: {} };
+    const initialData = { users: {}, inventory: {}, teams: {}, artifacts: {}, weapons: {}, debts: {} };
     fs.writeFileSync(dbFilePath, JSON.stringify(initialData, null, 2));
     return initialData;
   }
@@ -728,6 +791,324 @@ function updateTeam(discordId, slot1, slot2, slot3, slot4) {
   syncUserToMongo(discordId);
 }
 
+function getUserArtifacts(discordId) {
+  if (!memoryDb.artifacts) memoryDb.artifacts = {};
+  if (!memoryDb.artifacts[discordId]) memoryDb.artifacts[discordId] = [];
+  return memoryDb.artifacts[discordId];
+}
+
+function equipArtifactByKeycode(discordId, keycode, charId) {
+  const userArts = getUserArtifacts(discordId);
+  const targetArt = userArts.find(a => a.keycode && a.keycode.toUpperCase() === keycode.toUpperCase());
+
+  if (!targetArt) {
+    return { success: false, message: `❌ Không tìm thấy Thánh Di Vật có mã \`${keycode}\` trong kho!` };
+  }
+
+  // Exclusive Constraint: If currently equipped on another character, auto-unequip
+  if (targetArt.equipped_char_id && targetArt.equipped_char_id !== charId) {
+    const prevChar = targetArt.equipped_char_id;
+    targetArt.equipped_char_id = null;
+    targetArt.char_id = null;
+  }
+
+  // If character already has an artifact in the SAME slot, unequip that old piece
+  const oldArtInSlot = userArts.find(a => a.equipped_char_id === charId && a.slot === targetArt.slot && a.keycode !== targetArt.keycode);
+  if (oldArtInSlot) {
+    oldArtInSlot.equipped_char_id = null;
+    oldArtInSlot.char_id = null;
+  }
+
+  targetArt.equipped_char_id = charId;
+  targetArt.char_id = charId;
+
+  saveLocalDb();
+  syncUserToMongo(discordId);
+  return { success: true, artifact: targetArt, slot: targetArt.slot };
+}
+
+function equipWeaponByKeycode(discordId, keycode, charId) {
+  const userWpns = getUserWeapons(discordId);
+  const targetWpn = userWpns.find(w => w.keycode && w.keycode.toUpperCase() === keycode.toUpperCase());
+
+  if (!targetWpn) {
+    return { success: false, message: `❌ Không tìm thấy Nón Ánh Sáng có mã \`${keycode}\` trong kho!` };
+  }
+
+  // Auto-unequip if equipped on another character
+  if (targetWpn.equipped_char_id && targetWpn.equipped_char_id !== charId) {
+    targetWpn.equipped_char_id = null;
+    targetWpn.char_id = null;
+  }
+
+  // Unequip old weapon from this character
+  userWpns.forEach(w => {
+    if (w.equipped_char_id === charId && w.keycode !== targetWpn.keycode) {
+      w.equipped_char_id = null;
+      w.char_id = null;
+    }
+  });
+
+  targetWpn.equipped_char_id = charId;
+  targetWpn.char_id = charId;
+
+  const invRecord = getUserInventory(discordId).find(c => c.char_id === charId);
+  if (invRecord) {
+    invRecord.light_cone = targetWpn.name;
+    invRecord.weapon_level = targetWpn.level;
+  }
+
+  saveLocalDb();
+  syncUserToMongo(discordId);
+  return { success: true, weapon: targetWpn };
+}
+
+function dismantleItemsByKeycodes(discordId, keycodes) {
+  const user = getUser(discordId);
+  const userArts = getUserArtifacts(discordId);
+  const userWpns = getUserWeapons(discordId);
+
+  let dustGained = 0;
+  let crystalsGained = 0;
+  let dismantledNames = [];
+  let remainingArts = [];
+  let remainingWpns = [];
+
+  const codeSet = new Set(keycodes.map(k => k.toUpperCase().trim()));
+
+  userArts.forEach(a => {
+    if (a.keycode && codeSet.has(a.keycode.toUpperCase())) {
+      if (a.equipped_char_id) {
+        // Warning: cannot dismantle currently equipped artifact
+        remainingArts.push(a);
+      } else {
+        const val = 50 + (a.level || 0) * 100;
+        dustGained += val;
+        dismantledNames.push(`Di Vật ${a.setName} [${a.keycode}]`);
+      }
+    } else {
+      remainingArts.push(a);
+    }
+  });
+
+  userWpns.forEach(w => {
+    if (w.keycode && codeSet.has(w.keycode.toUpperCase())) {
+      if (w.equipped_char_id) {
+        remainingWpns.push(w);
+      } else {
+        const val = (w.rarity || 4) * 20 + (w.level || 1) * 10;
+        crystalsGained += val;
+        dismantledNames.push(`Vũ Khí ${w.name} [${w.keycode}]`);
+      }
+    } else {
+      remainingWpns.push(w);
+    }
+  });
+
+  if (dismantledNames.length === 0) {
+    return { success: false, message: '❌ Không tìm thấy trang bị hợp lệ để rã (Trang bị đang đeo không thể rã)!' };
+  }
+
+  memoryDb.artifacts[discordId] = remainingArts;
+  memoryDb.weapons[discordId] = remainingWpns;
+
+  user.materials.artifact_dust = (user.materials.artifact_dust || 0) + dustGained;
+  user.materials.weapon_exp_crystal = (user.materials.weapon_exp_crystal || 0) + crystalsGained;
+
+  saveLocalDb();
+  syncUserToMongo(discordId);
+
+  return {
+    success: true,
+    count: dismantledNames.length,
+    dismantledNames,
+    dustGained,
+    crystalsGained,
+    totalDust: user.materials.artifact_dust,
+    totalCrystals: user.materials.weapon_exp_crystal
+  };
+}
+
+function feedFodderItemsByKeycodes(discordId, targetKeycode, fodderKeycodes) {
+  const userArts = getUserArtifacts(discordId);
+  const userWpns = getUserWeapons(discordId);
+
+  const targetArt = userArts.find(a => a.keycode && a.keycode.toUpperCase() === targetKeycode.toUpperCase());
+  const targetWpn = userWpns.find(w => w.keycode && w.keycode.toUpperCase() === targetKeycode.toUpperCase());
+
+  if (!targetArt && !targetWpn) {
+    return { success: false, message: `❌ Không tìm thấy trang bị mục tiêu \`${targetKeycode}\`!` };
+  }
+
+  let totalExpGained = 0;
+  const fodderSet = new Set(fodderKeycodes.map(k => k.toUpperCase().trim()));
+
+  if (targetArt) {
+    memoryDb.artifacts[discordId] = userArts.filter(a => {
+      if (a.keycode && fodderSet.has(a.keycode.toUpperCase()) && !a.equipped_char_id) {
+        totalExpGained += 600 + (a.level || 0) * 400;
+        return false;
+      }
+      return true;
+    });
+
+    targetArt.exp = (targetArt.exp || 0) + totalExpGained;
+    let reqExp = (targetArt.level + 1) * 600;
+    while (targetArt.exp >= reqExp && targetArt.level < 15) {
+      targetArt.exp -= reqExp;
+      targetArt.level += 1;
+      targetArt.mainValue += 1.8;
+      reqExp = (targetArt.level + 1) * 600;
+    }
+  } else if (targetWpn) {
+    memoryDb.weapons[discordId] = userWpns.filter(w => {
+      if (w.keycode && fodderSet.has(w.keycode.toUpperCase()) && !w.equipped_char_id) {
+        totalExpGained += 800 + (w.level || 1) * 500;
+        return false;
+      }
+      return true;
+    });
+
+    targetWpn.exp = (targetWpn.exp || 0) + totalExpGained;
+    let reqExp = targetWpn.level * 800;
+    while (targetWpn.exp >= reqExp && targetWpn.level < 80) {
+      targetWpn.exp -= reqExp;
+      targetWpn.level += 1;
+      reqExp = targetWpn.level * 800;
+    }
+  }
+
+  saveLocalDb();
+  syncUserToMongo(discordId);
+  return { success: true, totalExpGained, item: targetArt || targetWpn };
+}
+
+function giveItemByKeycode(senderId, recipientId, keycode) {
+  const senderArts = getUserArtifacts(senderId);
+  const senderWpns = getUserWeapons(senderId);
+
+  const artIndex = senderArts.findIndex(a => a.keycode && a.keycode.toUpperCase() === keycode.toUpperCase());
+  const wpnIndex = senderWpns.findIndex(w => w.keycode && w.keycode.toUpperCase() === keycode.toUpperCase());
+
+  if (artIndex === -1 && wpnIndex === -1) {
+    return { success: false, message: `❌ Không tìm thấy Vũ Khí hoặc Thánh Di Vật có mã \`${keycode}\` trong kho của bạn!` };
+  }
+
+  if (!memoryDb.artifacts[recipientId]) memoryDb.artifacts[recipientId] = [];
+  if (!memoryDb.weapons[recipientId]) memoryDb.weapons[recipientId] = [];
+
+  let givenItemName = '';
+
+  if (artIndex !== -1) {
+    const art = senderArts[artIndex];
+    if (art.equipped_char_id) {
+      return { success: false, message: `⚠️ Món di vật \`${keycode}\` đang được trang bị bởi nhân vật! Hãy tháo ra trước khi tặng.` };
+    }
+    art.equipped_char_id = null;
+    art.char_id = null;
+    memoryDb.artifacts[recipientId].push(art);
+    senderArts.splice(artIndex, 1);
+    givenItemName = `Thánh Di Vật ${art.setName} [${art.keycode}]`;
+  } else if (wpnIndex !== -1) {
+    const wpn = senderWpns[wpnIndex];
+    if (wpn.equipped_char_id) {
+      return { success: false, message: `⚠️ Nón Ánh Sáng \`${keycode}\` đang được trang bị bởi nhân vật! Hãy tháo ra trước khi tặng.` };
+    }
+    wpn.equipped_char_id = null;
+    wpn.char_id = null;
+    memoryDb.weapons[recipientId].push(wpn);
+    senderWpns.splice(wpnIndex, 1);
+    givenItemName = `Vũ Khí ${wpn.name} [${wpn.keycode}]`;
+  }
+
+  saveLocalDb();
+  syncUserToMongo(senderId);
+  syncUserToMongo(recipientId);
+
+  return { success: true, itemName: givenItemName };
+}
+
+function createBorrowRequest(borrowerId, lenderId, amount) {
+  const borrower = getUser(borrowerId);
+  const lender = getUser(lenderId);
+
+  if (!memoryDb.debts) memoryDb.debts = {};
+
+  // Check if borrower already has an active debt
+  if (memoryDb.debts[borrowerId] && memoryDb.debts[borrowerId].remaining > 0) {
+    const activeDebt = memoryDb.debts[borrowerId];
+    return {
+      success: false,
+      message: `⚠️ Bạn đang có khoản nợ **${activeDebt.remaining.toLocaleString()} Jades** với <@${activeDebt.lender_id}> chưa hoàn trả xong! Không thể vay mượn tiếp.`
+    };
+  }
+
+  if (lender.jades < amount) {
+    return {
+      success: false,
+      message: `❌ Người chơi <@${lenderId}> không có đủ **${amount.toLocaleString()} Jades** để cho vay!`
+    };
+  }
+
+  return { success: true, borrowerId, lenderId, amount };
+}
+
+function acceptBorrowRequest(borrowerId, lenderId, amount) {
+  const borrower = getUser(borrowerId);
+  const lender = getUser(lenderId);
+
+  if (lender.jades < amount) {
+    return { success: false, message: '❌ Số dư Jades của bạn không đủ để hoàn tất giao dịch cho vay!' };
+  }
+
+  lender.jades -= amount;
+  borrower.jades += amount;
+
+  if (!memoryDb.debts) memoryDb.debts = {};
+  memoryDb.debts[borrowerId] = {
+    borrower_id: borrowerId,
+    lender_id: lenderId,
+    total_amount: amount,
+    remaining: amount,
+    created_at: new Date().toISOString()
+  };
+
+  saveLocalDb();
+  syncUserToMongo(borrowerId);
+  syncUserToMongo(lenderId);
+
+  return { success: true, borrowerJades: borrower.jades, lenderJades: lender.jades };
+}
+
+function repayDebtOnFarm(borrowerId, jadesEarned) {
+  if (!memoryDb.debts || !memoryDb.debts[borrowerId]) return { repaid: 0, debtCleared: false };
+
+  const debt = memoryDb.debts[borrowerId];
+  if (!debt || debt.remaining <= 0) return { repaid: 0, debtCleared: false };
+
+  const repayAmount = Math.min(jadesEarned, debt.remaining);
+  debt.remaining -= repayAmount;
+
+  const lender = getUser(debt.lender_id);
+  lender.jades += repayAmount;
+
+  const debtCleared = debt.remaining <= 0;
+  if (debtCleared) {
+    delete memoryDb.debts[borrowerId];
+  }
+
+  saveLocalDb();
+  syncUserToMongo(debt.lender_id);
+  syncUserToMongo(borrowerId);
+
+  return {
+    repaid: repayAmount,
+    debtRemaining: debt.remaining,
+    lenderId: debt.lender_id,
+    debtCleared
+  };
+}
+
 module.exports = {
   initDatabase,
   getUser,
@@ -740,6 +1121,15 @@ module.exports = {
   upgradeArtifact,
   addWeapon,
   getUserWeapons,
+  getUserArtifacts,
+  equipArtifactByKeycode,
+  equipWeaponByKeycode,
+  dismantleItemsByKeycodes,
+  feedFodderItemsByKeycodes,
+  giveItemByKeycode,
+  createBorrowRequest,
+  acceptBorrowRequest,
+  repayDebtOnFarm,
   generateRandomWeaponSubstats,
   setGuaranteedState,
   updateUserJades,
@@ -751,3 +1141,4 @@ module.exports = {
   getUserTeam,
   updateTeam
 };
+

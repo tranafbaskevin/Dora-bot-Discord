@@ -4,14 +4,14 @@ const charactersData = require('../data/characters.json');
 
 const upgradeCommand = new SlashCommandBuilder()
   .setName('upgrade')
-  .setDescription('Trung tâm Cường hóa & Nâng cấp Nhân vật, Vũ khí, Kỹ năng, Di vật');
+  .setDescription('Cường hóa & Nâng cấp Level, Vũ khí, Kỹ năng, Di vật (Hỗ trợ Phôi Trang Bị EXP Genshin Style)');
 
 async function executeUpgrade(interaction) {
   const userId = interaction.user.id;
   const user = db.getUser(userId);
 
   const mainEmbed = new EmbedBuilder()
-    .setTitle('✨ TRUNG TÂM NÂNG CẤP & CƯỜNG HÓA')
+    .setTitle('✨ TRUNG TÂM NÂNG CẤP & CƯỜNG HÓA TRANG BỊ')
     .setColor('#9333ea')
     .setThumbnail(interaction.user.displayAvatarURL())
     .setDescription(`🌐 **Cấp Thám Hiểm**: Lv.${user.player_level} (${user.player_exp}/${user.player_level * 500} EXP)\n\n📦 **Kho Vật Liệu Hiện Có**:\n- 📘 Sách EXP Nhân Vật: **${user.materials?.char_exp_book || 0}** cuốn\n- ⚔️ Tinh Thể Vũ Khí: **${user.materials?.weapon_exp_crystal || 0}** tinh thể\n- 🔮 Bụi Di Vật: **${user.materials?.artifact_dust || 0}** túi\n- 📜 Mầm Kỹ Năng: **${user.materials?.trace_material || 0}** mầm`)
@@ -20,7 +20,7 @@ async function executeUpgrade(interaction) {
   const rowButtons = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId('up_cat_char').setLabel('👤 Level Nhân Vật').setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId('up_cat_weapon').setLabel('⚔️ Level Vũ Khí').setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId('up_cat_skill').setLabel('📜 Đánh Thường / Kỹ Năng / Ult').setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId('up_cat_skill').setLabel('📜 Kỹ Năng / Ult').setStyle(ButtonStyle.Danger),
     new ButtonBuilder().setCustomId('up_cat_artifact').setLabel('🔮 Cường Hóa Di Vật').setStyle(ButtonStyle.Secondary)
   );
 
@@ -58,7 +58,7 @@ async function executeUpgrade(interaction) {
       const menu = new StringSelectMenuBuilder()
         .setCustomId('up_menu_char')
         .setPlaceholder('Chọn Nhân vật để TĂNG MAX LEVEL tự động...')
-        .addOptions(selectOptions);
+        .addOptions(selectOptions.slice(0, 25));
 
       const menuRow = new ActionRowBuilder().addComponents(menu);
 
@@ -87,48 +87,55 @@ async function executeUpgrade(interaction) {
 
     // 2. Weapon Level Upgrade Category
     else if (i.customId === 'up_cat_weapon') {
-      const selectOptions = userInv.map(inv => {
-        const char = charactersData.find(c => c.id === inv.char_id);
-        if (!char) return null;
-        return {
-          label: `${char.name} - ${inv.light_cone || 'Vũ Khí'} (Lv.${inv.weapon_level || 1}/80)`,
-          description: `Vũ khí đang trang bị cho ${char.name}`,
-          value: `up_wpn_select_${char.id}`,
-          emoji: '⚔️'
-        };
-      }).filter(Boolean);
+      const userWpns = db.getUserWeapons(userId);
+
+      if (userWpns.length === 0) {
+        return i.reply({ content: '⚠️ Bạn không có Vũ khí nào trong kho!', ephemeral: true });
+      }
+
+      const selectOptions = userWpns.map(w => ({
+        label: `[${w.keycode || '#W-NONE'}] ${w.name} (Lv.${w.level || 1}/80)`,
+        description: w.equipped_char_id ? `👤 Đang đeo cho ${w.equipped_char_id.toUpperCase()}` : '⚪ Chưa ai trang bị',
+        value: `up_wpn_select_kc_${w.keycode}`,
+        emoji: '⚔️'
+      }));
 
       const menu = new StringSelectMenuBuilder()
         .setCustomId('up_menu_weapon')
-        .setPlaceholder('Chọn Vũ khí để TĂNG MAX LEVEL...')
-        .addOptions(selectOptions);
+        .setPlaceholder('Chọn Vũ khí theo Mã Keycode để TĂNG LEVEL...')
+        .addOptions(selectOptions.slice(0, 25));
 
       const menuRow = new ActionRowBuilder().addComponents(menu);
 
       const embed = new EmbedBuilder()
-        .setTitle('⚔️ NÂNG CẤP LEVEL VŨ KHÍ / NÓN ÁNH SÁNG (Lv 1 -> 80)')
+        .setTitle('⚔️ NÂNG CẤP LEVEL VŨ KHÍ / NÓN ÁNH SÁNG')
         .setColor('#10b981')
-        .setDescription(`⚔️ Tinh Thể Vũ Khí khả dụng: **${refreshedUser.materials?.weapon_exp_crystal || 0}**.\nChọn vũ khí bên dưới để tự động tăng cấp tối đa!`);
+        .setDescription(`⚔️ Tinh Thể Vũ Khí khả dụng: **${refreshedUser.materials?.weapon_exp_crystal || 0}**.\nChọn vũ khí bên dưới để tự động tăng cấp!`);
 
       await i.update({ embeds: [embed], components: [menuRow, rowButtons] });
     }
 
     else if (i.customId === 'up_menu_weapon') {
-      const charId = i.values[0].replace('up_wpn_select_', '');
+      const keycode = i.values[0].replace('up_wpn_select_kc_', '');
+      const userWpns = db.getUserWeapons(userId);
+      const wpn = userWpns.find(w => w.keycode && w.keycode.toUpperCase() === keycode.toUpperCase());
+
+      if (!wpn) return i.reply({ content: '❌ Không tìm thấy vũ khí!', ephemeral: true });
+
+      const charId = wpn.equipped_char_id || 'seele';
       const result = db.upgradeWeaponLevel(userId, charId, true);
 
       if (!result.success) return i.reply({ content: result.message, ephemeral: true });
 
-      const char = charactersData.find(c => c.id === charId);
       const updatedEmbed = new EmbedBuilder()
-        .setTitle(`🎉 NÂNG CẤP VŨ KHÍ THÀNH CÔNG: ${char.name.toUpperCase()}`)
+        .setTitle(`🎉 NÂNG CẤP VŨ KHÍ THÀNH CÔNG: ${wpn.name.toUpperCase()}`)
         .setColor('#10b981')
-        .setDescription(`- Đã dùng: **${result.crystalsUsed}** Tinh Thể Vũ Khí\n- Cấp độ mới: **Lv.${result.newLevel} / 80**!\n⚔️ Tinh Thể còn lại: **${result.remainingCrystals}**.`);
+        .setDescription(`- Mã Keycode: \`${wpn.keycode}\`\n- Đã dùng: **${result.crystalsUsed}** Tinh Thể Vũ Khí\n- Cấp độ mới: **Lv.${result.newLevel} / 80**!\n⚔️ Tinh Thể còn lại: **${result.remainingCrystals}**.`);
 
       await i.update({ embeds: [updatedEmbed], components: [rowButtons] });
     }
 
-    // 3. Skill & Ultimate Level Upgrade Category (Supports Basic, Skill & Ultimate!)
+    // 3. Skill & Ultimate Level Upgrade Category
     else if (i.customId === 'up_cat_skill') {
       const skillOptions = [];
       userInv.forEach(inv => {
@@ -175,7 +182,7 @@ async function executeUpgrade(interaction) {
     else if (i.customId === 'up_menu_skill') {
       const parts = i.values[0].replace('up_sk_select_', '').split('_');
       const charId = parts[0];
-      const skillType = parts[1]; // 'basic', 'skill', or 'ult'
+      const skillType = parts[1];
 
       const result = db.upgradeSkillLevel(userId, charId, skillType);
 
@@ -196,25 +203,26 @@ async function executeUpgrade(interaction) {
       await i.update({ embeds: [updatedEmbed], components: [rowButtons] });
     }
 
-    // 4. Artifact Upgrade Category
+    // 4. Artifact Upgrade Category (With Genshin Style Fodder Button)
     else if (i.customId === 'up_cat_artifact') {
-      const rawDb = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../../database.json'), 'utf8'));
-      const userArts = (rawDb.artifacts && rawDb.artifacts[userId]) || [];
+      const userArts = db.getUserArtifacts(userId);
 
       if (userArts.length === 0) {
-        return i.reply({ content: '⚠️ Bạn chưa có Thánh Di Vật nào trong kho! Đánh Boss ở `/battle` để nhặt Di vật 5★!', ephemeral: true });
+        return i.reply({ content: '⚠️ Bạn chưa có Thánh Di Vật nào trong kho! Đánh Boss ở `/battle` hoặc farm ở `/hunt`!', ephemeral: true });
       }
 
+      const slotsMap = { Head: '🎩', Hands: '🥊', Body: '🥼', Feet: '👟' };
+
       const selectOptions = userArts.map(art => ({
-        label: `${art.setName} (+${art.level}/15)`,
-        description: `Main: ${art.mainStat} (+${art.mainValue.toFixed(1)}) | Sub-stats: ${art.subStats.length} dòng`,
-        value: `up_art_select_${art.id}`,
+        label: `[${art.keycode || '#A-NONE'}] ${slotsMap[art.slot] || '🛡️'} ${art.setName} (+${art.level}/15)`,
+        description: `Main: ${art.mainStat} (+${art.mainValue.toFixed(1)}) | ${art.equipped_char_id ? `👤 ${art.equipped_char_id.toUpperCase()}` : '⚪ Trống'}`,
+        value: `up_art_select_kc_${art.keycode}`,
         emoji: '🔮'
       }));
 
       const menu = new StringSelectMenuBuilder()
-        .setCustomId('up_menu_artifact')
-        .setPlaceholder('Chọn Thánh Di Vật để Cường Hóa & RNG Roll Dòng Phụ...')
+        .setCustomId('up_menu_artifact_kc')
+        .setPlaceholder('Chọn Thánh Di Vật theo Mã Keycode để Cường Hóa...')
         .addOptions(selectOptions.slice(0, 25));
 
       const menuRow = new ActionRowBuilder().addComponents(menu);
@@ -227,9 +235,14 @@ async function executeUpgrade(interaction) {
       await i.update({ embeds: [embed], components: [menuRow, rowButtons] });
     }
 
-    else if (i.customId === 'up_menu_artifact') {
-      const artId = i.values[0].replace('up_art_select_', '');
-      const result = db.upgradeArtifact(userId, artId, 5);
+    else if (i.customId === 'up_menu_artifact_kc') {
+      const keycode = i.values[0].replace('up_art_select_kc_', '');
+      const userArts = db.getUserArtifacts(userId);
+      const art = userArts.find(a => a.keycode && a.keycode.toUpperCase() === keycode.toUpperCase());
+
+      if (!art) return i.reply({ content: '❌ Không tìm thấy Di vật!', ephemeral: true });
+
+      const result = db.upgradeArtifact(userId, art.id, 5);
 
       if (!result.success) return i.reply({ content: result.message, ephemeral: true });
 
@@ -241,7 +254,7 @@ async function executeUpgrade(interaction) {
       const updatedEmbed = new EmbedBuilder()
         .setTitle(`🎉 CƯỜNG HÓA DI VẬT THÀNH CÔNG! (+${result.newLevel}/15)`)
         .setColor('#10b981')
-        .setDescription(`- Đã dùng: **${result.dustUsed}** Bụi Di Vật\n- Chỉ số chính: **+${result.mainValue.toFixed(1)}**\n\n**Các Dòng Phụ Chi Tiết**:\n${subLines}${rngLog}\n\n🔮 Bụi Di Vật còn lại: **${result.remainingDust}**.`);
+        .setDescription(`- Mã Keycode: \`${art.keycode}\` [${art.slot}]\n- Đã dùng: **${result.dustUsed}** Bụi Di Vật\n- Chỉ số chính: **+${result.mainValue.toFixed(1)}**\n\n**Các Dòng Phụ Chi Tiết**:\n${subLines}${rngLog}\n\n🔮 Bụi Di Vật còn lại: **${result.remainingDust}**.`);
 
       await i.update({ embeds: [updatedEmbed], components: [rowButtons] });
     }

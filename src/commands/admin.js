@@ -26,7 +26,6 @@ async function executeAdmin(interaction) {
   const targetUser = interaction.options.getUser('target') || interaction.user;
   const targetId = targetUser.id;
 
-  // Atomically add resources to target user and save directly to DB
   const updatedUser = db.addAdminResources(targetId);
 
   const isSelf = targetId === interaction.user.id;
@@ -44,7 +43,7 @@ async function executeAdmin(interaction) {
       { name: '🔮 Bụi Vàng Di Vật', value: `+500 túi (Tổng: **${updatedUser.materials.artifact_dust}**)`, inline: true },
       { name: '📜 Mầm Kỹ Năng', value: `+500 mầm (Tổng: **${updatedUser.materials.trace_material}**)`, inline: true }
     )
-    .setFooter({ text: 'Có thể dùng lệnh /admin giveall [target] để tặng tài nguyên cho bất kỳ ai!' });
+    .setFooter({ text: 'Dùng /admin giveall @target để cấp tài nguyên cho bất kỳ ai!' });
 
   await interaction.reply({ embeds: [embed] });
 }

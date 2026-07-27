@@ -33,6 +33,11 @@ const upgradeCommand = require('./src/commands/upgrade');
 const lahoanCommand = require('./src/commands/lahoan');
 const adminCommand = require('./src/commands/admin');
 const equipmentCommand = require('./src/commands/equipment');
+const deleteCommand = require('./src/commands/delete');
+const giveCommand = require('./src/commands/give');
+const borrowCommand = require('./src/commands/borrow');
+const huntCommand = require('./src/commands/hunt');
+const pvpCommand = require('./src/commands/pvp');
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
@@ -50,7 +55,12 @@ const commandsList = [
   upgradeCommand,
   lahoanCommand,
   adminCommand,
-  equipmentCommand
+  equipmentCommand,
+  deleteCommand,
+  giveCommand,
+  borrowCommand,
+  huntCommand,
+  pvpCommand
 ];
 
 commandsList.forEach(cmd => {
@@ -78,7 +88,7 @@ client.once('ready', async () => {
       { body: commandsData }
     );
 
-    console.log('✅ Đã đăng ký thành công 10 lệnh Slash Commands: /gacha, /profile, /team, /battle, /info, /inventory, /upgrade, /lahoan, /admin, /equipment');
+    console.log('✅ Đã đăng ký thành công 15 lệnh Slash Commands!');
   } catch (error) {
     console.error('❌ Lỗi đăng ký Slash Commands:', error);
   }

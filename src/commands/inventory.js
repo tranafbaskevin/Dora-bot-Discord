@@ -1,162 +1,187 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const db = require('../database/db');
 const charactersData = require('../data/characters.json');
 
 const inventoryCommand = new SlashCommandBuilder()
   .setName('inventory')
-  .setDescription('Xem và quản lý túi đồ, nguyên liệu, vũ khí và thánh di vật');
+  .setDescription('Xem và quản lý túi đồ, nguyên liệu, vũ khí và thánh di vật theo Mã Keycode');
 
 async function executeInventory(interaction) {
   const userId = interaction.user.id;
   const user = db.getUser(userId);
   const inventory = db.getUserInventory(userId);
   const userWeapons = db.getUserWeapons(userId);
+  const userArts = db.getUserArtifacts(userId);
 
-  const rawDb = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../../database.json'), 'utf8'));
-  const userArts = (rawDb.artifacts && rawDb.artifacts[userId]) || [];
+  let currentView = 'main'; // 'main', 'weapons', 'artifacts'
+  let currentPage = 1;
+  const itemsPerPage = 5;
 
-  const mainEmbed = new EmbedBuilder()
-    .setTitle(`🎒 TÚI ĐỒ VẬT PHẨM & TRANG BỊ - ${interaction.user.username}`)
-    .setColor('#f59e0b')
-    .setThumbnail(interaction.user.displayAvatarURL())
-    .setDescription('Nhấn vào các nút bên dưới để xem chi tiết **Nón Ánh Sáng (Vũ Khí S1-S5)** hoặc **Thánh Di Vật (Artifacts)** có sẵn!')
-    .addFields(
-      { name: '💎 Nguyên Thạch (Stellar Jade)', value: `**${user.jades.toLocaleString()}**`, inline: true },
-      { name: '⚔️ Nón Ánh Sáng Sở Hữu', value: `**${userWeapons.length}** món (S1 - S5)`, inline: true },
-      { name: '🔮 Di Vật Trong Kho', value: `**${userArts.length}** món`, inline: true },
-      {
-        name: '📦 Kho Vật Liệu Nâng Cấp',
-        value: `📘 **Sách EXP**: ${user.materials?.char_exp_book || 0} cuốn\n⚔️ **Tinh Thể Vũ Khí**: ${user.materials?.weapon_exp_crystal || 0} tinh thể\n🔮 **Bụi Di Vật**: ${user.materials?.artifact_dust || 0} túi\n📜 **Mầm Kỹ Năng**: ${user.materials?.trace_material || 0} mầm`,
-        inline: false
-      }
-    )
-    .setFooter({ text: 'Nhấn "Phân Tách Rác 3★" để đổi lấy Nguyên Thạch (20 Jades / món)!' });
+  function buildMainEmbed() {
+    const refreshedUser = db.getUser(userId);
+    const refreshedWpns = db.getUserWeapons(userId);
+    const refreshedArts = db.getUserArtifacts(userId);
 
-  const buttonsRow1 = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('inv_char_0').setLabel(`Slot 1: ${inventory[0] ? inventory[0].char_id : '1'}`).setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('inv_char_1').setLabel(`Slot 2: ${inventory[1] ? inventory[1].char_id : '2'}`).setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('inv_char_2').setLabel(`Slot 3: ${inventory[2] ? inventory[2].char_id : '3'}`).setStyle(ButtonStyle.Primary),
-    new ButtonBuilder().setCustomId('inv_char_3').setLabel(`Slot 4: ${inventory[3] ? inventory[3].char_id : '4'}`).setStyle(ButtonStyle.Primary)
-  );
+    return new EmbedBuilder()
+      .setTitle(`🎒 TÚI ĐỒ VẬT PHẨM & TRANG BỊ - ${interaction.user.username}`)
+      .setColor('#f59e0b')
+      .setThumbnail(interaction.user.displayAvatarURL())
+      .setDescription('Nhấn các nút bên dưới để xem **Nón Ánh Sáng** hoặc **Thánh Di Vật (Phân Trang OwO Style)**!')
+      .addFields(
+        { name: '💎 Nguyên Thạch (Stellar Jade)', value: `**${refreshedUser.jades.toLocaleString()}**`, inline: true },
+        { name: '⚔️ Nón Ánh Sáng Kho', value: `**${refreshedWpns.length}** món (S1 - S5)`, inline: true },
+        { name: '🔮 Di Vật Trong Kho', value: `**${refreshedArts.length}** món`, inline: true },
+        {
+          name: '📦 Kho Vật Liệu Nâng Cấp',
+          value: `📘 **Sách EXP**: ${refreshedUser.materials?.char_exp_book || 0} cuốn\n⚔️ **Tinh Thể Vũ Khí**: ${refreshedUser.materials?.weapon_exp_crystal || 0} tinh thể\n🔮 **Bụi Di Vật**: ${refreshedUser.materials?.artifact_dust || 0} túi\n📜 **Mầm Kỹ Năng**: ${refreshedUser.materials?.trace_material || 0} mầm`,
+          inline: false
+        }
+      )
+      .setFooter({ text: 'Nhấn "Phân Tách Rác 3★" để đổi lấy Nguyên Thạch (20 Jades / món)!' });
+  }
 
-  const buttonsRow2 = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId('inv_view_weapons').setLabel('⚔️ Xem Kho Vũ Khí (Nón S1-S5)').setStyle(ButtonStyle.Success),
-    new ButtonBuilder().setCustomId('inv_view_artifacts').setLabel('🔮 Xem Kho Di Vật & Chỉ Số Dòng').setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId('inv_recycle_trash').setLabel('♻️ Phân Tách Rác 3★').setStyle(ButtonStyle.Danger)
-  );
+  function buildWeaponsEmbed(page = 1) {
+    const refreshedWpns = db.getUserWeapons(userId);
+    const totalPages = Math.ceil(refreshedWpns.length / itemsPerPage) || 1;
+    const p = Math.min(Math.max(1, page), totalPages);
 
-  const response = await interaction.reply({
-    embeds: [mainEmbed],
-    components: [buttonsRow1, buttonsRow2],
+    const start = (p - 1) * itemsPerPage;
+    const pageItems = refreshedWpns.slice(start, start + itemsPerPage);
+
+    const wpnLines = pageItems.map((wpn, idx) => {
+      const sLevel = wpn.superimpose || 1;
+      const starStr = '⭐'.repeat(wpn.rarity || 4);
+      const equippedMsg = wpn.equipped_char_id ? ` (👤 Đang đeo: **${wpn.equipped_char_id.toUpperCase()}**)` : ' (⚪ Chưa ai dùng)';
+      const subs = (wpn.subStats || []).map(s => `${s.name} +${s.value}`).join(', ');
+      return `**${start + idx + 1}. 🆔 [\`${wpn.keycode || '#W-NONE'}\`] ${starStr} ${wpn.name}**\n   • Cấp độ: **Lv.${wpn.level || 1}/80** | Tích Chồng: **S${sLevel}/S5**${equippedMsg}\n   📜 **Nội Tại**: ${wpn.passiveDescription || 'Tăng sát thương bổ trợ.'}\n   🎲 **Dòng Buff Ngẫu Nhiên**: \`${subs || 'ATK% +5.2%, CRIT Rate% +3.8%'}\``;
+    }).join('\n\n');
+
+    return {
+      embed: new EmbedBuilder()
+        .setTitle(`⚔️ KHO NÓN ÁNH SÁNG SỞ HỮU (${refreshedWpns.length} MÓN)`)
+        .setColor('#eab308')
+        .setDescription(wpnLines || '⚠️ Chưa có Nón Ánh Sáng nào trong kho!')
+        .setFooter({ text: `Trang ${p} / ${totalPages} | Dùng nút ◀ ▶ bên dưới để chuyển trang OwO Style` }),
+      totalPages,
+      page: p
+    };
+  }
+
+  function buildArtifactsEmbed(page = 1) {
+    const refreshedArts = db.getUserArtifacts(userId);
+    const totalPages = Math.ceil(refreshedArts.length / itemsPerPage) || 1;
+    const p = Math.min(Math.max(1, page), totalPages);
+
+    const start = (p - 1) * itemsPerPage;
+    const pageItems = refreshedArts.slice(start, start + itemsPerPage);
+
+    const slotsMap = { Head: '🎩 [Head]', Hands: '🥊 [Hands]', Body: '🥼 [Body]', Feet: '👟 [Feet]' };
+
+    const artLines = pageItems.map((art, idx) => {
+      const slotLabel = slotsMap[art.slot] || `[${art.slot || 'Head'}]`;
+      const equippedMsg = art.equipped_char_id ? `👤 Đang trang bị cho **${art.equipped_char_id.toUpperCase()}**` : '⚪ Chưa ai trang bị';
+      const subStr = (art.subStats || []).map(s => `${s.name}: +${parseFloat(s.value).toFixed(1)}`).join(' | ');
+
+      return `**${start + idx + 1}. 🆔 [\`${art.keycode || '#A-NONE'}\`] ${slotLabel} ${art.setName} (${art.rarity || 5}★) (+${art.level}/15)**\n   • Main: **${art.mainStat}** (+${art.mainValue.toFixed(1)})\n   • Dòng phụ: \`${subStr || 'ATK% +3.5'}\` \n   • Trạng thái: ${equippedMsg}`;
+    }).join('\n\n');
+
+    return {
+      embed: new EmbedBuilder()
+        .setTitle(`🔮 KHO THÁNH DI VẬT SỞ HỮU (${refreshedArts.length} MÓN)`)
+        .setColor('#8b5cf6')
+        .setDescription(artLines || '⚠️ Chưa có Thánh Di Vật nào trong kho! Đánh Boss ở `/battle` để nhặt!')
+        .setFooter({ text: `Trang ${p} / ${totalPages} | Dùng nút ◀ ▶ bên dưới để chuyển trang OwO Style` }),
+      totalPages,
+      page: p
+    };
+  }
+
+  function getActionRows(view, page, totalPages) {
+    const row1Buttons = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('inv_view_weapons').setLabel('⚔️ Kho Vũ Khí').setStyle(view === 'weapons' ? ButtonStyle.Success : ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('inv_view_artifacts').setLabel('🔮 Kho Di Vật').setStyle(view === 'artifacts' ? ButtonStyle.Primary : ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('inv_view_main').setLabel('🏠 Trang Chủ Kho').setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId('inv_recycle_trash').setLabel('♻️ Phân Tách Rác 3★').setStyle(ButtonStyle.Danger)
+    );
+
+    if (view === 'main') {
+      return [row1Buttons];
+    }
+
+    const navRow = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId('inv_prev_page').setLabel('◀ Trang Trước').setStyle(ButtonStyle.Primary).setDisabled(page <= 1),
+      new ButtonBuilder().setCustomId('inv_page_indicator').setLabel(`📌 Trang ${page} / ${totalPages}`).setStyle(ButtonStyle.Secondary).setDisabled(true),
+      new ButtonBuilder().setCustomId('inv_next_page').setLabel('Trang Sau ▶').setStyle(ButtonStyle.Primary).setDisabled(page >= totalPages)
+    );
+
+    return [row1Buttons, navRow];
+  }
+
+  const initialPayload = {
+    embeds: [buildMainEmbed()],
+    components: getActionRows('main', 1, 1),
     fetchReply: true
-  });
+  };
 
-  // STRICT MESSAGE-SPECIFIC COLLECTOR (PER-USER & PER-MESSAGE ISOLATION)
+  const response = await interaction.reply(initialPayload);
+
   const collector = response.createMessageComponentCollector({
-    filter: i => i.message.id === response.id && i.user.id === interaction.user.id,
+    filter: i => i.message.id === response.id && i.user.id === userId,
     time: 300000
   });
 
   collector.on('collect', async i => {
-    if (i.message.id !== response.id || i.user.id !== interaction.user.id) return;
+    if (i.message.id !== response.id || i.user.id !== userId) return;
 
     await i.deferUpdate().catch(() => {});
 
-    // 1. Recycle Trash Items
     if (i.customId === 'inv_recycle_trash') {
       const result = db.recycleTrashItems(userId);
       if (!result.success) {
         return i.followUp({ content: '⚠️ Bạn không có Nón Ánh Sáng 3★ rác nào để phân tách!', ephemeral: true });
       }
-
-      const updatedUser = db.getUser(userId);
-      mainEmbed.spliceFields(0, 1, { name: '💎 Nguyên Thạch (Stellar Jade)', value: `**${updatedUser.jades.toLocaleString()}**`, inline: true });
-
-      await i.editReply({ embeds: [mainEmbed], components: [buttonsRow1, buttonsRow2] });
+      await i.editReply({ embeds: [buildMainEmbed()], components: getActionRows('main', 1, 1) });
       await i.followUp({ content: `🎉 **Đã phân tách ${result.count} món rác**! Nhận được **+${result.jadesGained} Nguyên Thạch**!`, ephemeral: true });
+      return;
     }
 
-    // 2. View Weapon Inventory (Light Cones S1-S5)
-    else if (i.customId === 'inv_view_weapons') {
-      const currentWeapons = db.getUserWeapons(userId);
-
-      if (currentWeapons.length === 0) {
-        return i.followUp({ content: '⚠️ Kho Vũ Khí của bạn đang trống! Hãy quay Gacha ở `/gacha` để nhận Nón Ánh Sáng 5★!', ephemeral: true });
-      }
-
-      const wpnLines = currentWeapons.map((wpn, idx) => {
-        const sLevel = wpn.superimpose || 1;
-        const starStr = '⭐'.repeat(wpn.rarity || 4);
-        const equippedMsg = wpn.char_id ? ` (Đang trang bị cho **${wpn.char_id.toUpperCase()}**)` : '';
-        const subs = (wpn.subStats || []).map(s => `${s.name} +${s.value}`).join(', ');
-        return `**${idx + 1}. ${starStr} ${wpn.name}**\n   • Cấp độ: **Lv.${wpn.level || 1} / 80** | Cung Mệnh: **Tích Chồng S${sLevel} / S5** ✨${equippedMsg}\n   📜 **Nội Tại**: ${wpn.passiveDescription || 'Tăng lực đánh và các chỉ số bổ trợ.'}\n   🎲 **Buff Ngẫu Nhiên**: \`${subs || 'ATK% +5.2%, CRIT Rate% +3.8%'}\``;
-      }).join('\n\n');
-
-      const wpnEmbed = new EmbedBuilder()
-        .setTitle(`⚔️ KHO NÓN ÁNH SÁNG & CUNG MỆNH VŨ KHÍ S1-S5 (${currentWeapons.length} MÓN)`)
-        .setColor('#eab308')
-        .setDescription(wpnLines)
-        .setFooter({ text: 'Khi roll trùng Nón Ánh Sáng ở /gacha, Vũ khí sẽ tự động Tích Chồng S1 -> S5!' });
-
-      await i.editReply({ embeds: [wpnEmbed], components: [buttonsRow1, buttonsRow2] });
+    if (i.customId === 'inv_view_main') {
+      currentView = 'main';
+      currentPage = 1;
+      await i.editReply({ embeds: [buildMainEmbed()], components: getActionRows('main', 1, 1) });
+      return;
     }
 
-    // 3. View Artifact Inventory
-    else if (i.customId === 'inv_view_artifacts') {
-      const currentArts = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '../../database.json'), 'utf8')).artifacts[userId] || [];
-
-      if (currentArts.length === 0) {
-        return i.followUp({ content: '⚠️ Kho Di Vật của bạn đang trống! Hãy đánh Boss ở `/battle` để nhặt Di vật 5★!', ephemeral: true });
-      }
-
-      const artLines = currentArts.map((art, idx) => {
-        const subStr = art.subStats.map(s => `${s.name}: +${s.value.toFixed(1)}`).join(' | ');
-        return `**${idx + 1}. ${art.setName} (${art.rarity || 5}★) (+${art.level}/15)**\n   • Main: **${art.mainStat}** (+${art.mainValue.toFixed(1)})\n   • Dòng phụ: ${subStr}`;
-      }).join('\n\n');
-
-      const artEmbed = new EmbedBuilder()
-        .setTitle(`🔮 KHO THÁNH DI VẬT SỞ HỮU (${currentArts.length} MÓN)`)
-        .setColor('#8b5cf6')
-        .setDescription(artLines)
-        .setFooter({ text: 'Dùng /upgrade -> 🔮 Cường Hóa Di Vật để RNG Roll dòng phụ!' });
-
-      await i.editReply({ embeds: [artEmbed], components: [buttonsRow1, buttonsRow2] });
+    if (i.customId === 'inv_view_weapons') {
+      currentView = 'weapons';
+      currentPage = 1;
+      const data = buildWeaponsEmbed(currentPage);
+      await i.editReply({ embeds: [data.embed], components: getActionRows('weapons', data.page, data.totalPages) });
+      return;
     }
 
-    // 4. Character Equipment Inspection
-    else if (i.customId.startsWith('inv_char_')) {
-      const idx = parseInt(i.customId.replace('inv_char_', ''), 10);
-      const item = inventory[idx];
-      if (!item) {
-        return i.followUp({ content: '⚠️ Không tìm thấy thông tin nhân vật ở slot này!', ephemeral: true });
-      }
+    if (i.customId === 'inv_view_artifacts') {
+      currentView = 'artifacts';
+      currentPage = 1;
+      const data = buildArtifactsEmbed(currentPage);
+      await i.editReply({ embeds: [data.embed], components: getActionRows('artifacts', data.page, data.totalPages) });
+      return;
+    }
 
-      const char = charactersData.find(c => c.id === item.char_id);
-      const charLvl = item.level || 1;
-      const wpnLvl = item.weapon_level || 1;
+    if (i.customId === 'inv_prev_page') {
+      currentPage = Math.max(1, currentPage - 1);
+    } else if (i.customId === 'inv_next_page') {
+      currentPage++;
+    }
 
-      const userWpns = db.getUserWeapons(userId);
-      const equippedWpn = userWpns.find(w => w.char_id === item.char_id || w.name.includes(item.light_cone)) || { name: item.light_cone, superimpose: 1 };
-      const subs = (equippedWpn.subStats || []).map(s => `${s.name} +${s.value}`).join(', ');
-
-      const charEmbed = new EmbedBuilder()
-        .setTitle(`🛡️ THÔNG TIN TRANG BỊ - ${char.name.toUpperCase()}`)
-        .setColor(char.color || '#3b82f6')
-        .setThumbnail(char.icon || interaction.user.displayAvatarURL())
-        .addFields(
-          { name: '👤 Cấp Nhân Vật', value: `**Lv.${charLvl} / 80**`, inline: true },
-          { name: '⚔️ Nón Ánh Sáng (Vũ Khí)', value: `**${equippedWpn.name}** (Lv.${wpnLvl} • **Tích Chồng S${equippedWpn.superimpose || 1}**)`, inline: true },
-          { name: '🔮 Bộ Di Vật', value: `**${item.artifact_set || 'Bộ Tiêu Chuẩn'}**`, inline: true },
-          { name: '🎲 Buff Vũ Khí Ngẫu Nhiên', value: `\`${subs || 'ATK% +5.2%, CRIT Rate% +3.8%'}\``, inline: false },
-          { name: '📜 Cấp Kỹ Năng', value: `Đánh thường: Lv.${item.basic_lvl || 1} | Chiến kỹ: Lv.${item.skill_lvl || 1} | Tuyệt kỹ: Lv.${item.ult_lvl || 1}`, inline: false },
-          {
-            name: '📊 Chỉ Số Thực Tế (Scaled Stats)',
-            value: `• **HP**: ${char.baseStats.hp + (charLvl - 1) * 40}\n• **ATK**: ${char.baseStats.atk + (charLvl - 1) * 18 + (wpnLvl - 1) * 12}\n• **DEF**: ${char.baseStats.def + (charLvl - 1) * 12}\n• **Tốc độ (SPD)**: ${char.baseStats.speed}`,
-            inline: false
-          }
-        );
-
-      await i.editReply({ embeds: [charEmbed], components: [buttonsRow1, buttonsRow2] });
+    if (currentView === 'weapons') {
+      const data = buildWeaponsEmbed(currentPage);
+      currentPage = data.page;
+      await i.editReply({ embeds: [data.embed], components: getActionRows('weapons', data.page, data.totalPages) });
+    } else if (currentView === 'artifacts') {
+      const data = buildArtifactsEmbed(currentPage);
+      currentPage = data.page;
+      await i.editReply({ embeds: [data.embed], components: getActionRows('artifacts', data.page, data.totalPages) });
     }
   });
 }
