@@ -4,6 +4,20 @@
 
 ---
 
+## 🎬 HIỆU ỨNG TUYỆT KỸ ULTIMATE ANIMATION MÃN NHÃN
+
+> Trải nghiệm những màn ngắt lượt thi triển Tuyệt Kỹ (Ultimate) với hình ảnh động GIF hoành tráng, mượt mà và trực quan ngay trong kênh chat Discord!
+
+| 💜 **Acheron** - *Slashed Dream Cries in Red* | 🍇 **Kafka** - *Twilight Trill* |
+| :---: | :---: |
+| ![Acheron Ultimate](https://i.makeagif.com/media/6-14-2024/956I-Z.gif) | ![Kafka Ultimate](https://media.tenor.com/YifZLG831mAAAAAM/kafka-honkai-star-rail.gif) |
+
+| 🌟 **Seele** - *Butterfly Flurry* | ⚡ **Jing Yuan** - *Lightbringer* |
+| :---: | :---: |
+| ![Seele Ultimate](https://i.pinimg.com/originals/c0/bb/75/c0bb75e2dd8aa72174381a8db0eee2a0.gif) | ![Jing Yuan Ultimate](https://i.pinimg.com/originals/fb/28/79/fb2879ea8f1b408d37ddcbad152171a3.gif) |
+
+---
+
 ## 🌐 1. HẠ TẦNG VẬN HÀNH 24/7 & LƯU TRỮ ĐÁM MÂY (ĐÃ HOÀN THÀNH)
 
 - ☁️ **Chạy 24/7/365 Độc Lập**: Triển khai trên **Render Web Service** kết hợp với **UptimeRobot Keep-Alive** (ping 5 phút/lần). Bạn có thể tắt laptop, gập máy hay đi ngủ mà bot vẫn luôn online phản hồi mượt mà!
