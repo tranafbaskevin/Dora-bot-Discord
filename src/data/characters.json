@@ -8,34 +8,11 @@
     "color": "#8a2be2",
     "icon": "assets/characters/seele.jpg",
     "ultGif": "https://i.pinimg.com/originals/c0/bb/75/c0bb75e2dd8aa72174381a8db0eee2a0.gif",
-    "baseStats": {
-      "hp": 930,
-      "atk": 640,
-      "def": 360,
-      "speed": 115,
-      "maxEnergy": 120
-    },
+    "baseStats": { "hp": 930, "atk": 640, "def": 360, "speed": 115, "maxEnergy": 120 },
     "skills": {
-      "basic": {
-        "name": "Threshing Strike",
-        "description": "Deals Quantum DMG to a single enemy.",
-        "multiplier": 1.0,
-        "spChange": 1,
-        "energyGain": 20
-      },
-      "skill": {
-        "name": "Sheathed Blade",
-        "description": "Increases SPD by 25% and deals heavy Quantum DMG to a single enemy.",
-        "multiplier": 2.2,
-        "spChange": -1,
-        "energyGain": 30
-      },
-      "ultimate": {
-        "name": "Butterfly Flurry",
-        "description": "Enters buffed state and deals massive Quantum DMG to a single enemy.",
-        "multiplier": 4.2,
-        "energyCost": 120
-      }
+      "basic": { "name": "Threshing Strike", "description": "Deals Quantum DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Sheathed Blade", "description": "Increases SPD by 25% and deals heavy Quantum DMG to a single enemy.", "multiplier": 2.2, "spChange": -1, "energyGain": 30 },
+      "ultimate": { "name": "Butterfly Flurry", "description": "Enters buffed state and deals massive Quantum DMG to a single enemy.", "multiplier": 4.2, "energyCost": 120 }
     }
   },
   {
@@ -47,36 +24,11 @@
     "color": "#ffd700",
     "icon": "assets/characters/jing_yuan.jpg",
     "ultGif": "https://i.pinimg.com/originals/fb/28/79/fb2879ea8f1b408d37ddcbad152171a3.gif",
-    "baseStats": {
-      "hp": 1160,
-      "atk": 698,
-      "def": 485,
-      "speed": 99,
-      "maxEnergy": 130
-    },
+    "baseStats": { "hp": 1160, "atk": 698, "def": 485, "speed": 99, "maxEnergy": 130 },
     "skills": {
-      "basic": {
-        "name": "Glistening Light",
-        "description": "Deals Lightning DMG to a single enemy.",
-        "multiplier": 1.0,
-        "spChange": 1,
-        "energyGain": 20
-      },
-      "skill": {
-        "name": "Rifting Zenith",
-        "description": "Deals Lightning DMG to all enemies.",
-        "multiplier": 1.5,
-        "spChange": -1,
-        "energyGain": 30,
-        "isAoE": true
-      },
-      "ultimate": {
-        "name": "Lightbringer",
-        "description": "Deals massive Lightning DMG to all enemies.",
-        "multiplier": 3.0,
-        "energyCost": 130,
-        "isAoE": true
-      }
+      "basic": { "name": "Glistening Light", "description": "Deals Lightning DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Rifting Zenith", "description": "Deals Lightning DMG to all enemies.", "multiplier": 1.5, "spChange": -1, "energyGain": 30, "isAoE": true },
+      "ultimate": { "name": "Lightbringer", "description": "Deals massive Lightning DMG to all enemies.", "multiplier": 3.0, "energyCost": 130, "isAoE": true }
     }
   },
   {
@@ -89,35 +41,11 @@
     "color": "#00bfff",
     "icon": "assets/characters/bronya.jpg",
     "ultGif": "https://i.pinimg.com/originals/52/28/49/52284913986f4336a6e8e575dc472d7a.gif",
-    "baseStats": {
-      "hp": 1240,
-      "atk": 580,
-      "def": 530,
-      "speed": 102,
-      "maxEnergy": 120
-    },
+    "baseStats": { "hp": 1240, "atk": 580, "def": 530, "speed": 102, "maxEnergy": 120 },
     "skills": {
-      "basic": {
-        "name": "Windrider Bullet",
-        "description": "Deals Wind DMG to a single enemy.",
-        "multiplier": 1.0,
-        "spChange": 1,
-        "energyGain": 20
-      },
-      "skill": {
-        "name": "Combat Redistribution",
-        "description": "Dispels a debuff, advances target ally turn by 100%, and increases DMG.",
-        "multiplier": 1.5,
-        "spChange": -1,
-        "energyGain": 30
-      },
-      "ultimate": {
-        "name": "The Belobog March",
-        "description": "Increases ATK and CRIT DMG of all allies.",
-        "multiplier": 0.0,
-        "energyCost": 120,
-        "isBuff": true
-      }
+      "basic": { "name": "Windrider Bullet", "description": "Deals Wind DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Combat Redistribution", "description": "Dispels a debuff, advances target ally turn by 100%, and increases DMG.", "multiplier": 1.5, "spChange": -1, "energyGain": 30 },
+      "ultimate": { "name": "The Belobog March", "description": "Increases ATK and CRIT DMG of all allies.", "multiplier": 0.0, "energyCost": 120, "isBuff": true }
     }
   },
   {
@@ -129,36 +57,11 @@
     "color": "#9932cc",
     "icon": "https://media.tenor.com/5Hp2EuV4kNQAAAAe/acheron-honkai-star-rail.png",
     "ultGif": "https://i.makeagif.com/media/6-14-2024/956I-Z.gif",
-    "baseStats": {
-      "hp": 1125,
-      "atk": 698,
-      "def": 436,
-      "speed": 101,
-      "maxEnergy": 130
-    },
+    "baseStats": { "hp": 1125, "atk": 698, "def": 436, "speed": 101, "maxEnergy": 130 },
     "skills": {
-      "basic": {
-        "name": "Truncated Leaf",
-        "description": "Deals Lightning DMG to a single enemy.",
-        "multiplier": 1.0,
-        "spChange": 1,
-        "energyGain": 20
-      },
-      "skill": {
-        "name": "Octuple Slash",
-        "description": "Deals Lightning DMG to a target and adjacent enemies.",
-        "multiplier": 2.0,
-        "spChange": -1,
-        "energyGain": 30,
-        "isAoE": true
-      },
-      "ultimate": {
-        "name": "Slashed Dream Cries in Red",
-        "description": "Unleashes 4 devastating slashes dealing colossal Lightning DMG to all enemies ignoring weaknesses.",
-        "multiplier": 4.5,
-        "energyCost": 130,
-        "isAoE": true
-      }
+      "basic": { "name": "Truncated Leaf", "description": "Deals Lightning DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Octuple Slash", "description": "Deals Lightning DMG to a target and adjacent enemies.", "multiplier": 2.0, "spChange": -1, "energyGain": 30, "isAoE": true },
+      "ultimate": { "name": "Slashed Dream Cries in Red", "description": "Unleashes 4 devastating slashes dealing colossal Lightning DMG to all enemies.", "multiplier": 4.5, "energyCost": 130, "isAoE": true }
     }
   },
   {
@@ -170,36 +73,11 @@
     "color": "#800080",
     "icon": "https://media.tenor.com/5Qosoa3RV7gAAAAe/hsr-kafka.png",
     "ultGif": "https://media.tenor.com/YifZLG831mAAAAAM/kafka-honkai-star-rail.gif",
-    "baseStats": {
-      "hp": 1086,
-      "atk": 679,
-      "def": 485,
-      "speed": 100,
-      "maxEnergy": 120
-    },
+    "baseStats": { "hp": 1086, "atk": 679, "def": 485, "speed": 100, "maxEnergy": 120 },
     "skills": {
-      "basic": {
-        "name": "Midnight Tumult",
-        "description": "Deals Lightning DMG to a single enemy.",
-        "multiplier": 1.0,
-        "spChange": 1,
-        "energyGain": 20
-      },
-      "skill": {
-        "name": "Caressing Moonlight",
-        "description": "Deals Lightning DMG to all enemies and immediately triggers all active DoT effects.",
-        "multiplier": 1.8,
-        "spChange": -1,
-        "energyGain": 30,
-        "isAoE": true
-      },
-      "ultimate": {
-        "name": "Twilight Trill",
-        "description": "Deals heavy Lightning DMG to all enemies, inflicting Shock and triggering DoT immediately.",
-        "multiplier": 3.5,
-        "energyCost": 120,
-        "isAoE": true
-      }
+      "basic": { "name": "Midnight Tumult", "description": "Deals Lightning DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Caressing Moonlight", "description": "Deals Lightning DMG to all enemies and triggers active DoT.", "multiplier": 1.8, "spChange": -1, "energyGain": 30, "isAoE": true },
+      "ultimate": { "name": "Twilight Trill", "description": "Deals heavy Lightning DMG to all enemies, inflicting Shock.", "multiplier": 3.5, "energyCost": 120, "isAoE": true }
     }
   },
   {
@@ -211,36 +89,11 @@
     "color": "#8b0000",
     "icon": "https://preview.redd.it/i-didnt-see-a-blade-nah-id-win-v0-93cflaaobiac1.jpeg?width=1080&crop=smart&auto=webp&s=f3dda0be69dc31c44328a63aba3b5fb43bf9f2a2",
     "ultGif": "https://upload-os-bbs.hoyolab.com/upload/2023/07/31/44959855/bcb22d4ab6ab8e4108a0a0d1ba1efac2_6576050986117020026.gif",
-    "baseStats": {
-      "hp": 1358,
-      "atk": 543,
-      "def": 485,
-      "speed": 97,
-      "maxEnergy": 130
-    },
+    "baseStats": { "hp": 1358, "atk": 543, "def": 485, "speed": 97, "maxEnergy": 130 },
     "skills": {
-      "basic": {
-        "name": "Shard Sword",
-        "description": "Deals Wind DMG to a single enemy.",
-        "multiplier": 1.0,
-        "spChange": 1,
-        "energyGain": 20
-      },
-      "skill": {
-        "name": "Hellscape",
-        "description": "Consumes 30% HP to enhance Basic Attack into AoE Wind DMG for 3 turns.",
-        "multiplier": 2.2,
-        "spChange": -1,
-        "energyGain": 30,
-        "isAoE": true
-      },
-      "ultimate": {
-        "name": "Death Sentence",
-        "description": "Sets HP to 50% and deals massive Wind DMG to target and adjacent enemies based on HP lost.",
-        "multiplier": 3.8,
-        "energyCost": 130,
-        "isAoE": true
-      }
+      "basic": { "name": "Shard Sword", "description": "Deals Wind DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Hellscape", "description": "Consumes HP to enhance Basic Attack into AoE Wind DMG.", "multiplier": 2.2, "spChange": -1, "energyGain": 30, "isAoE": true },
+      "ultimate": { "name": "Death Sentence", "description": "Deals massive Wind DMG based on HP lost.", "multiplier": 3.8, "energyCost": 130, "isAoE": true }
     }
   },
   {
@@ -252,34 +105,11 @@
     "color": "#1e90ff",
     "icon": "https://preview.redd.it/if-silver-wolf-have-a-genshin-character-card-by-me-v0-2xbu8p6wt74b1.jpg?width=612&format=pjpg&auto=webp&s=2b41f9f482433e0fef26fa11a50b449cb8fbc17a",
     "ultGif": "https://i.makeagif.com/media/5-04-2023/hHsBCF.gif",
-    "baseStats": {
-      "hp": 1047,
-      "atk": 640,
-      "def": 460,
-      "speed": 107,
-      "maxEnergy": 110
-    },
+    "baseStats": { "hp": 1047, "atk": 640, "def": 460, "speed": 107, "maxEnergy": 110 },
     "skills": {
-      "basic": {
-        "name": "System Warning",
-        "description": "Deals Quantum DMG to a single enemy.",
-        "multiplier": 1.0,
-        "spChange": 1,
-        "energyGain": 20
-      },
-      "skill": {
-        "name": "Allow Changes?",
-        "description": "Applies a weakness of an ally's element to the enemy and deals Quantum DMG.",
-        "multiplier": 2.1,
-        "spChange": -1,
-        "energyGain": 30
-      },
-      "ultimate": {
-        "name": "User Banned",
-        "description": "Deals massive Quantum DMG to single enemy and decreases enemy DEF by 45%.",
-        "multiplier": 3.8,
-        "energyCost": 110
-      }
+      "basic": { "name": "System Warning", "description": "Deals Quantum DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Allow Changes?", "description": "Applies a weakness of an ally's element to the enemy and deals Quantum DMG.", "multiplier": 2.1, "spChange": -1, "energyGain": 30 },
+      "ultimate": { "name": "User Banned", "description": "Deals massive Quantum DMG and decreases enemy DEF by 45%.", "multiplier": 3.8, "energyCost": 110 }
     }
   },
   {
@@ -291,37 +121,11 @@
     "color": "#ff69b4",
     "icon": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSP4IRgjKVxp8mB0lECTOKpMha4nXu21R81lu61K50JKVJNUNm8-Oi7SC_P&s=10",
     "ultGif": "https://upload-os-bbs.hoyolab.com/upload/2023/09/20/248396313/5752a91233ec86e37533a1ec8022a663_2652933987579829744.gif",
-    "baseStats": {
-      "hp": 1474,
-      "atk": 465,
-      "def": 606,
-      "speed": 100,
-      "maxEnergy": 130
-    },
+    "baseStats": { "hp": 1474, "atk": 465, "def": 606, "speed": 100, "maxEnergy": 130 },
     "skills": {
-      "basic": {
-        "name": "Novaprism",
-        "description": "Deals Quantum DMG to a single enemy.",
-        "multiplier": 1.0,
-        "spChange": 1,
-        "energyGain": 20
-      },
-      "skill": {
-        "name": "Known by Stern, Shown by Swarm",
-        "description": "Activates Matrix of Prescience to mitigate ally DMG and boost Max HP & CRIT Rate.",
-        "multiplier": 0.0,
-        "spChange": -1,
-        "energyGain": 30,
-        "isShield": true
-      },
-      "ultimate": {
-        "name": "Woes of Many Morphed to One",
-        "description": "Deals Quantum DMG to all enemies and heals all allies.",
-        "multiplier": 2.5,
-        "energyCost": 130,
-        "isAoE": true,
-        "isHeal": true
-      }
+      "basic": { "name": "Novaprism", "description": "Deals Quantum DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Known by Stern, Shown by Swarm", "description": "Mitigates ally DMG and boosts Max HP & CRIT Rate.", "multiplier": 0.0, "spChange": -1, "energyGain": 30, "isShield": true },
+      "ultimate": { "name": "Woes of Many Morphed to One", "description": "Deals Quantum DMG to all enemies and heals all allies.", "multiplier": 2.5, "energyCost": 130, "isAoE": true, "isHeal": true }
     }
   },
   {
@@ -332,35 +136,11 @@
     "path": "Hunt",
     "color": "#2e8b57",
     "icon": "assets/characters/dan_heng.jpg",
-    "ultGif": "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExYmtjYnV2anloMngyYndsb24yOHQxMGw1bzVvd3NocTFqdmdwOHB0bCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3oKIPnAiaMCws8nOsE/giphy.gif",
-    "baseStats": {
-      "hp": 880,
-      "atk": 540,
-      "def": 390,
-      "speed": 110,
-      "maxEnergy": 100
-    },
+    "baseStats": { "hp": 880, "atk": 540, "def": 390, "speed": 110, "maxEnergy": 100 },
     "skills": {
-      "basic": {
-        "name": "Cloudlancer Art: North Wind",
-        "description": "Deals Wind DMG to a single enemy.",
-        "multiplier": 1.0,
-        "spChange": 1,
-        "energyGain": 20
-      },
-      "skill": {
-        "name": "Cloudlancer Art: Torrent",
-        "description": "Deals Wind DMG to a single enemy with a chance to Slow.",
-        "multiplier": 1.8,
-        "spChange": -1,
-        "energyGain": 30
-      },
-      "ultimate": {
-        "name": "Ethereal Dream",
-        "description": "Deals high Wind DMG to a single enemy. Extra DMG if enemy is Slowed.",
-        "multiplier": 3.6,
-        "energyCost": 100
-      }
+      "basic": { "name": "Cloudlancer Art: North Wind", "description": "Deals Wind DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Cloudlancer Art: Torrent", "description": "Deals Wind DMG to a single enemy with a chance to Slow.", "multiplier": 1.8, "spChange": -1, "energyGain": 30 },
+      "ultimate": { "name": "Ethereal Dream", "description": "Deals high Wind DMG to a single enemy.", "multiplier": 3.6, "energyCost": 100 }
     }
   },
   {
@@ -371,37 +151,11 @@
     "path": "Preservation",
     "color": "#ffb6c1",
     "icon": "assets/characters/march_7th.jpg",
-    "ultGif": "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbWg1MnZwMnVrcWszbjVmdWpyNWhnaGExbmlqZXBnMjFiMTRhbHNudCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKxDbyw523wU8H6/giphy.gif",
-    "baseStats": {
-      "hp": 1050,
-      "atk": 510,
-      "def": 570,
-      "speed": 101,
-      "maxEnergy": 120
-    },
+    "baseStats": { "hp": 1050, "atk": 510, "def": 570, "speed": 101, "maxEnergy": 120 },
     "skills": {
-      "basic": {
-        "name": "Frigid Arrow",
-        "description": "Deals Ice DMG to a single enemy.",
-        "multiplier": 1.0,
-        "spChange": 1,
-        "energyGain": 20
-      },
-      "skill": {
-        "name": "The Power of Cute",
-        "description": "Provides a Shield to an ally for 3 turns.",
-        "multiplier": 0.0,
-        "spChange": -1,
-        "energyGain": 30,
-        "isShield": true
-      },
-      "ultimate": {
-        "name": "Glacial Cascade",
-        "description": "Deals Ice DMG to all enemies with a chance to Freeze them.",
-        "multiplier": 2.0,
-        "energyCost": 120,
-        "isAoE": true
-      }
+      "basic": { "name": "Frigid Arrow", "description": "Deals Ice DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "The Power of Cute", "description": "Provides a Shield to an ally for 3 turns.", "multiplier": 0.0, "spChange": -1, "energyGain": 30, "isShield": true },
+      "ultimate": { "name": "Glacial Cascade", "description": "Deals Ice DMG to all enemies with a chance to Freeze them.", "multiplier": 2.0, "energyCost": 120, "isAoE": true }
     }
   },
   {
@@ -412,38 +166,266 @@
     "path": "Abundance",
     "color": "#98fb98",
     "icon": "assets/characters/natasha.jpg",
-    "ultGif": "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExOW82bzRnMnhsdWFsa2RkdzlpdWZpdHRnb3Z4ZzBsbzBsNHl3dzdsbiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l3q2K5jinAlChoCLS/giphy.gif",
-    "baseStats": {
-      "hp": 1180,
-      "atk": 470,
-      "def": 505,
-      "speed": 98,
-      "maxEnergy": 90
-    },
+    "baseStats": { "hp": 1180, "atk": 470, "def": 505, "speed": 98, "maxEnergy": 90 },
     "skills": {
-      "basic": {
-        "name": "Behind the Kindness",
-        "description": "Deals Physical DMG to a single enemy.",
-        "multiplier": 1.0,
-        "spChange": 1,
-        "energyGain": 20
-      },
-      "skill": {
-        "name": "Love, Heal, and Choose",
-        "description": "Heals a single ally and grants continuous healing.",
-        "multiplier": 0.0,
-        "spChange": -1,
-        "energyGain": 30,
-        "isHeal": true
-      },
-      "ultimate": {
-        "name": "Gift of Rebirth",
-        "description": "Heals all allies substantially.",
-        "multiplier": 0.0,
-        "energyCost": 90,
-        "isHeal": true,
-        "isAoE": true
-      }
+      "basic": { "name": "Behind the Kindness", "description": "Deals Physical DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Love, Heal, and Choose", "description": "Heals a single ally and grants continuous healing.", "multiplier": 0.0, "spChange": -1, "energyGain": 30, "isHeal": true },
+      "ultimate": { "name": "Gift of Rebirth", "description": "Heals all allies substantially.", "multiplier": 0.0, "energyCost": 90, "isHeal": true, "isAoE": true }
+    }
+  },
+  {
+    "id": "tingyun",
+    "name": "Tingyun",
+    "rarity": 4,
+    "element": "Lightning",
+    "path": "Harmony",
+    "color": "#d2691e",
+    "icon": "https://i.pinimg.com/736x/e6/7d/d2/e67dd204fff735c71af636f4609380d4.jpg",
+    "baseStats": { "hp": 846, "atk": 529, "def": 396, "speed": 112, "maxEnergy": 130 },
+    "skills": {
+      "basic": { "name": "Dislodged", "description": "Deals Lightning DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Soothing Melody", "description": "Grants Benediction to an ally, boosting ATK and dealing extra Lightning DMG.", "multiplier": 1.5, "spChange": -1, "energyGain": 30, "isBuff": true },
+      "ultimate": { "name": "Amidst the Rejoicing Clouds", "description": "Regenerates 50 Energy for an ally and boosts their DMG by 50%.", "multiplier": 0.0, "energyCost": 130, "isBuff": true }
+    }
+  },
+  {
+    "id": "yukong",
+    "name": "Yukong",
+    "rarity": 4,
+    "element": "Imaginary",
+    "path": "Harmony",
+    "color": "#ffd700",
+    "icon": "https://i.pinimg.com/736x/0a/cf/42/0acf4202b1698901e56096905e69bbff.jpg",
+    "baseStats": { "hp": 917, "atk": 600, "def": 375, "speed": 107, "maxEnergy": 130 },
+    "skills": {
+      "basic": { "name": "Arrowslinger", "description": "Deals Imaginary DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Emboldening Salvo", "description": "Gains Roaring Bowstrings, boosting ATK of all allies by 80%.", "multiplier": 0.0, "spChange": -1, "energyGain": 30, "isBuff": true },
+      "ultimate": { "name": "Diving Kestrel", "description": "Deals heavy Imaginary DMG to single target and boosts CRIT Rate & CRIT DMG.", "multiplier": 3.8, "energyCost": 130 }
+    }
+  },
+  {
+    "id": "hanya",
+    "name": "Hanya",
+    "rarity": 4,
+    "element": "Physical",
+    "path": "Harmony",
+    "color": "#ba55d3",
+    "icon": "https://preview.redd.it/what-song-yall-play-on-the-astral-express-v0-ktw6giphj08e1.jpeg?width=1080&format=pjpg&auto=webp&s=770f8f17ced88a0a513f3cb528cfc66ed6d7338f",
+    "baseStats": { "hp": 917, "atk": 564, "def": 352, "speed": 110, "maxEnergy": 140 },
+    "skills": {
+      "basic": { "name": "Oracle Brush", "description": "Deals Physical DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Samsara, Locked", "description": "Applies Burden to an enemy, recovering SP when allies hit target.", "multiplier": 2.4, "spChange": -1, "energyGain": 30 },
+      "ultimate": { "name": "Ten-Squire's Decree", "description": "Increases SPD and ATK of a target ally for 2 turns.", "multiplier": 0.0, "energyCost": 140, "isBuff": true }
+    }
+  },
+  {
+    "id": "pela",
+    "name": "Pela",
+    "rarity": 4,
+    "element": "Ice",
+    "path": "Nihility",
+    "color": "#4682b4",
+    "icon": "https://i.pinimg.com/736x/5e/b1/a8/5eb1a872d91b5e7705039c7182747723.jpg",
+    "baseStats": { "hp": 987, "atk": 529, "def": 463, "speed": 105, "maxEnergy": 110 },
+    "skills": {
+      "basic": { "name": "Frost Shot", "description": "Deals Ice DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Frostbite", "description": "Removes 1 buff from target enemy and deals Ice DMG.", "multiplier": 2.1, "spChange": -1, "energyGain": 30 },
+      "ultimate": { "name": "Zone Suppression", "description": "Deals Ice DMG to all enemies and inflicts Exposed, reducing DEF by 40%.", "multiplier": 2.0, "energyCost": 110, "isAoE": true }
+    }
+  },
+  {
+    "id": "sampo",
+    "name": "Sampo",
+    "rarity": 4,
+    "element": "Wind",
+    "path": "Nihility",
+    "color": "#20b2aa",
+    "icon": "https://i.redd.it/nbis393uzgic1.jpeg",
+    "baseStats": { "hp": 1023, "atk": 617, "def": 396, "speed": 106, "maxEnergy": 120 },
+    "skills": {
+      "basic": { "name": "Dazzling Blades", "description": "Deals Wind DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Ricochet Love", "description": "Deals Wind DMG bounce 5 times to random enemies.", "multiplier": 1.5, "spChange": -1, "energyGain": 30, "isAoE": true },
+      "ultimate": { "name": "Surprise Present", "description": "Deals Wind DMG to all enemies and increases DoT DMG taken by 30%.", "multiplier": 2.6, "energyCost": 120, "isAoE": true }
+    }
+  },
+  {
+    "id": "luka",
+    "name": "Luka",
+    "rarity": 4,
+    "element": "Physical",
+    "path": "Nihility",
+    "color": "#cd5c5c",
+    "icon": "https://i.pinimg.com/236x/e9/cf/7a/e9cf7a95ecfc3b78940ff77f21a00738.jpg",
+    "baseStats": { "hp": 917, "atk": 582, "def": 485, "speed": 103, "maxEnergy": 130 },
+    "skills": {
+      "basic": { "name": "Direct Punch", "description": "Deals Physical DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Lariat Fist", "description": "Deals Physical DMG and inflicts Bleed DoT.", "multiplier": 1.6, "spChange": -1, "energyGain": 30 },
+      "ultimate": { "name": "Coupe de Grâce", "description": "Deals massive Physical DMG, gains Fighting Will, and increases target DMG taken.", "multiplier": 3.3, "energyCost": 130 }
+    }
+  },
+  {
+    "id": "guinaifen",
+    "name": "Guinaifen",
+    "rarity": 4,
+    "element": "Fire",
+    "path": "Nihility",
+    "color": "#ff4500",
+    "icon": "https://i.pinimg.com/736x/11/fc/77/11fc7722c30a3beb69b0ffa342874d4e.jpg",
+    "baseStats": { "hp": 882, "atk": 582, "def": 441, "speed": 106, "maxEnergy": 120 },
+    "skills": {
+      "basic": { "name": "Standing Ovation", "description": "Deals Fire DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Blazing Welcome", "description": "Deals Fire DMG to target and adjacent enemies, inflicting Burn.", "multiplier": 1.2, "spChange": -1, "energyGain": 30, "isAoE": true },
+      "ultimate": { "name": "Watch This Showstopper", "description": "Deals Fire DMG to all enemies and detonates Burn DoT.", "multiplier": 2.4, "energyCost": 120, "isAoE": true }
+    }
+  },
+  {
+    "id": "serval",
+    "name": "Serval",
+    "rarity": 4,
+    "element": "Lightning",
+    "path": "Erudition",
+    "color": "#9370db",
+    "icon": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQtLi5cPp-kanXYGYAN2U6gmhgrrqssNCdk8ny8HOieVV5iNV1CIdfZecM4&s=10",
+    "baseStats": { "hp": 917, "atk": 652, "def": 374, "speed": 104, "maxEnergy": 100 },
+    "skills": {
+      "basic": { "name": "Roaring Thunder", "description": "Deals Lightning DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Lightning Flash", "description": "Deals Lightning DMG to target and adjacent enemies with a chance to Shock.", "multiplier": 1.4, "spChange": -1, "energyGain": 30, "isAoE": true },
+      "ultimate": { "name": "Here Comes the Mechanical Fever", "description": "Deals Lightning DMG to all enemies and extends Shock duration.", "multiplier": 3.0, "energyCost": 100, "isAoE": true }
+    }
+  },
+  {
+    "id": "qingque",
+    "name": "Qingque",
+    "rarity": 4,
+    "element": "Quantum",
+    "path": "Erudition",
+    "color": "#00fa9a",
+    "icon": "https://i.redd.it/ms29z46hq07b1.png",
+    "baseStats": { "hp": 1023, "atk": 652, "def": 441, "speed": 98, "maxEnergy": 140 },
+    "skills": {
+      "basic": { "name": "Flower Pick", "description": "Deals Quantum DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "A Scoop of Moon", "description": "Draws 2 tile cards and boosts DMG by 28%.", "multiplier": 0.0, "spChange": -1, "energyGain": 30 },
+      "ultimate": { "name": "A Quartet? Woo-hoo!", "description": "Deals massive Quantum DMG to all enemies and gains 4 matching tiles.", "multiplier": 2.4, "energyCost": 140, "isAoE": true }
+    }
+  },
+  {
+    "id": "herta",
+    "name": "Herta",
+    "rarity": 4,
+    "element": "Ice",
+    "path": "Erudition",
+    "color": "#b0c4de",
+    "icon": "https://preview.redd.it/live-herta-reaction-v0-5ra4zsq6uwce1.jpeg?width=1044&format=pjpg&auto=webp&s=4bf5a2e162942ea7aede7f4ebb863c1402a3466b",
+    "baseStats": { "hp": 952, "atk": 582, "def": 396, "speed": 100, "maxEnergy": 110 },
+    "skills": {
+      "basic": { "name": "What Are You Looking At?", "description": "Deals Ice DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "One-Time Offer", "description": "Deals Ice DMG to all enemies (+20% DMG if HP > 50%).", "multiplier": 1.0, "spChange": -1, "energyGain": 30, "isAoE": true },
+      "ultimate": { "name": "It's Magic, I Added Some Magic", "description": "Deals Ice DMG to all enemies with Kurukuru spinning hammer.", "multiplier": 2.0, "energyCost": 110, "isAoE": true }
+    }
+  },
+  {
+    "id": "sushang",
+    "name": "Sushang",
+    "rarity": 4,
+    "element": "Physical",
+    "path": "Hunt",
+    "color": "#ff7f50",
+    "icon": "https://i.imgflip.com/86zny4.png",
+    "baseStats": { "hp": 917, "atk": 564, "def": 418, "speed": 107, "maxEnergy": 120 },
+    "skills": {
+      "basic": { "name": "Knightsword Art: Starfall", "description": "Deals Physical DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Knightsword Art: Mountainfall", "description": "Deals Physical DMG and triggers Sword Stance.", "multiplier": 2.1, "spChange": -1, "energyGain": 30 },
+      "ultimate": { "name": "Shape of Taixu: Dawn Herald", "description": "Deals massive Physical DMG, advances turn by 100%, and boosts ATK.", "multiplier": 3.2, "energyCost": 120 }
+    }
+  },
+  {
+    "id": "hook",
+    "name": "Hook",
+    "rarity": 4,
+    "element": "Fire",
+    "path": "Destruction",
+    "color": "#ff0000",
+    "icon": "https://i.redd.it/eipr97oyynub1.jpg",
+    "baseStats": { "hp": 1340, "atk": 617, "def": 352, "speed": 94, "maxEnergy": 120 },
+    "skills": {
+      "basic": { "name": "Hehey! Don't Get Burned!", "description": "Deals Fire DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Hey! Remember Hook?", "description": "Deals Fire DMG and inflicts Burn for 2 turns.", "multiplier": 2.4, "spChange": -1, "energyGain": 30 },
+      "ultimate": { "name": "Boom! Here Comes the Fire!", "description": "Deals heavy Fire DMG to single target and enhances next Skill to AoE.", "multiplier": 4.0, "energyCost": 120 }
+    }
+  },
+  {
+    "id": "arlan",
+    "name": "Arlan",
+    "rarity": 4,
+    "element": "Lightning",
+    "path": "Destruction",
+    "color": "#4b0082",
+    "icon": "https://i.pinimg.com/736x/b2/b7/d3/b2b7d3de6de12d0b0b6d619f854e6c91.jpg",
+    "baseStats": { "hp": 1199, "atk": 599, "def": 330, "speed": 102, "maxEnergy": 110 },
+    "skills": {
+      "basic": { "name": "Lightning Rush", "description": "Deals Lightning DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Shackle Breaker", "description": "Consumes 15% HP to deal heavy Lightning DMG without spending SP.", "multiplier": 2.4, "spChange": 0, "energyGain": 30 },
+      "ultimate": { "name": "Frenzied Punishment", "description": "Deals massive Lightning DMG to target and adjacent enemies.", "multiplier": 3.2, "energyCost": 110, "isAoE": true }
+    }
+  },
+  {
+    "id": "xueyi",
+    "name": "Xueyi",
+    "rarity": 4,
+    "element": "Quantum",
+    "path": "Destruction",
+    "color": "#008080",
+    "icon": "https://preview.redd.it/is-xueyi-a-robot-v0-acrm4ec0qn6c1.jpeg?auto=webp&s=5242b56708dcc98469b53e943b13f133841574d1",
+    "baseStats": { "hp": 1058, "atk": 599, "def": 396, "speed": 103, "maxEnergy": 120 },
+    "skills": {
+      "basic": { "name": "Mara-Slayer Claw", "description": "Deals Quantum DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Inexorable Desolation", "description": "Deals Quantum DMG to target and adjacent enemies.", "multiplier": 1.4, "spChange": -1, "energyGain": 30, "isAoE": true },
+      "ultimate": { "name": "Divine Castigation", "description": "Deals massive Quantum DMG ignoring Weakness types to reduce Toughness.", "multiplier": 3.6, "energyCost": 120 }
+    }
+  },
+  {
+    "id": "misha",
+    "name": "Misha",
+    "rarity": 4,
+    "element": "Ice",
+    "path": "Destruction",
+    "color": "#87cefa",
+    "icon": "https://i.pinimg.com/736x/bb/91/2d/bb912de501690c6354c1b1bc25e28e34.jpg",
+    "baseStats": { "hp": 1058, "atk": 599, "def": 396, "speed": 98, "maxEnergy": 100 },
+    "skills": {
+      "basic": { "name": "Escort, Please!", "description": "Deals Ice DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Room Service!", "description": "Deals Ice DMG to target and adjacent enemies, increasing Ult hits.", "multiplier": 1.5, "spChange": -1, "energyGain": 30, "isAoE": true },
+      "ultimate": { "name": "G-G-Gotta Be On Time!", "description": "Deals multi-hit Ice DMG with a chance to Freeze enemies.", "multiplier": 3.0, "energyCost": 100, "isAoE": true }
+    }
+  },
+  {
+    "id": "lynx",
+    "name": "Lynx",
+    "rarity": 4,
+    "element": "Quantum",
+    "path": "Abundance",
+    "color": "#7fffd4",
+    "icon": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR0h1113E0twzAubnlk7DPe2XBMh2YpTN9s2DGp82GbBw&s=10",
+    "baseStats": { "hp": 1058, "atk": 493, "def": 550, "speed": 100, "maxEnergy": 100 },
+    "skills": {
+      "basic": { "name": "Ice Crampon Technique", "description": "Deals Quantum DMG based on Max HP to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Salted Camping Cans", "description": "Applies Survival Response to an ally, increasing Max HP and healing.", "multiplier": 0.0, "spChange": -1, "energyGain": 30, "isHeal": true },
+      "ultimate": { "name": "Snowfield First Aid", "description": "Dispels 1 debuff from all allies and heals all allies.", "multiplier": 0.0, "energyCost": 100, "isHeal": true, "isAoE": true }
+    }
+  },
+  {
+    "id": "gallagher",
+    "name": "Gallagher",
+    "rarity": 4,
+    "element": "Fire",
+    "path": "Abundance",
+    "color": "#8b4513",
+    "icon": "https://i.pinimg.com/736x/67/f0/d7/67f0d7c4659a8ee350e87aa32f0738e1.jpg",
+    "baseStats": { "hp": 1305, "atk": 529, "def": 441, "speed": 98, "maxEnergy": 110 },
+    "skills": {
+      "basic": { "name": "Corkage Fee", "description": "Deals Fire DMG to a single enemy.", "multiplier": 1.0, "spChange": 1, "energyGain": 20 },
+      "skill": { "name": "Special Blend", "description": "Heals a target ally immediately.", "multiplier": 0.0, "spChange": -1, "energyGain": 30, "isHeal": true },
+      "ultimate": { "name": "Nectarous Blitz", "description": "Deals Fire DMG to all enemies, inflicts Besotted, and enhances next Basic Attack.", "multiplier": 1.5, "energyCost": 110, "isAoE": true, "isHeal": true }
     }
   }
 ]
