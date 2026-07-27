@@ -82,7 +82,42 @@ Mỗi nhân vật và trang bị có thể sở hữu các dòng Buff gia tăng 
 
 ---
 
-## 🎲 4. HỆ THỐNG GACHA 50/50 CHUẨN VÀ BANNER DỰ ÁN
+## 🛡️ 4. BẢNG THÁNH DI VẬT (ARTIFACT SETS) & NHÂN VẬT PHÙ HỢP
+
+Khi chiến thắng Boss ở `/battle`, người chơi nhận được chuẩn 2 Di Vật (4★ / 5★). Dưới đây là các bộ Di Vật và nhân vật tối ưu nhất:
+
+| Bộ Thánh Di Vật | Hiệu Ứng Bộ Trang Bị | Nhân Vật Phù Hợp Nhất |
+| :--- | :--- | :--- |
+| 🌌 **Bộ Thiên Tài Trường Sân Ga** *(Genius of Brilliant Stars)* | • **2 Món**: Tăng +10% Sát Thương Lượng Tử.<br>• **4 Món**: Bỏ qua 10% DEF kẻ địch (bỏ qua 20% DEF nếu địch có Điểm Yếu Lượng Tử). | **Seele**, **Silver Wolf**, **Qingque**, **Fu Xuan**, **Xueyi** |
+| 🦅 **Bộ Chim Ưng Tháp Hoang** *(Eagle of Twilight Line)* | • **2 Món**: Tăng +10% Sát Thương Phong.<br>• **4 Món**: Sau khi dùng Tuyệt Kỹ, hành động của bản thân được Ưu Tiên Hành Động +25%. | **Blade**, **Bronya**, **Sampo**, **Dan Heng** |
+| 🌾 **Bộ Thiện Xạ Trường Hoang** *(Musketeer of Wild Wheat)* | • **2 Món**: Tăng +12% ATK.<br>• **4 Món**: Tăng +6% Tốc Độ (SPD) và +10% Sát thương Đánh Thường. | **Tingyun**, **Yukong**, **Hanya**, **Sushang**, **Arlan**, **Natasha** |
+| 🏰 **Bộ Hiệp Sĩ Giáo Đường** *(Knight of Purity Palace)* | • **2 Món**: Tăng +15% DEF.<br>• **4 Món**: Tăng +20% Lượng Hấp Thụ Sát Thương của Khiên do bản thân tạo ra. | **Fu Xuan**, **March 7th**, **Gepard** |
+| ❄️ **Bộ Thợ Săn Băng Tuyết** *(Hunter of Glacial Forest)* | • **2 Món**: Tăng +10% Sát Thương Băng.<br>• **4 Món**: Sau khi dùng Tuyệt Kỹ, Sát Thương Bạo Kích (CRIT DMG) tăng +25% trong 2 lượt. | **Herta**, **Pela**, **Misha** |
+| ☁️ **Bộ Lãng Khách Âm Thầm** *(Passerby of Wandering Cloud)* | • **2 Món**: Tăng +10% Lượng Hồi Máu.<br>• **4 Món**: Ngay khi vào trận, hồi phục ngay +1 Điểm Chiến Kỹ (SP) cho toàn đội. | **Natasha**, **Lynx**, **Gallagher** |
+
+---
+
+## 📊 5. CÁC DÒNG BUFF CHỈ SỐ NGẪU NHIÊN 100% TRÊN VŨ KHÍ & DI VẬT
+
+Mọi Vũ Khí & Thánh Di Vật (4★ / 5★) khi nhận được đều được hệ thống tự động sinh ngẫu nhiên **1 Dòng Chỉ Số Chính (Mainstat)** và **4 Dòng Buff Chỉ Số Phụ (Substats)** cả về loại chỉ số lẫn con số % cộng thêm:
+
+### 🎲 Danh Sách 12 Dòng Buff Chỉ Số Phụ Ngẫu Nhiên:
+1. ⚔️ **ATK%** *(Tỷ lệ Tấn Công)*: Tăng % lực đánh tổng cho nhân vật gây sát thương.
+2. 🗡️ **ATK cố định**: Chỉ số Tấn công cộng thẳng vào chỉ số gốc.
+3. 🎯 **CRIT Rate%** *(Tỷ lệ Bạo Kích)*: Tăng cơ hội gây đòn đánh Bạo Kích nhân sát thương.
+4. 💥 **CRIT DMG%** *(Sát Thương Bạo Kích)*: Tăng nhân lực sát thương khi kích hoạt bạo kích.
+5. ⚡ **SPD** *(Tốc Độ)*: Giúp nhân vật hành động trước và gia tăng số lượt đi trong trận.
+6. ❤️ **HP%** *(Tỷ lệ Máu)*: Tăng % sinh lực tối đa cho nhân vật (đặc biệt là Blade, Fu Xuan, Lynx).
+7. 🩺 **HP cố định**: Chỉ số Máu cộng thẳng vào sinh lực gốc.
+8. 🛡️ **DEF%** *(Tỷ lệ Phòng Thủ)*: Tăng % giáp và độ dày của Khiên tạo ra (March 7th, Fu Xuan).
+9. 🧱 **DEF cố định**: Chỉ số Phòng thủ cộng thẳng.
+10. 🔮 **Hồi EP%** *(Energy Recovery)*: Hồi năng lượng giúp nhân vật nạp Tuyệt Kỹ ngắt lượt cực nhanh.
+11. 🔨 **Tấn Công Phá Vỡ%** *(Break Effect)*: Tăng sát thương phá cản và sát thương nổ khi đánh bể thanh Điểm Yếu của Boss.
+12. 💚 **Tăng Hồi Máu%** *(Outgoing Healing)*: Tăng lượng máu trị liệu cho nhân vật Trù Phú (Natasha, Lynx, Gallagher).
+
+---
+
+## 🎲 6. HỆ THỐNG GACHA 50/50 CHUẨN VÀ BANNER DỰ ÁN
 
 Lệnh `/gacha` hỗ trợ quay đơn (Roll 1), quay max 10 (Roll 10) và Đổi Banner trực tiếp:
 - 🌟 **50% Win Rate-Up**: Ra đúng nhân vật 5★ của Banner đó (Acheron / Kafka / Blade / Silver Wolf / Fu Xuan / Seele / Jing Yuan).
@@ -91,7 +126,7 @@ Lệnh `/gacha` hỗ trợ quay đơn (Roll 1), quay max 10 (Roll 10) và Đổi
 
 ---
 
-## 👹 5. DANH SÁCH BOSS & PHẦN THƯỞNG CHIẾN THẮNG CHUYÊN BIỆT
+## 👹 7. DANH SÁCH BOSS & PHẦN THƯỞNG CHIẾN THẮNG CHUYÊN BIỆT
 
 Mỗi khi hạ gục Boss ở lệnh `/battle`, người chơi sẽ nhận được **chuẩn 2 món Di Vật (4★ / 5★ theo Cấp Thám Hiểm)** cùng các phần thưởng tài nguyên chuyên biệt:
 
