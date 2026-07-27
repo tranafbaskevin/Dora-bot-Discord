@@ -20,10 +20,15 @@ const gachaCommand = new SlashCommandBuilder()
       .setDescription('Chọn Banner Gacha Muốn Roll')
       .setRequired(false)
       .addChoices(
+        { name: '💜 Banner Acheron 5★ (Lightning - Nihility)', value: 'acheron' },
+        { name: '🍇 Banner Kafka 5★ (Lightning - Nihility)', value: 'kafka' },
         { name: '🌟 Banner Seele 5★ (Quantum - Hunt)', value: 'seele' },
         { name: '⚡ Banner Jing Yuan 5★ (Lightning - Erudition)', value: 'jing_yuan' },
+        { name: '⚔️ Banner Blade 5★ (Wind - Destruction)', value: 'blade' },
+        { name: '👾 Banner Silver Wolf 5★ (Quantum - Nihility)', value: 'silver_wolf' },
+        { name: '🌸 Banner Fu Xuan 5★ (Quantum - Preservation)', value: 'fu_xuan' },
         { name: '🌀 Banner Bronya 5★ (Wind - Harmony)', value: 'bronya' },
-        { name: '⚔️ Banner Nón Ánh Sáng Vĩnh Cửu 36+ (Brilliant Fixation)', value: 'weapon' }
+        { name: '🗡️ Banner Nón Ánh Sáng Vĩnh Cửu 36+ (Brilliant Fixation)', value: 'weapon' }
       )
   );
 
@@ -60,7 +65,8 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
   const results = [];
   let trashCount = 0;
 
-  const featuredId = (bannerType === 'jing_yuan' || bannerType === 'bronya') ? bannerType : 'seele';
+  const validBanners = ['seele', 'jing_yuan', 'bronya', 'acheron', 'kafka', 'blade', 'silver_wolf', 'fu_xuan'];
+  const featuredId = validBanners.includes(bannerType) ? bannerType : 'seele';
   const featuredChar5 = charactersData.find(c => c.id === featuredId) || charactersData[0];
 
   // STRICT OFF-BANNER 50/50 RULE: Off-banner 5★ can ONLY be Standard 5★ (Bronya), NEVER another Limited Event 5★!
@@ -183,7 +189,7 @@ function buildGachaEmbedPayload(username, res, bannerType) {
 
   const embed = new EmbedBuilder()
     .setTitle(`✨ KẾT QUẢ GACHA (${res.actualAmount} LƯỢT)`)
-    .setColor('#ffd700')
+    .setColor(res.featuredChar.color || '#ffd700')
     .setDescription(`**${bannerTitle}**${autoNotice}\n\n💎 **Nguyên thạch còn lại**: **${res.remainingJades.toLocaleString()}** | 🎯 **Pity 5★**: **${res.pity5}/90**\n${guaranteedBadge}`)
     .setFooter({ text: `Người quay: ${username} | Chọn các nút bên dưới để tiếp tục quay!` });
 
@@ -288,10 +294,15 @@ async function executeGacha(interaction) {
         .setCustomId('gacha_menu_select_banner')
         .setPlaceholder('Chọn Banner Gacha Muốn Đổi...')
         .addOptions(
+          { label: '💜 Banner Acheron 5★ (Lightning - Nihility)', value: 'acheron' },
+          { label: '🍇 Banner Kafka 5★ (Lightning - Nihility)', value: 'kafka' },
           { label: '🌟 Banner Seele 5★ (Quantum - Hunt)', value: 'seele' },
           { label: '⚡ Banner Jing Yuan 5★ (Lightning - Erudition)', value: 'jing_yuan' },
+          { label: '⚔️ Banner Blade 5★ (Wind - Destruction)', value: 'blade' },
+          { label: '👾 Banner Silver Wolf 5★ (Quantum - Nihility)', value: 'silver_wolf' },
+          { label: '🌸 Banner Fu Xuan 5★ (Quantum - Preservation)', value: 'fu_xuan' },
           { label: '🌀 Banner Bronya 5★ (Wind - Harmony)', value: 'bronya' },
-          { label: '⚔️ Banner Nón Ánh Sáng Vĩnh Cửu 36+ (Brilliant Fixation)', value: 'weapon' }
+          { label: '🗡️ Banner Nón Ánh Sáng Vĩnh Cửu 36+', value: 'weapon' }
         );
 
       const menuRow = new ActionRowBuilder().addComponents(bannerMenu);

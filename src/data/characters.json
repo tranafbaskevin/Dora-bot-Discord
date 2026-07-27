@@ -83,6 +83,7 @@
     "id": "bronya",
     "name": "Bronya",
     "rarity": 5,
+    "isStandard": true,
     "element": "Wind",
     "path": "Harmony",
     "color": "#00bfff",
@@ -116,6 +117,210 @@
         "multiplier": 0.0,
         "energyCost": 120,
         "isBuff": true
+      }
+    }
+  },
+  {
+    "id": "acheron",
+    "name": "Acheron",
+    "rarity": 5,
+    "element": "Lightning",
+    "path": "Nihility",
+    "color": "#9932cc",
+    "icon": "https://media.tenor.com/5Hp2EuV4kNQAAAAe/acheron-honkai-star-rail.png",
+    "ultGif": "https://i.makeagif.com/media/6-14-2024/956I-Z.gif",
+    "baseStats": {
+      "hp": 1125,
+      "atk": 698,
+      "def": 436,
+      "speed": 101,
+      "maxEnergy": 130
+    },
+    "skills": {
+      "basic": {
+        "name": "Truncated Leaf",
+        "description": "Deals Lightning DMG to a single enemy.",
+        "multiplier": 1.0,
+        "spChange": 1,
+        "energyGain": 20
+      },
+      "skill": {
+        "name": "Octuple Slash",
+        "description": "Deals Lightning DMG to a target and adjacent enemies.",
+        "multiplier": 2.0,
+        "spChange": -1,
+        "energyGain": 30,
+        "isAoE": true
+      },
+      "ultimate": {
+        "name": "Slashed Dream Cries in Red",
+        "description": "Unleashes 4 devastating slashes dealing colossal Lightning DMG to all enemies ignoring weaknesses.",
+        "multiplier": 4.5,
+        "energyCost": 130,
+        "isAoE": true
+      }
+    }
+  },
+  {
+    "id": "kafka",
+    "name": "Kafka",
+    "rarity": 5,
+    "element": "Lightning",
+    "path": "Nihility",
+    "color": "#800080",
+    "icon": "https://media.tenor.com/5Qosoa3RV7gAAAAe/hsr-kafka.png",
+    "ultGif": "https://media.tenor.com/YifZLG831mAAAAAM/kafka-honkai-star-rail.gif",
+    "baseStats": {
+      "hp": 1086,
+      "atk": 679,
+      "def": 485,
+      "speed": 100,
+      "maxEnergy": 120
+    },
+    "skills": {
+      "basic": {
+        "name": "Midnight Tumult",
+        "description": "Deals Lightning DMG to a single enemy.",
+        "multiplier": 1.0,
+        "spChange": 1,
+        "energyGain": 20
+      },
+      "skill": {
+        "name": "Caressing Moonlight",
+        "description": "Deals Lightning DMG to all enemies and immediately triggers all active DoT effects.",
+        "multiplier": 1.8,
+        "spChange": -1,
+        "energyGain": 30,
+        "isAoE": true
+      },
+      "ultimate": {
+        "name": "Twilight Trill",
+        "description": "Deals heavy Lightning DMG to all enemies, inflicting Shock and triggering DoT immediately.",
+        "multiplier": 3.5,
+        "energyCost": 120,
+        "isAoE": true
+      }
+    }
+  },
+  {
+    "id": "blade",
+    "name": "Blade",
+    "rarity": 5,
+    "element": "Wind",
+    "path": "Destruction",
+    "color": "#8b0000",
+    "icon": "https://preview.redd.it/i-didnt-see-a-blade-nah-id-win-v0-93cflaaobiac1.jpeg?width=1080&crop=smart&auto=webp&s=f3dda0be69dc31c44328a63aba3b5fb43bf9f2a2",
+    "ultGif": "https://upload-os-bbs.hoyolab.com/upload/2023/07/31/44959855/bcb22d4ab6ab8e4108a0a0d1ba1efac2_6576050986117020026.gif",
+    "baseStats": {
+      "hp": 1358,
+      "atk": 543,
+      "def": 485,
+      "speed": 97,
+      "maxEnergy": 130
+    },
+    "skills": {
+      "basic": {
+        "name": "Shard Sword",
+        "description": "Deals Wind DMG to a single enemy.",
+        "multiplier": 1.0,
+        "spChange": 1,
+        "energyGain": 20
+      },
+      "skill": {
+        "name": "Hellscape",
+        "description": "Consumes 30% HP to enhance Basic Attack into AoE Wind DMG for 3 turns.",
+        "multiplier": 2.2,
+        "spChange": -1,
+        "energyGain": 30,
+        "isAoE": true
+      },
+      "ultimate": {
+        "name": "Death Sentence",
+        "description": "Sets HP to 50% and deals massive Wind DMG to target and adjacent enemies based on HP lost.",
+        "multiplier": 3.8,
+        "energyCost": 130,
+        "isAoE": true
+      }
+    }
+  },
+  {
+    "id": "silver_wolf",
+    "name": "Silver Wolf",
+    "rarity": 5,
+    "element": "Quantum",
+    "path": "Nihility",
+    "color": "#1e90ff",
+    "icon": "https://preview.redd.it/if-silver-wolf-have-a-genshin-character-card-by-me-v0-2xbu8p6wt74b1.jpg?width=612&format=pjpg&auto=webp&s=2b41f9f482433e0fef26fa11a50b449cb8fbc17a",
+    "ultGif": "https://i.makeagif.com/media/5-04-2023/hHsBCF.gif",
+    "baseStats": {
+      "hp": 1047,
+      "atk": 640,
+      "def": 460,
+      "speed": 107,
+      "maxEnergy": 110
+    },
+    "skills": {
+      "basic": {
+        "name": "System Warning",
+        "description": "Deals Quantum DMG to a single enemy.",
+        "multiplier": 1.0,
+        "spChange": 1,
+        "energyGain": 20
+      },
+      "skill": {
+        "name": "Allow Changes?",
+        "description": "Applies a weakness of an ally's element to the enemy and deals Quantum DMG.",
+        "multiplier": 2.1,
+        "spChange": -1,
+        "energyGain": 30
+      },
+      "ultimate": {
+        "name": "User Banned",
+        "description": "Deals massive Quantum DMG to single enemy and decreases enemy DEF by 45%.",
+        "multiplier": 3.8,
+        "energyCost": 110
+      }
+    }
+  },
+  {
+    "id": "fu_xuan",
+    "name": "Fu Xuan",
+    "rarity": 5,
+    "element": "Quantum",
+    "path": "Preservation",
+    "color": "#ff69b4",
+    "icon": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSP4IRgjKVxp8mB0lECTOKpMha4nXu21R81lu61K50JKVJNUNm8-Oi7SC_P&s=10",
+    "ultGif": "https://upload-os-bbs.hoyolab.com/upload/2023/09/20/248396313/5752a91233ec86e37533a1ec8022a663_2652933987579829744.gif",
+    "baseStats": {
+      "hp": 1474,
+      "atk": 465,
+      "def": 606,
+      "speed": 100,
+      "maxEnergy": 130
+    },
+    "skills": {
+      "basic": {
+        "name": "Novaprism",
+        "description": "Deals Quantum DMG to a single enemy.",
+        "multiplier": 1.0,
+        "spChange": 1,
+        "energyGain": 20
+      },
+      "skill": {
+        "name": "Known by Stern, Shown by Swarm",
+        "description": "Activates Matrix of Prescience to mitigate ally DMG and boost Max HP & CRIT Rate.",
+        "multiplier": 0.0,
+        "spChange": -1,
+        "energyGain": 30,
+        "isShield": true
+      },
+      "ultimate": {
+        "name": "Woes of Many Morphed to One",
+        "description": "Deals Quantum DMG to all enemies and heals all allies.",
+        "multiplier": 2.5,
+        "energyCost": 130,
+        "isAoE": true,
+        "isHeal": true
       }
     }
   },
