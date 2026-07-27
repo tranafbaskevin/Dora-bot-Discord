@@ -62,7 +62,9 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
 
   const featuredId = (bannerType === 'jing_yuan' || bannerType === 'bronya') ? bannerType : 'seele';
   const featuredChar5 = charactersData.find(c => c.id === featuredId) || charactersData[0];
-  const standardChars5 = charactersData.filter(c => c.rarity === 5 && c.id !== featuredId);
+
+  // STRICT OFF-BANNER 50/50 RULE: Off-banner 5★ can ONLY be Standard 5★ (Bronya), NEVER another Limited Event 5★!
+  const standardChars5 = charactersData.filter(c => c.rarity === 5 && (c.isStandard === true || c.id === 'bronya'));
   const chars4Star = charactersData.filter(c => c.rarity === 4);
 
   const weapons5Star = weaponsData.filter(w => w.rarity === 5);
@@ -89,7 +91,8 @@ function handleGachaPull(discordId, requestedAmount, bannerType) {
           wonRateUp = true;
           isGuaranteed = false;
         } else {
-          const randStandard = standardChars5[Math.floor(Math.random() * standardChars5.length)] || charactersData[1];
+          // Off-Banner 50/50 Loss drops strictly Standard 5★ (Bronya)
+          const randStandard = standardChars5[Math.floor(Math.random() * standardChars5.length)] || charactersData.find(c => c.id === 'bronya') || charactersData[2];
           item = { type: 'char', ...randStandard };
           lostRateUp = true;
           isGuaranteed = true;
