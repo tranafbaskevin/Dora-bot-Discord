@@ -12,9 +12,9 @@
 | :---: | :---: |
 | ![Acheron Ultimate](https://i.makeagif.com/media/6-14-2024/956I-Z.gif) | ![Kafka Ultimate](https://media.tenor.com/YifZLG831mAAAAAM/kafka-honkai-star-rail.gif) |
 
-| 🌟 **Seele** - *Butterfly Flurry* | ⚡ **Jing Yuan** - *Lightbringer* |
+| ⚔️ **Blade** - *Death Sentence* | 🌸 **Fu Xuan** - *Woes of Many Morphed to One* |
 | :---: | :---: |
-| ![Seele Ultimate](https://i.pinimg.com/originals/c0/bb/75/c0bb75e2dd8aa72174381a8db0eee2a0.gif) | ![Jing Yuan Ultimate](https://i.pinimg.com/originals/fb/28/79/fb2879ea8f1b408d37ddcbad152171a3.gif) |
+| ![Blade Ultimate](https://upload-os-bbs.hoyolab.com/upload/2023/07/31/44959855/bcb22d4ab6ab8e4108a0a0d1ba1efac2_6576050986117020026.gif) | ![Fu Xuan Ultimate](https://upload-os-bbs.hoyolab.com/upload/2023/09/20/248396313/5752a91233ec86e37533a1ec8022a663_2652933987579829744.gif) |
 
 ---
 
@@ -104,7 +104,7 @@ Mỗi khi hạ gục Boss ở lệnh `/battle`, người chơi sẽ nhận đư�
 | **Cocolia** *(Mẫu Thần Dối Tráp)* | ❄️ Belobog | 🌟 Trùm Belobog (Đa Năng) | **1,500** | **10** | **10** | **20** | `Bộ Lãng Khách` & `Bộ Hiệp Sĩ` |
 | **Svarog** *(Thủ Vệ Robot)* | ❄️ Belobog | ⚔️ Tinh Thể Vũ Khí & Jades | 800 | 5 | **14** | 10 | `Bộ Hiệp Sĩ` & `Bộ Thiện Xạ` |
 | **Phantylia** *(Tai Họa Huyễn Lung)* | ⛩️ Xianzhou | 💎 Trùm Cuối (Max Jades & Bụi) | **1,800** | 8 | 8 | **36** | `Bộ Thiên Tài` & `Bộ Chim Ưng` |
-| **Abundance Deer** *(Hươu Trù Phú)* | ⛩️ Xianzhou | 📘 Siêu Cấp Sách EXP | 700 | **22** | 4 | 10 | `Bộ Lãng Khách Âm Thầm` |
+| **Abundance Deer** *(Hươu Trù Phú)* | ⛩️ Xianzhou | 📘 Chuyên Farm Sách EXP | 700 | **22** | 4 | 10 | `Bộ Lãng Khách Âm Thầm` |
 | **Aurumaton Gatekeeper** *(Kim Nhân)* | ⛩️ Xianzhou | 🔮 Bụi Di Vật & Tinh Thể | 800 | 5 | 12 | **25** | `Bộ Chim Ưng` & `Bộ Thợ Săn` |
 
 ---
